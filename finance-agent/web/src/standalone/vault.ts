@@ -1,6 +1,6 @@
 // Coffre de l'app autonome : l'état n'est enregistré que chiffré par le code
 // d'accès (PBKDF2-SHA256 → AES-GCM 256). Sans le code, les données sont illisibles.
-import type { User } from '../types';
+import type { Attachment, User } from '../types';
 import { getBackend, type Sealed, type State } from './storage';
 
 const ITERATIONS = 310_000;
@@ -58,7 +58,7 @@ function emptyState(): State {
     notifyInApp: true,
     createdAt: new Date().toISOString(),
   };
-  return { version: 1, user, bills: [], budgets: [], notifications: [] };
+  return { version: 1, user, bills: [], budgets: [], notifications: [], incomes: [] };
 }
 
 // ---------- Session ----------
@@ -170,4 +170,34 @@ if (typeof window !== 'undefined') {
   // Fermeture ou mise en arrière-plan : on n'attend pas la fin du délai
   window.addEventListener('pagehide', () => void flush());
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && void flush());
+}
+
+// ---------- Pièces jointes ----------
+
+export const MAX_ATTACHMENT = 8 * 1024 * 1024;
+const CHUNK = 180_000;
+
+/** Chiffre le fichier avec la clé du coffre et l'enregistre par morceaux. */
+export async function saveAttachment(file: File): Promise<Attachment> {
+  if (!session) throw new LockedError('Verrouillé');
+  if (file.size > MAX_ATTACHMENT) throw new Error(`Fichier trop lourd (${Math.round(MAX_ATTACHMENT / 1024 / 1024)} Mo au plus)`);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, session.key, await file.arrayBuffer());
+  const data = toB64(iv) + '.' + toB64(cipher);
+  const chunks: string[] = [];
+  for (let i = 0; i < data.length; i += CHUNK) chunks.push(data.slice(i, i + CHUNK));
+  const id = crypto.randomUUID();
+  await (await getBackend()).putChunks(id, chunks);
+  return { id, name: file.name, type: file.type || 'application/octet-stream', size: file.size, chunks: chunks.length };
+}
+
+export async function readAttachment(a: Attachment): Promise<Blob> {
+  if (!session) throw new LockedError('Verrouillé');
+  const [iv, cipher] = (await (await getBackend()).getChunks(a.id, a.chunks)).join('').split('.') as [string, string];
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(iv) as BufferSource }, session.key, fromB64(cipher) as BufferSource);
+  return new Blob([plain], { type: a.type });
+}
+
+export async function deleteAttachment(a: Attachment) {
+  await (await getBackend()).deleteChunks(a.id, a.chunks).catch((e) => console.error('[pièce jointe]', e));
 }

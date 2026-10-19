@@ -4,6 +4,7 @@ import { BillsPage } from './components/Bills/BillsPage';
 import { CalendarPage } from './components/Bills/CalendarPage';
 import { BudgetPage } from './components/Budget/BudgetPage';
 import { DashboardPage } from './components/Dashboard/DashboardPage';
+import { IncomesPage } from './components/Incomes/IncomesPage';
 import { Layout } from './components/Layout/Layout';
 import { NotificationsPage } from './components/Notifications/NotificationsPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
@@ -30,6 +31,7 @@ export function App() {
         <Route index element={<DashboardPage />} />
         <Route path="factures" element={<BillsPage />} />
         <Route path="calendrier" element={<CalendarPage />} />
+        <Route path="revenus" element={<IncomesPage />} />
         <Route path="budget" element={<BudgetPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="parametres" element={<SettingsPage />} />

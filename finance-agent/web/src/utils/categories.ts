@@ -1,4 +1,4 @@
-import type { BillCategory, Recurrence } from '../types';
+import type { BillCategory, IncomeCategory, Recurrence } from '../types';
 
 // Palette catégorielle validée (daltonisme, contraste) ; la couleur accompagne toujours le libellé
 export const CATEGORIES: Record<BillCategory, { label: string; color: string; icon: string }> = {
@@ -21,4 +21,14 @@ export const RECURRENCES: Record<Recurrence, string> = {
   MONTHLY: 'Mensuelle',
   QUARTERLY: 'Trimestrielle',
   YEARLY: 'Annuelle',
+};
+
+export const INCOME_CATEGORIES: Record<IncomeCategory, string> = {
+  SALARY: 'Salaire',
+  FREELANCE: 'Activité indépendante',
+  BENEFITS: 'Aides et allocations',
+  RENTAL: 'Loyers perçus',
+  INVESTMENT: 'Placements',
+  GIFT: 'Dons et cadeaux',
+  OTHER: 'Autres',
 };

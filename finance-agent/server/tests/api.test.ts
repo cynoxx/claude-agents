@@ -257,3 +257,36 @@ describe('budget et dashboard', () => {
     expect(res.statusCode).toBe(501);
   });
 });
+
+describe('rentrées et bilan', () => {
+  it('gère les rentrées et calcule le bilan du mois', async () => {
+    const { auth } = await registerUser(ctx.app);
+    const other = await registerUser(ctx.app);
+    const month = today.slice(0, 7);
+    const salary = { label: 'Salaire', source: 'Employeur', amount: 2100, date: `${month}-01`, recurrence: 'MONTHLY', category: 'SALARY' };
+    const created = await ctx.app.inject({ method: 'POST', url: '/api/incomes', headers: auth, payload: salary });
+    expect(created.statusCode).toBe(201);
+    const id = created.json().id;
+    await ctx.app.inject({ method: 'POST', url: '/api/incomes', headers: auth, payload: { label: 'Vente', amount: 40, date: `${month}-02` } });
+    await ctx.app.inject({ method: 'POST', url: '/api/bills', headers: auth, payload: bill({ amount: 600, dueDate: `${month}-03` }) });
+
+    const bad = await ctx.app.inject({ method: 'POST', url: '/api/incomes', headers: auth, payload: { ...salary, endDate: '2000-01-01' } });
+    expect(bad.statusCode).toBe(400);
+    expect(bad.json().details.endDate).toBeDefined();
+
+    const list = (await ctx.app.inject({ method: 'GET', url: '/api/incomes', headers: auth })).json();
+    expect(list).toHaveLength(2);
+    expect(list.find((i: { id: string }) => i.id === id)).toMatchObject({ amount: 2100, endDate: null, category: 'SALARY' });
+
+    const balance = (await ctx.app.inject({ method: 'GET', url: '/api/incomes/balance?months=3', headers: auth })).json();
+    expect(balance).toHaveLength(3);
+    expect(balance[2]).toEqual({ month, income: 2140, expenses: 600, balance: 1540 });
+
+    const put = await ctx.app.inject({ method: 'PUT', url: `/api/incomes/${id}`, headers: auth, payload: { ...salary, amount: 2200 } });
+    expect(put.json().amount).toBe(2200);
+    // Les rentrées des autres utilisateurs restent inaccessibles
+    expect((await ctx.app.inject({ method: 'PUT', url: `/api/incomes/${id}`, headers: other.auth, payload: salary })).statusCode).toBe(404);
+    expect((await ctx.app.inject({ method: 'DELETE', url: `/api/incomes/${id}`, headers: other.auth })).statusCode).toBe(404);
+    expect((await ctx.app.inject({ method: 'DELETE', url: `/api/incomes/${id}`, headers: auth })).statusCode).toBe(204);
+  });
+});

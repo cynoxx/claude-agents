@@ -1,10 +1,11 @@
 // Réplique dans le navigateur de l'API du serveur (mêmes routes, mêmes règles),
 // pour faire tourner l'app sans backend, par exemple dans un artefact.
-import type { Bill, BillCategory, Recurrence } from '../types';
+import type { Bill, BillCategory, Income, IncomeCategory, Recurrence } from '../types';
+import { monthlyBalance, monthsEndingAt } from '../utils/balance';
 import { addDays, daysBetween, localToday } from '../utils/dates';
 import { BILL_CATEGORIES, categorizeProvider } from './categories';
 import type { State, StoredNotification } from './storage';
-import { currentState, LockedError, scheduleSave } from './vault';
+import { currentState, deleteAttachment, LockedError, scheduleSave } from './vault';
 
 export class MockError extends Error {
   constructor(
@@ -212,6 +213,7 @@ route('POST', '/bills', (s, _p, _q, body) => {
     category: (body.category as BillCategory) ?? categorizeProvider(String(body.provider)),
     reference: (body.reference as string) || null,
     documentUrl: (body.documentUrl as string) || null,
+    attachment: (body.attachment as Bill['attachment']) ?? null,
     notes: (body.notes as string) || null,
     recurrence: (body.recurrence as Recurrence) ?? 'NONE',
     paid,
@@ -229,6 +231,8 @@ route('PUT', '/bills/:id', (s, p, _q, body) => {
   const bill = findBill(s, p.id!);
   validateBill(body, true);
   const { id: _id, createdAt: _c, ...rest } = body as Partial<Bill>;
+  // Fichier remplacé ou retiré : l'ancien est effacé
+  if ('attachment' in body && bill.attachment && bill.attachment.id !== (body.attachment as Bill['attachment'])?.id) void deleteAttachment(bill.attachment);
   Object.assign(bill, rest, { updatedAt: new Date().toISOString() });
   if (body.paid === false) bill.paidDate = null;
   if (body.paid === true && !body.paidDate) bill.paidDate = bill.paidDate ?? localToday();
@@ -238,7 +242,8 @@ route('PUT', '/bills/:id', (s, p, _q, body) => {
 });
 
 route('DELETE', '/bills/:id', (s, p) => {
-  findBill(s, p.id!);
+  const removed = findBill(s, p.id!);
+  if (removed.attachment) void deleteAttachment(removed.attachment);
   s.bills = s.bills.filter((b) => b.id !== p.id);
   s.notifications = s.notifications.filter((n) => n.billId !== p.id);
   mutate(s);
@@ -256,7 +261,7 @@ route('PATCH', '/bills/:id/pay', (s, p, _q, body) => {
   if (months && !wasPaid) {
     const due = addMonths(bill.dueDate, months);
     if (!s.bills.some((b) => b.provider === bill.provider && b.title === bill.title && b.dueDate === due)) {
-      next = { ...bill, id: uid(), dueDate: due, paid: false, paidDate: null, notes: null, documentUrl: null, createdAt: bill.updatedAt };
+      next = { ...bill, id: uid(), dueDate: due, paid: false, paidDate: null, notes: null, documentUrl: null, attachment: null, createdAt: bill.updatedAt };
       s.bills.push(next);
     }
   }
@@ -308,6 +313,57 @@ route('PATCH', '/notifications/:id/read', (s, p) => {
   n.isRead = true;
   mutate(s);
   return { ok: true };
+});
+
+// ---------- Rentrées d'argent ----------
+
+const INCOME_CATS: IncomeCategory[] = ['SALARY', 'FREELANCE', 'BENEFITS', 'RENTAL', 'INVESTMENT', 'GIFT', 'OTHER'];
+
+function parseIncome(body: Record<string, unknown>): Omit<Income, 'id' | 'createdAt' | 'updatedAt'> {
+  const errors: Record<string, string[]> = {};
+  const str = (k: string) => (typeof body[k] === 'string' && (body[k] as string).trim() ? (body[k] as string).trim() : null);
+  const amount = Number(body.amount);
+  if (!str('label')) errors.label = ['Intitulé requis'];
+  if (!(amount > 0)) errors.amount = ['Le montant doit être positif'];
+  if (!(typeof body.date === 'string' && DATE_RE.test(body.date))) errors.date = ['Date attendue au format AAAA-MM-JJ'];
+  const endDate = str('endDate');
+  if (endDate && (!DATE_RE.test(endDate) || endDate < String(body.date))) errors.endDate = ['La date de fin doit suivre la date de début'];
+  const recurrence = (body.recurrence ?? 'NONE') as Recurrence;
+  if (!(recurrence in MONTHS_BY_RECURRENCE)) errors.recurrence = ['Périodicité inconnue'];
+  const category = (body.category ?? 'OTHER') as IncomeCategory;
+  if (!INCOME_CATS.includes(category)) errors.category = ['Catégorie inconnue'];
+  if (Object.keys(errors).length) throw new MockError(400, 'Données invalides', errors);
+  return { label: str('label')!, source: str('source'), amount: round(amount), date: body.date as string, endDate, recurrence, category, notes: str('notes') };
+}
+
+const findIncome = (s: State, id: string) => {
+  const i = (s.incomes ??= []).find((x) => x.id === id);
+  if (!i) throw new MockError(404, 'Rentrée introuvable');
+  return i;
+};
+
+route('GET', '/incomes', (s) => [...(s.incomes ?? [])].sort((a, b) => b.date.localeCompare(a.date)));
+route('POST', '/incomes', (s, _p, _q, body) => {
+  const now = new Date().toISOString();
+  const income: Income = { ...parseIncome(body), id: uid(), createdAt: now, updatedAt: now };
+  (s.incomes ??= []).push(income);
+  mutate(s);
+  return income;
+});
+route('PUT', '/incomes/:id', (s, p, _q, body) => {
+  const income = findIncome(s, p.id!);
+  Object.assign(income, parseIncome(body), { updatedAt: new Date().toISOString() });
+  mutate(s);
+  return income;
+});
+route('DELETE', '/incomes/:id', (s, p) => {
+  findIncome(s, p.id!);
+  s.incomes = s.incomes!.filter((i) => i.id !== p.id);
+  mutate(s);
+});
+route('GET', '/incomes/balance', (s, _p, q) => {
+  const count = Math.min(24, Math.max(1, Number(q.get('months')) || 6));
+  return monthlyBalance(s.incomes ?? [], s.bills, monthsEndingAt(localToday().slice(0, 7), count));
 });
 
 route('GET', '/dashboard', (s) => {

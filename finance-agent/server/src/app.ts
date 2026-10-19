@@ -10,6 +10,7 @@ import { billRoutes } from './routes/bills.js';
 import { budgetRoutes } from './routes/budget.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { importRoutes } from './routes/import.js';
+import { incomeRoutes } from './routes/incomes.js';
 import { notificationRoutes } from './routes/notifications.js';
 import { createMailer, type Mailer } from './services/mailer.js';
 
@@ -67,6 +68,7 @@ export async function buildApp(opts: AppOptions = {}) {
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
   await app.register(dashboardRoutes, { prefix: '/api/dashboard' });
   await app.register(importRoutes, { prefix: '/api/import' });
+  await app.register(incomeRoutes, { prefix: '/api/incomes' });
 
   return app;
 }

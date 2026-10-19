@@ -13,6 +13,7 @@ const NAV = [
   { to: '/', label: 'Tableau de bord', short: 'Accueil', icon: 'home' },
   { to: '/factures', label: 'Factures', short: 'Factures', icon: 'bills' },
   { to: '/calendrier', label: 'Calendrier', short: 'Agenda', icon: 'calendar' },
+  { to: '/revenus', label: 'Revenus', short: 'Revenus', icon: 'income' },
   { to: '/budget', label: 'Budget', short: 'Budget', icon: 'budget' },
   { to: '/notifications', label: 'Notifications', short: 'Alertes', icon: 'bell' },
   { to: '/parametres', label: 'Paramètres', short: 'Réglages', icon: 'settings' },
@@ -75,7 +76,7 @@ export function Layout() {
       </main>
 
       {/* Navigation mobile */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-7 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         {NAV.map((n) => (
           <NavLink
             key={n.to}
@@ -84,7 +85,7 @@ export function Layout() {
             className={({ isActive }) => `relative flex flex-col items-center py-2 text-[11px] ${isActive ? 'text-ink' : 'text-muted'}`}
           >
             <Icon name={n.icon} className="mb-0.5 h-5 w-5" />
-            {n.short}
+            <span className="max-w-full truncate px-0.5">{n.short}</span>
             {n.to === '/notifications' && unread > 0 && <span className="absolute right-[30%] top-1.5 h-1.5 w-1.5 rounded-full bg-ink" />}
           </NavLink>
         ))}

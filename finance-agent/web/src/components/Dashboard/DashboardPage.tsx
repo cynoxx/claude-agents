@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useBillMutations, useBills } from '../../hooks/useBills';
+import { incomeService } from '../../services/incomeService';
 import { dashboardService, notificationService } from '../../services/notificationService';
 import { useAuthStore } from '../../store/authStore';
 import { CATEGORIES } from '../../utils/categories';
@@ -18,6 +19,8 @@ export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const { data, isLoading, error } = useQuery({ queryKey: ['dashboard'], queryFn: dashboardService.get });
   const { pay } = useBillMutations();
+  const balance = useQuery({ queryKey: ['balance', 6], queryFn: () => incomeService.balance(6) });
+  const month = balance.data?.[balance.data.length - 1];
   // Semaine du lundi au dimanche contenant aujourd'hui
   const today = localToday();
   const monday = addDays(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7));
@@ -72,7 +75,7 @@ export function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader title="À payer en priorité" action={<Link to="/calendrier" className="text-xs text-muted hover:text-ink">Voir le calendrier</Link>} />
           {urgent.length === 0 ? (
-            <EmptyState>Rien à payer dans les 7 prochains jours. 🎉</EmptyState>
+            <EmptyState>Rien à payer dans les 7 prochains jours.</EmptyState>
           ) : (
             <div className="divide-y divide-white/5">
               {urgent.map((b) => (
@@ -101,6 +104,39 @@ export function DashboardPage() {
                 </li>
               ))}
             </ul>
+          )}
+        </Card>
+
+        <Card>
+          <CardHeader title="Bilan du mois" action={<Link to="/revenus" className="text-xs text-muted hover:text-ink">Voir le détail</Link>} />
+          {!month ? (
+            <EmptyState>Chargement…</EmptyState>
+          ) : (
+            <div className="space-y-2 px-5 pb-5 pt-2 text-sm tabular-nums">
+              <div className="flex justify-between">
+                <span className="text-muted">Entrées</span>
+                <span>{eur(month.income)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Sorties (factures)</span>
+                <span>{eur(month.expenses)}</span>
+              </div>
+              <div className="h-[7px] rounded-full bg-track">
+                <div
+                  className={`h-full rounded-full ${month.expenses > month.income ? 'bg-red-500' : 'bg-ink'}`}
+                  style={{ width: `${month.income > 0 ? Math.min(100, Math.max(3, (month.expenses / month.income) * 100)) : month.expenses > 0 ? 100 : 0}%` }}
+                />
+              </div>
+              <div className="flex justify-between pt-1 text-base font-semibold">
+                <span>Reste</span>
+                <span className={month.balance < 0 ? 'text-red-400' : ''}>{eur(month.balance)}</span>
+              </div>
+              {month.income === 0 && (
+                <Link to="/revenus" className="block text-xs text-muted underline underline-offset-2 hover:text-ink">
+                  Ajoutez vos rentrées d’argent pour voir ce qu’il vous reste
+                </Link>
+              )}
+            </div>
           )}
         </Card>
 

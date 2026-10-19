@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { useBillMutations } from '../../hooks/useBills';
-import { ApiError } from '../../services/api';
-import type { Bill, BillCategory, BillInput, Recurrence } from '../../types';
+import { ApiError, STANDALONE } from '../../services/api';
+import { saveAttachment } from '../../standalone/vault';
+import type { Attachment, Bill, BillCategory, BillInput, Recurrence } from '../../types';
 import { CATEGORIES, CATEGORY_KEYS, RECURRENCES } from '../../utils/categories';
 import { localToday } from '../../utils/dates';
 import { Button, Field, Input, Modal, Select } from '../ui';
+import { AttachmentDrop } from './Attachments';
 
 interface Props {
   open: boolean;
@@ -39,10 +41,14 @@ function BillFormBody({ bill, defaultDueDate, preset, onDone }: { bill?: Bill | 
     notes: bill?.notes ?? '',
     paid: bill?.paid ?? false,
   });
+  // Fichier glissé : chiffré et enregistré seulement à la validation du formulaire
+  const [file, setFile] = useState<File | null>(null);
+  const [attachment, setAttachment] = useState<Attachment | null>(bill?.attachment ?? null);
+  const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [error, setError] = useState<string | null>(null);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
-  const pending = create.isPending || update.isPending;
+  const pending = create.isPending || update.isPending || uploading;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -61,6 +67,16 @@ function BillFormBody({ bill, defaultDueDate, preset, onDone }: { bill?: Bill | 
       paid: form.paid,
     };
     try {
+      if (STANDALONE) {
+        if (file) {
+          setUploading(true);
+          try {
+            data.attachment = await saveAttachment(file);
+          } finally {
+            setUploading(false);
+          }
+        } else if ((bill?.attachment ?? null) !== attachment) data.attachment = attachment;
+      }
       if (bill) await update.mutateAsync({ id: bill.id, data });
       else await create.mutateAsync(data);
       onDone();
@@ -109,10 +125,23 @@ function BillFormBody({ bill, defaultDueDate, preset, onDone }: { bill?: Bill | 
         <Field label="Référence (facultatif)">
           <Input value={form.reference} onChange={(e) => set('reference', e.target.value)} />
         </Field>
-        <Field label="Lien du document (facultatif)" error={err('documentUrl')}>
-          <Input type="url" value={form.documentUrl} onChange={(e) => set('documentUrl', e.target.value)} placeholder="https://" />
-        </Field>
+        {!STANDALONE && (
+          <Field label="Lien du document (facultatif)" error={err('documentUrl')}>
+            <Input type="url" value={form.documentUrl} onChange={(e) => set('documentUrl', e.target.value)} placeholder="https://" />
+          </Field>
+        )}
       </div>
+      {STANDALONE && (
+        <AttachmentDrop
+          current={attachment}
+          file={file}
+          onFile={setFile}
+          onRemove={() => {
+            setFile(null);
+            setAttachment(null);
+          }}
+        />
+      )}
       <Field label="Notes (facultatif)">
         <textarea
           value={form.notes}
@@ -136,7 +165,7 @@ function BillFormBody({ bill, defaultDueDate, preset, onDone }: { bill?: Bill | 
           Annuler
         </Button>
         <Button type="submit" disabled={pending}>
-          {pending ? 'Enregistrement…' : 'Enregistrer'}
+          {uploading ? 'Chiffrement du fichier…' : pending ? 'Enregistrement…' : 'Enregistrer'}
         </Button>
       </div>
     </form>

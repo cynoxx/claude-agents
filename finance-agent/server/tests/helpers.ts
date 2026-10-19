@@ -10,6 +10,7 @@ export async function setupApp() {
 
 export async function resetDb() {
   await prisma.notification.deleteMany();
+  await prisma.income.deleteMany();
   await prisma.bill.deleteMany();
   await prisma.budget.deleteMany();
   await prisma.adminDocument.deleteMany();

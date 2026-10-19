@@ -34,10 +34,21 @@ export interface Bill {
   provider: string;
   reference: string | null;
   documentUrl: string | null;
+  /** Fichier joint (app autonome uniquement, chiffré avec les données) */
+  attachment?: Attachment | null;
   notes: string | null;
   recurrence: Recurrence;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Attachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  /** Nombre de morceaux enregistrés */
+  chunks: number;
 }
 
 export type BillInput = Partial<Omit<Bill, 'id' | 'createdAt' | 'updatedAt' | 'category'>> & {
@@ -47,6 +58,26 @@ export type BillInput = Partial<Omit<Bill, 'id' | 'createdAt' | 'updatedAt' | 'c
   provider: string;
   category?: BillCategory;
 };
+
+export type IncomeCategory = 'SALARY' | 'FREELANCE' | 'BENEFITS' | 'RENTAL' | 'INVESTMENT' | 'GIFT' | 'OTHER';
+
+export interface Income {
+  id: string;
+  label: string;
+  source: string | null;
+  amount: number;
+  /** Première (ou unique) rentrée */
+  date: string;
+  /** Dernière date incluse d'une rentrée récurrente */
+  endDate: string | null;
+  recurrence: Recurrence;
+  category: IncomeCategory;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type IncomeInput = Omit<Income, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface BillFilters {
   status?: 'all' | 'paid' | 'unpaid' | 'overdue';
