@@ -1,0 +1,515 @@
+<title>Chef d'orchestre</title>
+<meta name="description" content="Point d'entrée unique de Jojo vers Jarvis Ultime, Muse et l'Agent financier : tournée automatique, état de chaque agent et ce qui demande son attention.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Chef d'orchestre : noir dominant, blanc en second, cartes très arrondies, barres fines aux bouts arrondis.
+   La couleur ne sert qu'au sens : rouge = en retard, orange = à surveiller. */
+:root{
+  color-scheme:dark;
+  --bg:#050505; --card:#121212; --card-2:#1a1a1a; --field:#0c0c0c; --track:#262626; --line:#222;
+  --ink:#f4f4f2; --ink-2:#a1a1a0; --ink-3:#686867; --on-ink:#0a0a0a;
+  --late:#ff4d4f; --warn:#ff9f1a;
+  --sans:'Geist',ui-sans-serif,-apple-system,system-ui,sans-serif;
+  --mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --r-xl:30px; --r-lg:24px; --r-md:16px;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="light"]){color-scheme:dark}}
+:root[data-theme="dark"]{color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:10px}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 16px 80px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.dim{color:var(--ink-2)}
+
+/* en-tête */
+.mast{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,320px);gap:16px}
+.hello{background:var(--card);border-radius:var(--r-xl);padding:26px 28px;display:grid;gap:18px;align-content:space-between;min-width:0}
+.brand{margin:0;font-weight:600;font-size:clamp(38px,6.4vw,66px);line-height:.92;letter-spacing:-.05em}
+.brand span{color:var(--ink-3)}
+.hello-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.run{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:var(--card-2);font-weight:500;font-size:14px;white-space:nowrap;text-decoration:none}
+.btn:hover{background:#232323}
+.btn.main{background:var(--ink);color:var(--on-ink);font-weight:600}
+.btn.main:hover{background:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+.btn.sm{padding:7px 13px;font-size:13px}
+.week{background:var(--card);border-radius:var(--r-xl);padding:20px 22px 16px;display:grid;gap:10px}
+.week-h{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-2)}
+.week-h b{font-size:22px;color:var(--ink);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.bars{display:grid;grid-template-columns:repeat(7,1fr);align-items:end;height:86px;justify-items:center}
+.bars i{width:7px;border-radius:7px;background:var(--ink);min-height:8px;transition:height .5s cubic-bezier(.2,.8,.2,1)}
+.bars i.off{background:var(--track)}
+.bars i.now{background:linear-gradient(180deg,#fff,#bdbdbd);box-shadow:0 0 16px rgba(255,255,255,.35)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--ink-3)}
+.days .now{color:var(--ink);font-weight:600}
+
+/* sections */
+.sec{margin-top:34px;display:grid;gap:14px;align-content:start}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.sec-h h2{margin:0;font-size:24px;font-weight:600;letter-spacing:-.03em}
+
+/* agents */
+.agents{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.agent{background:var(--card);border-radius:var(--r-xl);padding:22px;display:grid;gap:14px;align-content:start;min-width:0;position:relative}
+.agent.late{box-shadow:inset 0 0 0 1px rgba(255,77,79,.45)}
+.agent.warn{box-shadow:inset 0 0 0 1px rgba(255,159,26,.4)}
+.ag-top{display:flex;align-items:center;gap:12px}
+.mono-mark{width:42px;height:42px;border-radius:14px;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:15px;letter-spacing:-.02em;flex:none}
+.ag-top h3{margin:0;font-size:19px;font-weight:600;letter-spacing:-.025em;line-height:1.15}
+.ag-top small{display:block;color:var(--ink-3);font-size:12.5px}
+.state{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);white-space:nowrap}
+.state i{width:7px;height:7px;border-radius:50%;background:var(--ink-3)}
+.state.ok i{background:var(--ink)}
+.state.warn{color:var(--warn)} .state.warn i{background:var(--warn)}
+.state.late{color:var(--late)} .state.late i{background:var(--late)}
+.ag-line{margin:0;color:var(--ink-2);font-size:14px;min-height:2.9em}
+.ritual{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-md);background:var(--field);text-align:left;width:100%}
+.ritual .tick{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ink-3);display:grid;place-items:center;flex:none}
+.ritual.on .tick{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.ritual .tick svg{width:13px;height:13px}
+.ritual span{flex:1;min-width:0;font-size:14px}
+.ritual em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.ag-acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ordres du jour */
+.orders{background:var(--card);border-radius:var(--r-xl);padding:22px 24px;display:grid;gap:14px}
+.phrase{margin:0;font-size:clamp(19px,2.6vw,24px);font-weight:500;letter-spacing:-.02em;line-height:1.3;text-wrap:balance}
+.olist{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.olist li{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:14px;align-items:center;padding:13px 16px;border-radius:var(--r-md);background:var(--field)}
+.olist .who{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.olist b{font-weight:500}
+.olist small{display:block;color:var(--ink-3);font-size:12.5px;margin-top:2px}
+.olist li.hot b{color:var(--ink)}
+.olist li.hot .who{color:var(--warn)}
+.status{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:13.5px}
+.pulse{width:6px;height:20px;border-radius:6px;background:var(--ink);animation:pu 1.1s ease-in-out infinite}
+@keyframes pu{50%{transform:scaleY(.4);opacity:.6}}
+
+/* courrier à traiter */
+.mail{display:grid;gap:8px}
+.mi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 18px;border-radius:var(--r-lg);background:var(--card)}
+.mi b{font-weight:500;display:block;overflow-wrap:anywhere}
+.mi small{display:block;color:var(--ink-3);font-size:12.5px;margin-top:2px;overflow-wrap:anywhere}
+.mi small.late{color:var(--late)}
+.mi-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.agenda{display:grid;gap:6px}
+.ev{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px;padding:12px 18px;border-radius:var(--r-md);background:var(--card);font-size:14px}
+.ev span{font-family:var(--mono);font-size:12px;color:var(--ink-2);padding-top:2px}
+.note{padding:14px 18px;border-radius:var(--r-md);background:var(--card);color:var(--ink-2);font-size:14px}
+.note.warn{box-shadow:inset 0 0 0 1px rgba(255,159,26,.4)}
+.empty{padding:22px;border-radius:var(--r-lg);background:var(--card);color:var(--ink-3);text-align:center;font-size:14px}
+.cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px}
+.journal{display:grid;gap:4px;font-size:13px;color:var(--ink-2)}
+.journal div{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.journal div:first-child{border-top:0}
+.journal span{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.truth{background:var(--card);border-radius:var(--r-xl);padding:22px 24px;display:grid;gap:12px;font-size:14px;color:var(--ink-2)}
+.truth h3{margin:0;color:var(--ink);font-size:17px;font-weight:600;letter-spacing:-.02em}
+.truth ul{margin:0;padding-left:18px;display:grid;gap:5px}
+.truth b{color:var(--ink);font-weight:500}
+
+/* verrou */
+.lock{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;padding:24px 16px;overflow:auto}
+.lock-card{width:min(380px,100%);display:grid;gap:16px;text-align:center;background:var(--card);border-radius:34px;padding:36px 28px}
+.lock-card .brand{font-size:46px}
+.lock-card p{margin:0;color:var(--ink-2);font-size:14px}
+.pin{font-family:var(--mono);font-size:26px;letter-spacing:.5em;text-align:center;padding:14px 10px 14px calc(10px + .5em);border-radius:var(--r-md);border:1px solid transparent;background:var(--field);width:100%}
+.pin:focus{outline:none;border-color:var(--ink)}
+.lock-err{min-height:20px;font-size:14px;color:var(--late)}
+.reset{font-size:12.5px;color:var(--ink-3);text-decoration:underline}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--on-ink);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:500;max-width:calc(100% - 32px)}
+
+@media (max-width:900px){.agents{grid-template-columns:1fr}.cols{grid-template-columns:1fr}}
+@media (max-width:640px){.mast{grid-template-columns:1fr}.olist li{grid-template-columns:minmax(0,1fr) auto}.olist .who{grid-column:1/-1}.ev{grid-template-columns:1fr;gap:2px}.mi{grid-template-columns:1fr}.mi-acts{justify-content:flex-start}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}.bars i{transition:none}}
+</style>
+
+<div class="wrap" id="app" hidden>
+  <header class="mast">
+    <div class="hello">
+      <div>
+        <div class="eyebrow" id="today"></div>
+        <h1 class="brand">Chef<br>d'orchestre<span>.</span></h1>
+      </div>
+      <div class="hello-foot">
+        <span class="dim" id="lastRun" style="font-size:13px"></span>
+        <div class="run">
+          <button class="btn main" id="runBtn">Lancer la tournée</button>
+          <button class="btn" id="lockBtn">Verrouiller</button>
+        </div>
+      </div>
+    </div>
+    <div class="week" aria-label="Rituels tenus cette semaine">
+      <div class="week-h"><span>Rituels tenus</span><b id="weekTotal">0 / 21</b></div>
+      <div class="bars" id="weekBars"></div>
+      <div class="days" id="weekDays"></div>
+    </div>
+  </header>
+
+  <section class="sec">
+    <div class="sec-h"><h2>Ordres du jour</h2><span class="eyebrow">Rédigés par Claude à chaque tournée</span></div>
+    <div class="orders" id="orders"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><h2>Tes agents</h2><span class="eyebrow">État et rituel de chacun</span></div>
+    <div class="agents" id="agents"></div>
+  </section>
+
+  <div class="cols">
+    <section class="sec">
+      <div class="sec-h"><h2>Pour l'Agent financier</h2><span class="eyebrow" id="mailCount"></span></div>
+      <div class="mail" id="mail"></div>
+    </section>
+    <section class="sec">
+      <div class="sec-h"><h2>Pour Jarvis</h2><span class="eyebrow">Ton agenda, 7 jours</span></div>
+      <div class="agenda" id="agenda"></div>
+    </section>
+  </div>
+
+  <div class="cols">
+    <section class="sec">
+      <div class="sec-h"><h2>Journal</h2><span class="eyebrow">Les dernières tournées</span></div>
+      <div class="journal" id="journal"></div>
+    </section>
+    <section class="sec">
+      <div class="truth">
+        <h3>Ce qui est automatique, et ce qui ne l'est pas</h3>
+        <ul>
+          <li><b>Automatique</b> : à chaque ouverture (une fois par jour) et sur « Lancer la tournée », je lis ta boîte Gmail (factures, reçus, échéances, prélèvements des 14 derniers jours) et ton Google Agenda des 7 prochains jours, puis Claude rédige tes ordres du jour et les répartit entre tes trois agents.</li>
+          <li><b>Automatique</b> : l'état de chaque agent (à jour, à surveiller en orange, en retard en rouge) se calcule tout seul.</li>
+          <li><b>Pas automatique</b> : tes agents gardent leurs données chiffrées chacun de leur côté, je ne peux ni les lire ni écrire dedans. Je prépare la consigne, tu la colles ou tu la saisis dans l'agent, puis tu coches ici.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="lock" id="lock">
+  <form class="lock-card" id="lockForm" autocomplete="off">
+    <h1 class="brand">Chef d'orchestre<span>.</span></h1>
+    <p id="lockText">Chargement…</p>
+    <input class="pin" id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••" aria-label="Code d'accès" hidden>
+    <input class="pin" id="pin2" type="password" inputmode="numeric" maxlength="8" placeholder="••••" aria-label="Confirme le code" hidden>
+    <div class="lock-err" id="lockErr"></div>
+    <button class="btn main" type="submit" id="lockGo" style="justify-self:center" hidden>Entrer</button>
+    <button class="reset" type="button" id="resetBtn" hidden>Code oublié : repartir de zéro</button>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---------- les agents ----------
+const AGENTS = {
+  jarvis: { name: "Jarvis Ultime", short: "J", role: "Planning, études, sport, vie", url: "https://claude.ai/artifact/AMmh5P3szhb2MXL2YtRp2s",
+    ritual: "Bilan du soir fait", warnAt: 21 },
+  muse: { name: "Muse", short: "M", role: "Idées de business IA", url: "https://claude.ai/artifact/ChtV57zUDqYdQGJsKotktQ",
+    ritual: "Idée du jour validée", warnAt: 18 },
+  finance: { name: "Agent financier", short: "€", role: "Factures, abonnements, budget", url: "https://claude.ai/artifact/5Envk91bbCznx7bKLdpCHD",
+    ritual: "Factures du jour saisies", warnAt: 20 },
+};
+const IDS = ["jarvis", "muse", "finance"];
+const MAIL_Q = "newer_than:14d (facture OR reçu OR receipt OR invoice OR échéance OR prélèvement OR abonnement OR paiement OR avis)";
+const LOCK_MS = 30 * 60 * 1000;
+
+// ---------- utilitaires ----------
+const $ = s => document.querySelector(s);
+const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === "class") n.className = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else if (v !== false && v != null) n.setAttribute(k, v === true ? "" : v); } for (const c of kids.flat()) if (c != null && c !== false) n.append(c.nodeType ? c : String(c)); return n; };
+const pad = n => String(n).padStart(2, "0");
+const iso = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const today = () => iso(new Date());
+const localStamp = d => iso(d) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":00";
+const fmtTime = t => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const fmtDay = t => new Date(t).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+const decode = s => { const t = document.createElement("textarea"); t.innerHTML = s || ""; return t.value; };
+const daysAgo = t => Math.floor((Date.now() - new Date(t).getTime()) / 864e5);
+const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), 2600); }
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast("Consigne copiée, colle-la dans l'agent"); }
+  catch { toast("Copie impossible ici, sélectionne le texte à la main"); }
+}
+
+// ---------- coffre chiffré par le code d'accès ----------
+const enc = new TextEncoder(), dec = new TextDecoder();
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function deriveKey(code, salt) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(code), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function seal(obj, key, salt) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(obj)));
+  return { v: 1, salt: b64(salt), iv: b64(iv), ct: b64(ct) };
+}
+async function unseal(vault, key) {
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(vault.iv) }, key, unb64(vault.ct));
+  return JSON.parse(dec.decode(pt));
+}
+
+const use = n => (window.claude && window.claude.use ? window.claude.use(n) : Promise.resolve(null)).catch(() => null);
+
+// ---------- état ----------
+const blank = () => ({ rituals: {}, mailStatus: {}, mail: [], events: [], briefing: null, lastRun: 0, journal: [], errors: {} });
+let S = blank(), key = null, salt = null, docRef = null, storedVault = null, busy = false, lastActive = Date.now();
+let mcp = null, sample = null;
+const LS = "chef-orchestre-vault";
+
+async function loadVault() {
+  const db = await use("db");
+  const user = await use("user");
+  if (db && user) {
+    try { const id = await user.id(); docRef = db.collection("data/users/" + id).doc("orchestre"); const snap = await docRef.get(); storedVault = snap && snap.exists ? (snap.data() || {}).vault : null; } catch { docRef = null; }
+  }
+  if (!storedVault) { try { const raw = localStorage.getItem(LS); if (raw) storedVault = JSON.parse(raw); } catch {} }
+}
+let saveTimer = null;
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400); }
+async function saveNow() {
+  if (!key) return;
+  const vault = await seal(S, key, salt); storedVault = vault;
+  try { localStorage.setItem(LS, JSON.stringify(vault)); } catch {}
+  if (docRef) { try { await docRef.set({ vault, updatedAt: Date.now() }); } catch {} }
+}
+
+// ---------- verrou ----------
+function showLock() {
+  key = null; S = blank();
+  $("#app").hidden = true; $("#lock").hidden = false;
+  const first = !storedVault;
+  $("#lockText").textContent = first ? "Choisis un code d'accès de 4 à 8 chiffres. Il chiffre tes données ici et ne peut pas être récupéré." : "Entre ton code d'accès.";
+  $("#pin").hidden = false; $("#pin").value = ""; $("#pin2").hidden = !first; $("#pin2").value = "";
+  $("#lockGo").hidden = false; $("#lockGo").textContent = first ? "Créer mon code" : "Entrer";
+  $("#resetBtn").hidden = first; $("#resetBtn").dataset.arm = ""; $("#resetBtn").textContent = "Code oublié : repartir de zéro";
+  $("#lockErr").textContent = "";
+  setTimeout(() => $("#pin").focus(), 50);
+}
+$("#lockForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const code = $("#pin").value.trim(), err = $("#lockErr");
+  if (!/^\d{4,8}$/.test(code)) { err.textContent = "4 à 8 chiffres."; return; }
+  $("#lockGo").disabled = true;
+  try {
+    if (!storedVault) {
+      if ($("#pin2").value.trim() !== code) { err.textContent = "Les deux codes ne correspondent pas."; return; }
+      salt = crypto.getRandomValues(new Uint8Array(16)); key = await deriveKey(code, salt); S = blank(); await saveNow();
+    } else {
+      salt = unb64(storedVault.salt); key = await deriveKey(code, salt);
+      try { S = Object.assign(blank(), await unseal(storedVault, key)); } catch { key = null; err.textContent = "Code incorrect."; return; }
+    }
+    unlocked();
+  } finally { $("#lockGo").disabled = false; }
+});
+$("#resetBtn").addEventListener("click", async () => {
+  const b = $("#resetBtn");
+  if (!b.dataset.arm) { b.dataset.arm = "1"; b.textContent = "Touche encore pour tout effacer (rituels, journal)"; return; }
+  storedVault = null; try { localStorage.removeItem(LS); } catch {}
+  if (docRef) { try { await docRef.delete(); } catch {} }
+  showLock();
+});
+$("#lockBtn").addEventListener("click", () => { saveNow().then(showLock); });
+["pointerdown", "keydown", "scroll"].forEach(ev => addEventListener(ev, () => (lastActive = Date.now()), { passive: true }));
+setInterval(() => { if (key && Date.now() - lastActive > LOCK_MS) saveNow().then(showLock); }, 30000);
+
+function unlocked() {
+  $("#lock").hidden = true; $("#app").hidden = false; lastActive = Date.now();
+  render();
+  const last = S.lastRun ? iso(new Date(S.lastRun)) : "";
+  if (last !== today()) runTour("auto");
+}
+
+// ---------- la tournée ----------
+async function runTour(how) {
+  if (busy) return; busy = true; render();
+  const notes = [];
+  S.errors = {};
+  if (!mcp) mcp = await use("mcp");
+  if (!sample) sample = await use("sample");
+  // 1. le courrier (Gmail)
+  if (mcp) {
+    try {
+      const r = await mcp.callTool("Gmail", "search_threads", { query: MAIL_Q, pageSize: 25 });
+      const threads = (r.payload && r.payload.threads) || [];
+      S.mail = threads.map(t => { const m = (t.messages || [])[0] || {}; return { id: t.id, subject: decode(m.subject || "(sans objet)"), sender: m.sender || "", date: m.date || (m.internalDate ? new Date(+m.internalDate).toISOString() : ""), snippet: decode(m.snippet || "").slice(0, 220), url: t.viewUrl || m.viewUrl || "" }; });
+      notes.push(S.mail.length + " mail" + (S.mail.length > 1 ? "s" : "") + " d'argent repéré" + (S.mail.length > 1 ? "s" : ""));
+    } catch (e) { S.errors.gmail = errText(e, "Gmail"); notes.push("Gmail injoignable"); }
+    // 2. l'agenda (Google Agenda)
+    try {
+      const now = new Date(), end = new Date(now.getTime() + 7 * 864e5);
+      const r = await mcp.callTool("Google Calendar", "list_events", { startTime: localStamp(now), endTime: localStamp(end), orderBy: "startTime", pageSize: 40 });
+      const p = r.payload || {};
+      const list = p.events || p.items || [];
+      S.events = list.map(ev => { const st = ev.start || {}; return { id: ev.id || "", title: ev.summary || "(sans titre)", start: st.dateTime || st.date || ev.startTime || "", allDay: !st.dateTime && !!st.date, where: ev.location || "" }; }).filter(e => e.start);
+      notes.push(S.events.length + " évènement" + (S.events.length > 1 ? "s" : "") + " à venir");
+    } catch (e) { S.errors.cal = errText(e, "Google Agenda"); notes.push("Agenda injoignable"); }
+  } else {
+    S.errors.gmail = S.errors.cal = "Les connecteurs ne sont pas accessibles depuis cette vue.";
+  }
+  // 3. les ordres du jour (Claude)
+  if (sample) {
+    try { S.briefing = { day: today(), at: Date.now(), ...(await brief()) }; notes.push("ordres du jour rédigés"); }
+    catch (e) { S.errors.brief = e && e.code === "not_granted" ? "Autorise Claude pour que je rédige tes ordres du jour." : "Claude n'a pas pu rédiger les ordres du jour cette fois."; notes.push("ordres du jour non rédigés"); }
+  } else { S.briefing = { day: today(), at: Date.now(), ...fallbackBrief() }; }
+  S.lastRun = Date.now();
+  S.journal.unshift({ at: Date.now(), how, text: notes.join(", ") });
+  S.journal = S.journal.slice(0, 30);
+  busy = false; save(); render();
+}
+function errText(e, who) {
+  const c = e && e.code;
+  if (c === "needs_reauth" || c === "server_not_connected" || c === "not_connected") return who + " n'est pas connecté : reconnecte-le dans les réglages de claude.ai, rubrique Connecteurs.";
+  if (c === "denied" || c === "not_granted" || c === "consent_denied") return "Tu n'as pas autorisé " + who + " pour cette page. Tu peux le faire dans le menu Autorisations de l'artefact.";
+  return who + " n'a pas répondu cette fois. Relance la tournée plus tard.";
+}
+
+function pendingMail() { return S.mail.filter(m => !S.mailStatus[m.id]); }
+function ritualDone(id, day = today()) { return !!(S.rituals[day] && S.rituals[day][id]); }
+
+function context() {
+  const h = new Date().getHours();
+  return {
+    maintenant: new Date().toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }),
+    heure: h,
+    rituels_du_jour: Object.fromEntries(IDS.map(id => [id, ritualDone(id)])),
+    rituels_hier: Object.fromEntries(IDS.map(id => [id, ritualDone(id, iso(new Date(Date.now() - 864e5)))])),
+    mails_a_saisir: pendingMail().slice(0, 15).map(m => ({ objet: m.subject, de: m.sender, date: m.date, extrait: m.snippet })),
+    agenda_7_jours: S.events.slice(0, 25).map(e => ({ titre: e.title, debut: e.start, journee: e.allDay })),
+  };
+}
+async function brief() {
+  const prompt = `Tu es le chef d'orchestre des agents personnels de Johan (Jojo), étudiant en PASS (première année de médecine) en France. Tu répartis le travail entre ses trois agents :
+- "jarvis" : Jarvis Ultime, son assistant de vie (planning de la journée, révisions PASS, sport, prière, bilan du soir).
+- "muse" : Muse, qui lui propose chaque jour des idées de business IA ; il doit en valider une par jour.
+- "finance" : l'Agent financier, où il saisit factures, abonnements et revenus, et suit son budget.
+
+Voici l'état du jour (JSON) :
+${JSON.stringify(context())}
+
+Rédige en français, sans emoji, sur un ton direct et bienveillant :
+- "phrase" : une seule phrase d'ouverture qui résume la journée.
+- "ordres" : 3 à 6 actions concrètes, les plus importantes d'abord. Chaque action dit exactement quoi faire dans quel agent (par exemple : saisir telle facture de tel montant dans l'Agent financier, caler telle séance avant tel évènement dans Jarvis). Une facture qui arrive à échéance ou un abonnement qui se renouvelle est prioritaire. Ne propose pas de rituel déjà fait aujourd'hui.
+- "consignes" : un texte court par agent que Johan peut copier-coller tel quel dans l'agent ("jarvis" et "muse" seulement), écrit à la première personne comme si Johan parlait à l'agent. Pour Jarvis, inclus les évènements d'agenda utiles. Pour Muse, propose un angle d'idée cohérent avec sa vie d'étudiant en médecine.
+
+Réponds uniquement avec ce JSON :
+{"phrase":"…","ordres":[{"agent":"jarvis|muse|finance","action":"…","pourquoi":"…","urgent":true}],"consignes":{"jarvis":"…","muse":"…"}}`;
+  const r = await sample.json(prompt, { modelTier: "default" });
+  if (!r || !Array.isArray(r.ordres)) throw new Error("format");
+  r.ordres = r.ordres.filter(o => AGENTS[o.agent] && o.action).slice(0, 6);
+  return { phrase: String(r.phrase || ""), ordres: r.ordres, consignes: r.consignes || {} };
+}
+function fallbackBrief() {
+  const o = [];
+  const pm = pendingMail();
+  if (pm.length) o.push({ agent: "finance", action: "Saisir " + pm.length + " facture" + (pm.length > 1 ? "s" : "") + " ou reçu" + (pm.length > 1 ? "s" : "") + " repérés dans ta boîte mail", pourquoi: "Ils ne sont pas encore cochés ici.", urgent: pm.some(m => daysAgo(m.date) > 3) });
+  if (!ritualDone("muse")) o.push({ agent: "muse", action: "Valider ton idée du jour", pourquoi: "Pour garder ta série.", urgent: false });
+  if (!ritualDone("jarvis")) o.push({ agent: "jarvis", action: "Faire ton bilan du soir", pourquoi: "Pour préparer demain.", urgent: false });
+  return { phrase: "Voici ce qui t'attend aujourd'hui.", ordres: o, consignes: {} };
+}
+
+// ---------- état de chaque agent ----------
+function agentState(id) {
+  const h = new Date().getHours(), y = iso(new Date(Date.now() - 864e5));
+  if (id === "finance") {
+    const pm = pendingMail();
+    if (pm.some(m => daysAgo(m.date) > 3)) return { cls: "late", label: "En retard", line: pm.length + " mail" + (pm.length > 1 ? "s" : "") + " d'argent à saisir, dont certains depuis plus de 3 jours." };
+    if (pm.length) return { cls: "warn", label: "À traiter", line: pm.length + " mail" + (pm.length > 1 ? "s" : "") + " d'argent à saisir." };
+    return { cls: "ok", label: "À jour", line: S.mail.length ? "Tout le courrier d'argent repéré est traité." : "Rien de nouveau dans ta boîte mail." };
+  }
+  const a = AGENTS[id], done = ritualDone(id);
+  if (done) return { cls: "ok", label: "À jour", line: a.ritual + " aujourd'hui." };
+  if (!ritualDone(id, y) && S.journal.some(j => iso(new Date(j.at)) <= y)) return { cls: "late", label: "En retard", line: a.ritual + " : pas fait hier, pas encore fait aujourd'hui." };
+  if (h >= a.warnAt) return { cls: "warn", label: "À faire", line: a.ritual + " : il est temps." };
+  return { cls: "", label: "Plus tard", line: a.ritual + " : à faire dans la journée." };
+}
+function toggleRitual(id) {
+  const d = today(); S.rituals[d] = S.rituals[d] || {}; S.rituals[d][id] = !S.rituals[d][id];
+  save(); render();
+}
+
+// ---------- rendu ----------
+function render() {
+  $("#today").textContent = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  $("#lastRun").textContent = busy ? "Tournée en cours…" : S.lastRun ? "Dernière tournée : " + fmtDay(S.lastRun) + " à " + fmtTime(S.lastRun) : "Pas encore de tournée.";
+  $("#runBtn").disabled = busy; $("#runBtn").textContent = busy ? "Tournée en cours" : "Lancer la tournée";
+  renderWeek(); renderOrders(); renderAgents(); renderMail(); renderAgenda(); renderJournal();
+}
+function renderWeek() {
+  const now = new Date(), monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  let total = 0;
+  const week = [...Array(7)].map((_, k) => { const d = new Date(monday); d.setDate(monday.getDate() + k); const key = iso(d); const n = IDS.filter(id => ritualDone(id, key)).length; total += n; return { key, n }; });
+  $("#weekBars").replaceChildren(...week.map(w => el("i", { class: w.key === today() ? "now" : (w.n ? "" : "off"), style: `height:${10 + w.n * 25}px`, title: w.n + " rituel" + (w.n > 1 ? "s" : "") + " sur 3" })));
+  $("#weekDays").replaceChildren(...["L", "M", "M", "J", "V", "S", "D"].map((d, k) => el("span", { class: week[k].key === today() ? "now" : "" }, d)));
+  $("#weekTotal").textContent = total + " / 21";
+}
+function renderOrders() {
+  const box = $("#orders"); box.replaceChildren();
+  if (busy) { box.append(el("div", { class: "status" }, el("span", { class: "pulse" }), "Je lis ta boîte mail et ton agenda, puis Claude répartit le travail…")); return; }
+  if (S.errors.brief) box.append(el("div", { class: "note warn" }, S.errors.brief));
+  const b = S.briefing;
+  if (!b) { box.append(el("p", { class: "dim", style: "margin:0" }, "Lance la tournée pour obtenir tes ordres du jour.")); return; }
+  if (b.day !== today()) box.append(el("div", { class: "note" }, "Ces ordres datent du " + fmtDay(b.at) + ". Relance la tournée pour ceux d'aujourd'hui."));
+  if (b.phrase) box.append(el("p", { class: "phrase" }, b.phrase));
+  if (b.ordres && b.ordres.length) box.append(el("ul", { class: "olist" }, b.ordres.map(o => el("li", { class: o.urgent ? "hot" : "" },
+    el("span", { class: "who" }, (o.urgent ? "Urgent · " : "") + AGENTS[o.agent].name),
+    el("div", {}, el("b", {}, o.action), o.pourquoi ? el("small", {}, o.pourquoi) : null),
+    el("a", { class: "btn sm", href: AGENTS[o.agent].url, target: "_blank", rel: "noopener" }, "Ouvrir")))));
+  else box.append(el("p", { class: "dim", style: "margin:0" }, "Rien d'urgent : tout est à jour."));
+}
+function renderAgents() {
+  const box = $("#agents"); box.replaceChildren();
+  for (const id of IDS) {
+    const a = AGENTS[id], st = agentState(id), on = ritualDone(id);
+    const tick = el("span", { class: "tick" }); if (on) tick.innerHTML = TICK;
+    const consigne = S.briefing && S.briefing.day === today() && S.briefing.consignes && S.briefing.consignes[id];
+    box.append(el("article", { class: "agent " + st.cls },
+      el("div", { class: "ag-top" }, el("div", { class: "mono-mark" }, a.short), el("div", {}, el("h3", {}, a.name), el("small", {}, a.role)),
+        el("span", { class: "state " + st.cls }, el("i"), st.label)),
+      el("p", { class: "ag-line" }, st.line),
+      el("button", { class: "ritual" + (on ? " on" : ""), "aria-pressed": on ? "true" : "false", onclick: () => toggleRitual(id) }, tick, el("span", {}, a.ritual), el("em", {}, on ? "fait" : "à cocher")),
+      el("div", { class: "ag-acts" },
+        el("a", { class: "btn main sm", href: a.url, target: "_blank", rel: "noopener" }, "Ouvrir " + a.name),
+        consigne ? el("button", { class: "btn sm", onclick: () => copy(consigne) }, "Copier la consigne") : null)));
+  }
+}
+function renderMail() {
+  const box = $("#mail"); box.replaceChildren();
+  const pm = pendingMail();
+  $("#mailCount").textContent = pm.length ? pm.length + " à saisir" : "";
+  if (S.errors.gmail) box.append(el("div", { class: "note warn" }, S.errors.gmail));
+  if (!pm.length) { if (!S.errors.gmail) box.append(el("div", { class: "empty" }, S.lastRun ? "Aucune facture ni reçu à saisir." : "La tournée remplira cette liste.")); return; }
+  for (const m of pm) {
+    const late = daysAgo(m.date) > 3;
+    box.append(el("div", { class: "mi" },
+      el("div", {}, el("b", {}, m.subject), el("small", { class: late ? "late" : "" }, (m.sender ? m.sender.replace(/<.*>/, "").trim() + " · " : "") + (m.date ? fmtDay(m.date) : "") + (late ? " · depuis " + daysAgo(m.date) + " jours" : "")), m.snippet ? el("small", {}, m.snippet) : null),
+      el("div", { class: "mi-acts" },
+        m.url ? el("a", { class: "btn sm", href: m.url, target: "_blank", rel: "noopener" }, "Voir le mail") : null,
+        el("a", { class: "btn sm", href: AGENTS.finance.url, target: "_blank", rel: "noopener" }, "Saisir"),
+        el("button", { class: "btn main sm", onclick: () => { S.mailStatus[m.id] = "saisi"; save(); render(); } }, "C'est saisi"),
+        el("button", { class: "btn sm", onclick: () => { S.mailStatus[m.id] = "ignore"; save(); render(); } }, "Ignorer"))));
+  }
+}
+function renderAgenda() {
+  const box = $("#agenda"); box.replaceChildren();
+  if (S.errors.cal) box.append(el("div", { class: "note warn" }, S.errors.cal));
+  if (!S.events.length) { if (!S.errors.cal) box.append(el("div", { class: "empty" }, S.lastRun ? "Rien dans ton agenda ces 7 prochains jours." : "La tournée remplira cette liste.")); return; }
+  for (const e of S.events.slice(0, 20)) box.append(el("div", { class: "ev" }, el("span", {}, fmtDay(e.start) + (e.allDay ? "" : " · " + fmtTime(e.start))), el("div", {}, e.title, e.where ? el("div", { class: "dim", style: "font-size:12.5px" }, e.where) : null)));
+}
+function renderJournal() {
+  const box = $("#journal"); box.replaceChildren();
+  if (!S.journal.length) { box.append(el("p", { class: "dim", style: "margin:0" }, "Aucune tournée pour l'instant.")); return; }
+  for (const j of S.journal.slice(0, 8)) box.append(el("div", {}, el("span", {}, fmtDay(j.at) + " " + fmtTime(j.at)), el("p", { style: "margin:0" }, (j.how === "auto" ? "Automatique : " : "À la demande : ") + (j.text || "rien"))));
+}
+$("#runBtn").addEventListener("click", () => runTour("manuel"));
+
+// ---------- démarrage ----------
+(async () => { await loadVault(); showLock(); })();
+</script>
