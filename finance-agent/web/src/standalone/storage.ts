@@ -21,6 +21,14 @@ export interface State {
   notifications: StoredNotification[];
   /** Absent des coffres créés avant l'ajout des rentrées */
   incomes?: Income[];
+  /** Mails déjà transformés en factures (ids Gmail), pour ne jamais les ajouter deux fois */
+  importedMail?: string[];
+}
+
+/** Facture repérée dans les mails par le tri du matin, en attente d'être rangée dans le coffre. */
+export interface InboxItem {
+  id: string;
+  data: Record<string, unknown>;
 }
 
 /** Coffre enregistré : l'état chiffré par le code d'accès (AES-GCM, clé PBKDF2). */
@@ -42,12 +50,15 @@ export interface Backend {
   putChunks(id: string, chunks: string[]): Promise<void>;
   getChunks(id: string, count: number): Promise<string[]>;
   deleteChunks(id: string, count: number): Promise<void>;
+  /** Boîte d'arrivée : factures déposées par le tri du matin (non chiffrées, privées) */
+  listInbox(): Promise<InboxItem[]>;
+  removeInbox(id: string): Promise<void>;
   /** Où vont les données, pour l'afficher à l'utilisateur */
   kind: 'cloud' | 'browser' | 'memory';
 }
 
 interface DbCollection {
-  limit(n: number): { get(): Promise<{ docs: Array<{ id: string }> }> };
+  limit(n: number): { get(): Promise<{ docs: Array<{ id: string; data(): Record<string, unknown> | undefined }> }> };
 }
 interface DbDoc {
   get(): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
@@ -101,6 +112,8 @@ function browserBackend(): Backend | null {
     async deleteChunks(id, count) {
       for (let n = 0; n < count; n++) localStorage.removeItem(`${LS_FILE}${id}_${n}`);
     },
+    listInbox: async () => [],
+    removeInbox: async () => {},
   };
 }
 
@@ -162,6 +175,13 @@ async function cloudBackend(): Promise<Backend | null> {
       async deleteChunks(id, count) {
         for (let n = 0; n < count; n++) await chunk(id, n).delete();
       },
+      async listInbox() {
+        const { docs } = await db.collection(`${base}/inbox`).limit(200).get();
+        return docs.map((d) => ({ id: d.id, data: d.data() ?? {} }));
+      },
+      async removeInbox(id) {
+        await db.doc(`${base}/inbox/${id}`).delete();
+      },
     };
   } catch {
     return null;
@@ -183,6 +203,8 @@ export function getBackend(): Promise<Backend> {
       deleteChunks: async (id, count) => {
         for (let n = 0; n < count; n++) files.delete(`${id}_${n}`);
       },
+      listInbox: async () => [],
+      removeInbox: async () => {},
     };
     return (await cloudBackend()) ?? browserBackend() ?? memory;
   })();

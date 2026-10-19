@@ -1,6 +1,7 @@
 // Coffre de l'app autonome : l'état n'est enregistré que chiffré par le code
 // d'accès (PBKDF2-SHA256 → AES-GCM 256). Sans le code, les données sont illisibles.
 import type { Attachment, User } from '../types';
+import { importMailInbox } from './mailInbox';
 import { getBackend, type Sealed, type State } from './storage';
 
 const ITERATIONS = 310_000;
@@ -100,6 +101,7 @@ export async function createVault(code: string) {
   const key = await deriveKey(code, salt);
   session = { key, salt: toB64(salt), state: emptyState() };
   await saveNow();
+  await pullMailInbox();
 }
 
 /** Ouvre le coffre ; renvoie false si le code est faux. */
@@ -109,10 +111,26 @@ export async function unlockVault(code: string): Promise<boolean> {
   const key = await deriveKey(code, fromB64(sealed.salt));
   try {
     session = { key, salt: sealed.salt, state: await open(key, sealed) };
-    return true;
   } catch {
     return false;
   }
+  await pullMailInbox();
+  return true;
+}
+
+/** Range les factures déposées par le tri du matin, puis les retire de la boîte une fois le coffre enregistré. */
+async function pullMailInbox() {
+  const s = session;
+  if (!s) return;
+  const backend = await getBackend();
+  const { added, done } = await importMailInbox(s.state, backend);
+  if (!done.length) return;
+  if (added) {
+    dirty = true;
+    await saveNow();
+    if (dirty) return; // enregistrement raté : on garde les dépôts pour la prochaine ouverture
+  }
+  await Promise.all(done.map((id) => backend.removeInbox(id))).catch((e) => console.error('[factures des mails]', e));
 }
 
 export async function lockVault() {
