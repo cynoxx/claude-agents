@@ -5,7 +5,7 @@ import { formatDate } from '../../utils/format';
 import { PageTitle } from '../Layout/Layout';
 import { Button, Card, EmptyState, ErrorMessage, Spinner } from '../ui';
 
-const ICONS = { BILL_REMINDER: '🔔', BUDGET_ALERT: '💶', ADMIN_TASK: '🗂️', GENERAL: 'ℹ️' } as const;
+const KIND = { BILL_REMINDER: 'Échéance', BUDGET_ALERT: 'Budget', ADMIN_TASK: 'Administratif', GENERAL: 'Info' } as const;
 
 export function NotificationsPage() {
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -40,19 +40,17 @@ export function NotificationsPage() {
           {data!.items.length === 0 ? (
             <EmptyState>Aucune notification.</EmptyState>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-black/5">
               {data!.items.map((n) => (
                 <li key={n.id} className={`flex items-start gap-3 px-4 py-3 ${n.isRead ? 'opacity-60' : ''}`}>
-                  <span aria-hidden className="text-lg">
-                    {ICONS[n.type]}
-                  </span>
+                  <span className="mt-0.5 w-24 shrink-0 text-xs uppercase tracking-wide text-muted">{KIND[n.type]}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-sm font-medium">
-                      {!n.isRead && <span className="h-2 w-2 rounded-full bg-brand-600" aria-label="Non lue" />}
+                      {!n.isRead && <span className="h-2 w-2 rounded-full bg-ink" aria-label="Non lue" />}
                       {n.title}
                     </div>
-                    <div className="text-sm text-slate-600">{n.message}</div>
-                    <div className="mt-0.5 text-xs text-slate-400">
+                    <div className="text-sm text-ink/70">{n.message}</div>
+                    <div className="mt-0.5 text-xs text-muted">
                       {new Date(n.createdAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}
                       {n.dueDate && ` · échéance ${formatDate(n.dueDate)}`}
                     </div>

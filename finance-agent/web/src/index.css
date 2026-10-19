@@ -1,15 +1,28 @@
 @import 'tailwindcss';
 
+/* Direction visuelle : monochrome, minimaliste, cartes gris clair très arrondies */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
-  --color-brand-500: #14b8a6;
-  --color-brand-600: #0d9488;
-  --color-brand-700: #0f766e;
-  --color-brand-800: #115e59;
+  --color-brand-50: #e9e8e5;
+  --color-brand-100: #dddcd8;
+  --color-brand-500: #737373;
+  --color-brand-600: #404040;
+  --color-brand-700: #111111;
+  --color-brand-800: #000000;
+  --color-surface: #fafaf9;
+  --color-card: #efeeec;
+  --color-ink: #111111;
+  --color-muted: #6e6d69;
 }
 
 body {
-  @apply text-slate-800 antialiased;
+  @apply bg-surface text-ink antialiased;
+}
+
+/* Barre mise en avant (jour ou mois courant) : dégradé blanc lumineux */
+.bar-highlight {
+  background: linear-gradient(to top, #b9b8b4 0%, #ffffff 55%, #d9d8d4 100%);
+  box-shadow:
+    0 0 10px rgba(255, 255, 255, 0.95),
+    0 0 2px rgba(0, 0, 0, 0.08);
 }

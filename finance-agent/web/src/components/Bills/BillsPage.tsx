@@ -71,10 +71,10 @@ export function BillsPage() {
           </div>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:flex sm:items-center">
-          <label className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+          <label className="flex min-w-0 items-center gap-2 text-xs text-muted">
             Du <Input type="date" value={filters.from ?? ''} onChange={(e) => set({ from: e.target.value || undefined })} className="min-w-0 flex-1 py-1" />
           </label>
-          <label className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+          <label className="flex min-w-0 items-center gap-2 text-xs text-muted">
             au <Input type="date" value={filters.to ?? ''} onChange={(e) => set({ to: e.target.value || undefined })} className="min-w-0 flex-1 py-1" />
           </label>
         </div>
@@ -86,11 +86,11 @@ export function BillsPage() {
         <ErrorMessage error={error} />
       ) : (
         <Card>
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 text-sm text-slate-600">
+          <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm text-ink/70">
             <span>
               {bills!.length} facture{bills!.length > 1 ? 's' : ''}
             </span>
-            <span className="font-semibold text-slate-800">Total {eur(total)}</span>
+            <span className="font-semibold text-ink">Total {eur(total)}</span>
           </div>
           {bills!.length === 0 ? (
             <EmptyState>Aucune facture pour ces critères.</EmptyState>
@@ -98,7 +98,7 @@ export function BillsPage() {
             <>
               {/* Tableau desktop */}
               <table className="hidden w-full text-sm md:table">
-                <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
+                <thead className="text-left text-xs uppercase tracking-wide text-muted">
                   <tr>
                     <th className="px-4 py-2 font-medium">Facture</th>
                     <th className="px-4 py-2 font-medium">Catégorie</th>
@@ -107,24 +107,21 @@ export function BillsPage() {
                     <th className="px-4 py-2" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-black/5">
                   {bills!.map((b) => {
                     const st = dueStatus(b, today);
                     return (
-                      <tr key={b.id} className="hover:bg-slate-50">
+                      <tr key={b.id} className="hover:bg-black/5">
                         <td className="px-4 py-3">
                           <div className="font-medium">{b.title}</div>
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-muted">
                             {b.provider}
                             {b.reference && ` · réf. ${b.reference}`}
                             {b.recurrence !== 'NONE' && ` · ${RECURRENCES[b.recurrence]}`}
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-1.5 text-slate-600">
-                            <span className="h-2 w-2 rounded-full" style={{ background: CATEGORIES[b.category].color }} />
-                            {CATEGORIES[b.category].label}
-                          </span>
+                          <span className="text-ink/70">{CATEGORIES[b.category].label}</span>
                         </td>
                         <td className="px-4 py-3">
                           <div>{formatDate(b.dueDate)}</div>
@@ -140,7 +137,7 @@ export function BillsPage() {
                             </Button>
                           )}
                           {b.documentUrl && (
-                            <a href={b.documentUrl} target="_blank" rel="noreferrer" className="mr-1 inline-block rounded-md px-2 py-1 text-xs text-brand-700 hover:bg-slate-100">
+                            <a href={b.documentUrl} target="_blank" rel="noreferrer" className="mr-1 inline-block rounded-md px-2 py-1 text-xs text-brand-700 hover:bg-black/5">
                               PDF
                             </a>
                           )}
@@ -158,7 +155,7 @@ export function BillsPage() {
               </table>
 
               {/* Cartes mobile */}
-              <ul className="divide-y divide-slate-100 md:hidden">
+              <ul className="divide-y divide-black/5 md:hidden">
                 {bills!.map((b) => {
                   const st = dueStatus(b, today);
                   return (
@@ -166,9 +163,9 @@ export function BillsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <button className="min-w-0 text-left" onClick={() => openForm(b)}>
                           <div className="truncate font-medium">
-                            {CATEGORIES[b.category].icon} {b.title}
+                            {b.title}
                           </div>
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-muted">
                             {b.provider} · {formatDate(b.dueDate)}
                           </div>
                         </button>

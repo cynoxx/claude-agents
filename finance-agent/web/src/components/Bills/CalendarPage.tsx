@@ -66,7 +66,7 @@ export function CalendarPage() {
         }
       />
 
-      <div className="mb-3 flex flex-wrap gap-3 text-xs text-slate-600">
+      <div className="mb-3 flex flex-wrap gap-3 text-xs text-ink/70">
         {LEGEND.map((s) => (
           <span key={s} className="inline-flex items-center gap-1.5">
             <span className={`h-2.5 w-2.5 rounded-full ${DUE_STYLES[s].dot}`} /> {DUE_STYLES[s].label}
@@ -74,9 +74,9 @@ export function CalendarPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px] [&>*]:min-w-0">
         <Card className="overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50 text-center text-xs font-medium text-slate-500">
+          <div className="grid grid-cols-7 border-b border-black/5 bg-black/[0.03] text-center text-xs font-medium text-muted">
             {WEEKDAYS.map((d) => (
               <div key={d} className="py-2">
                 {d}
@@ -94,9 +94,9 @@ export function CalendarPage() {
                   key={day}
                   onClick={() => setSelected(day)}
                   onDoubleClick={() => setForm({ open: true, bill: null, date: day })}
-                  className={`flex min-h-16 flex-col items-start justify-start border-b border-r border-slate-100 p-1 text-left transition sm:min-h-24 sm:p-1.5 ${
-                    inMonth ? 'bg-white' : 'bg-slate-50/60 text-slate-400'
-                  } ${isSelected ? 'ring-2 ring-inset ring-brand-500' : 'hover:bg-slate-50'}`}
+                  className={`flex min-h-16 flex-col items-start justify-start border-b border-r border-black/5 p-1 text-left transition sm:min-h-24 sm:p-1.5 ${
+                    inMonth ? '' : 'text-muted/60'
+                  } ${isSelected ? 'ring-2 ring-inset ring-brand-500' : 'hover:bg-black/5'}`}
                 >
                   <span
                     className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${isToday ? 'bg-brand-700 font-semibold text-white' : ''}`}
@@ -115,7 +115,7 @@ export function CalendarPage() {
                         {b.title} · {eur(b.amount)}
                       </div>
                     ))}
-                    {dayBills.length > 3 && <div className="text-[11px] text-slate-500">+{dayBills.length - 3} autre(s)</div>}
+                    {dayBills.length > 3 && <div className="text-[11px] text-muted">+{dayBills.length - 3} autre(s)</div>}
                   </div>
                 </button>
               );
@@ -135,7 +135,7 @@ export function CalendarPage() {
           {selectedBills.length === 0 ? (
             <EmptyState>Aucune échéance ce jour-là.</EmptyState>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-black/5">
               {selectedBills.map((b) => (
                 <BillRow key={b.id} bill={b} today={today} onPay={() => pay.mutate(b.id)} onClick={() => setForm({ open: true, bill: b })} />
               ))}

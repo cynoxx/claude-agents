@@ -30,13 +30,13 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-surface p-4">
+      <div className="w-full max-w-sm rounded-[32px] bg-card p-8">
         <div className="mb-6 flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
           <div>
             <h1 className="text-lg font-semibold">Agent financier</h1>
-            <p className="text-xs text-slate-500">Factures, échéances et budget au même endroit</p>
+            <p className="text-xs text-muted">Factures, échéances et budget au même endroit</p>
           </div>
         </div>
         <form onSubmit={submit} className="space-y-4">
@@ -58,12 +58,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
               autoComplete={isLogin ? 'current-password' : 'new-password'}
             />
           </Field>
-          {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? '…' : isLogin ? 'Se connecter' : 'Créer mon compte'}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-muted">
           {isLogin ? (
             <>
               Pas encore de compte ? <Link to="/inscription" className="font-medium text-brand-700">Créer un compte</Link>

@@ -1,22 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useBillMutations } from '../../hooks/useBills';
+import { useBillMutations, useBills } from '../../hooks/useBills';
 import { dashboardService, notificationService } from '../../services/notificationService';
 import { useAuthStore } from '../../store/authStore';
 import { CATEGORIES } from '../../utils/categories';
-import { eur, formatMonth } from '../../utils/format';
+import { addDays, localToday } from '../../utils/dates';
+import { eur, formatDate, formatMonth } from '../../utils/format';
+
+const DAY_INITIALS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 import { BillRow } from '../Bills/BillRow';
 import { BudgetBar } from '../Budget/BudgetBar';
 import { PageTitle } from '../Layout/Layout';
 import { Card, CardHeader, EmptyState, ErrorMessage, Spinner } from '../ui';
-
-const SERIES = '#2a78d6';
+import { MiniBars, ThinBars, type MiniBar } from '../ui/MiniBars';
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const { data, isLoading, error } = useQuery({ queryKey: ['dashboard'], queryFn: dashboardService.get });
   const { pay } = useBillMutations();
+  // Semaine du lundi au dimanche contenant aujourd'hui
+  const today = localToday();
+  const monday = addDays(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7));
+  const { data: weekBills = [] } = useBills({ from: monday, to: addDays(monday, 6) });
   const qc = useQueryClient();
   const markRead = useMutation({
     mutationFn: notificationService.markRead,
@@ -32,8 +37,24 @@ export function DashboardPage() {
   const byCategory = data.budgetSummary
     .filter((l) => l.spent > 0)
     .sort((a, b) => b.spent - a.spent)
-    .map((l) => ({ name: CATEGORIES[l.category].label, spent: l.spent }));
-  const trend = data.monthlyTrend.map((m) => ({ name: formatMonth(m.month), total: m.total }));
+    .map((l) => ({ key: l.category, label: CATEGORIES[l.category].label, value: l.spent }));
+  const week: MiniBar[] = Array.from({ length: 7 }, (_, i) => {
+    const day = addDays(monday, i);
+    return {
+      key: day,
+      label: DAY_INITIALS[i]!,
+      title: formatDate(day, { weekday: 'long', day: 'numeric', month: 'long' }),
+      value: weekBills.filter((b) => b.dueDate === day).reduce((s, b) => s + b.amount, 0),
+      highlight: day === today,
+    };
+  });
+  const trend: MiniBar[] = data.monthlyTrend.map((m, i, all) => ({
+    key: m.month,
+    label: formatMonth(m.month).split(' ')[0]!.replace('.', ''),
+    title: formatMonth(m.month, true),
+    value: m.total,
+    highlight: i === all.length - 1,
+  }));
   const budgets = data.budgetSummary.filter((l) => l.limit > 0);
 
   return (
@@ -47,13 +68,13 @@ export function DashboardPage() {
         <Stat label="Total à payer" value={eur(data.totalAmountDue)} hint="toutes échéances" />
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-3">
+      <div className="grid items-start gap-4 lg:grid-cols-3 [&>*]:min-w-0">
         <Card className="lg:col-span-2">
-          <CardHeader title="À payer en priorité" action={<Link to="/calendrier" className="text-xs text-brand-700">Voir le calendrier</Link>} />
+          <CardHeader title="À payer en priorité" action={<Link to="/calendrier" className="text-xs text-muted hover:text-ink">Voir le calendrier</Link>} />
           {urgent.length === 0 ? (
             <EmptyState>Rien à payer dans les 7 prochains jours. 🎉</EmptyState>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-black/5">
               {urgent.map((b) => (
                 <BillRow key={b.id} bill={b} today={data.today} onPay={() => pay.mutate(b.id)} />
               ))}
@@ -62,19 +83,19 @@ export function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader title="Rappels" action={<Link to="/notifications" className="text-xs text-brand-700">Tout voir</Link>} />
+          <CardHeader title="Rappels" action={<Link to="/notifications" className="text-xs text-muted hover:text-ink">Tout voir</Link>} />
           {data.upcomingReminders.length === 0 ? (
             <EmptyState>Aucun rappel non lu.</EmptyState>
           ) : (
-            <ul className="divide-y divide-slate-100">
-              {data.upcomingReminders.map((n) => (
+            <ul className="divide-y divide-black/5">
+              {data.upcomingReminders.slice(0, 5).map((n) => (
                 <li key={n.id} className="flex items-start gap-2 px-4 py-3">
-                  <span aria-hidden>{n.type === 'BUDGET_ALERT' ? '💶' : '🔔'}</span>
+                  <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.type === 'BUDGET_ALERT' ? 'bg-orange-500' : 'bg-ink'}`} aria-hidden />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium">{n.title}</div>
-                    <div className="text-xs text-slate-500">{n.message}</div>
+                    <div className="text-xs text-muted">{n.message}</div>
                   </div>
-                  <button className="text-xs text-slate-400 hover:text-slate-700" onClick={() => markRead.mutate(n.id)} title="Marquer comme lu">
+                  <button className="text-xs text-muted hover:text-ink/70" onClick={() => markRead.mutate(n.id)} title="Marquer comme lu">
                     ✓
                   </button>
                 </li>
@@ -84,44 +105,35 @@ export function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader title="Dépenses du mois par catégorie" />
+          <CardHeader title="Cette semaine" />
+          <div className="px-5 pb-5 pt-2">
+            <MiniBars bars={week} format={eur} />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Six derniers mois" />
+          <div className="px-5 pb-5 pt-2">
+            <MiniBars bars={trend} format={eur} />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Ce mois-ci par catégorie" />
           {byCategory.length === 0 ? (
             <EmptyState>Pas encore de facture ce mois-ci.</EmptyState>
           ) : (
-            <div className="h-64 p-2">
-              <ResponsiveContainer>
-                <BarChart data={byCategory} layout="vertical" margin={{ left: 8, right: 16 }}>
-                  <CartesianGrid horizontal={false} stroke="#e2e8f0" />
-                  <XAxis type="number" tickFormatter={(v) => `${v} €`} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11, fill: '#334155' }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v: number) => [eur(v), 'Dépensé']} cursor={{ fill: '#f1f5f9' }} />
-                  <Bar dataKey="spent" fill={SERIES} radius={[0, 4, 4, 0]} barSize={14} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="px-5 pb-5 pt-3">
+              <ThinBars rows={byCategory} format={eur} />
             </div>
           )}
         </Card>
 
         <Card>
-          <CardHeader title="Évolution sur 6 mois" />
-          <div className="h-64 p-2">
-            <ResponsiveContainer>
-              <BarChart data={trend} margin={{ left: 0, right: 8, top: 8 }}>
-                <CartesianGrid vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={(v) => `${v} €`} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} width={56} />
-                <Tooltip formatter={(v: number) => [eur(v), 'Total des factures']} cursor={{ fill: '#f1f5f9' }} />
-                <Bar dataKey="total" fill={SERIES} radius={[4, 4, 0, 0]} barSize={22} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader title="Budget vs réel" action={<Link to="/budget" className="text-xs text-brand-700">Gérer</Link>} />
+          <CardHeader title="Budget vs réel" action={<Link to="/budget" className="text-xs text-muted hover:text-ink">Gérer</Link>} />
           {budgets.length === 0 ? (
             <EmptyState>
-              Aucun budget défini. <Link to="/budget" className="text-brand-700">Définir mes limites</Link>
+              Aucun budget défini. <Link to="/budget" className="text-ink underline">Définir mes limites</Link>
             </EmptyState>
           ) : (
             <div className="space-y-4 p-4">
@@ -132,12 +144,12 @@ export function DashboardPage() {
           )}
         </Card>
 
-        <Card className="lg:col-span-3">
-          <CardHeader title="Derniers paiements" action={<Link to="/factures" className="text-xs text-brand-700">Historique</Link>} />
+        <Card className="lg:col-span-2">
+          <CardHeader title="Derniers paiements" action={<Link to="/factures" className="text-xs text-muted hover:text-ink">Historique</Link>} />
           {data.recentTransactions.length === 0 ? (
             <EmptyState>Aucune facture payée pour l'instant.</EmptyState>
           ) : (
-            <div className="grid divide-y divide-slate-100 md:grid-cols-2 md:divide-y-0">
+            <div className="grid grid-cols-1 divide-y divide-black/5 md:grid-cols-2 md:divide-y-0">
               {data.recentTransactions.map((b) => (
                 <BillRow key={b.id} bill={b} today={data.today} />
               ))}
@@ -151,10 +163,13 @@ export function DashboardPage() {
 
 function Stat({ label, value, hint, tone }: { label: string; value: string; hint: string; tone?: 'danger' }) {
   return (
-    <Card className={`p-4 ${tone === 'danger' ? 'border-red-200 bg-red-50' : ''}`}>
-      <div className={`text-xs font-medium ${tone === 'danger' ? 'text-red-700' : 'text-slate-500'}`}>{label}</div>
-      <div className={`mt-1 text-xl font-semibold tabular-nums sm:text-2xl ${tone === 'danger' ? 'text-red-800' : 'text-slate-900'}`}>{value}</div>
-      <div className="text-xs text-slate-500">{hint}</div>
+    <Card className="p-5">
+      <div className="flex items-center gap-1.5 text-xs text-muted">
+        {tone === 'danger' && <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />}
+        {label}
+      </div>
+      <div className={`mt-1 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl ${tone === 'danger' ? 'text-red-700' : 'text-ink'}`}>{value}</div>
+      <div className="text-xs text-muted">{hint}</div>
     </Card>
   );
 }

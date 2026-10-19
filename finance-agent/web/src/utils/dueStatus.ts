@@ -21,7 +21,7 @@ export const DUE_STYLES: Record<DueStatus, { label: string; badge: string; dot: 
   urgent: { label: '≤ 3 jours', badge: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500', chip: 'bg-orange-50 text-orange-800 border-orange-200' },
   soon: { label: '≤ 7 jours', badge: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-400', chip: 'bg-yellow-50 text-yellow-900 border-yellow-200' },
   later: { label: '> 7 jours', badge: 'bg-green-100 text-green-800', dot: 'bg-green-500', chip: 'bg-green-50 text-green-800 border-green-200' },
-  paid: { label: 'Payée', badge: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400', chip: 'bg-slate-50 text-slate-500 border-slate-200 line-through' },
+  paid: { label: 'Payée', badge: 'bg-black/5 text-ink/70', dot: 'bg-[#b5b4b0]', chip: 'bg-transparent text-muted border-black/10 line-through' },
 };
 
 export function dueLabel(bill: Pick<Bill, 'paid' | 'dueDate'>, today: string): string {

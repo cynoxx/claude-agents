@@ -65,19 +65,18 @@ export function BudgetPage() {
       ) : error ? (
         <ErrorMessage error={error} />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
           <Card>
             <CardHeader title="Limites par catégorie" />
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-black/5">
               {CATEGORY_KEYS.map((c) => {
                 const line = lines.get(c);
                 const current = drafts[c] ?? (line?.limit ? String(line.limit) : '');
                 return (
                   <li key={c} className="flex items-center gap-3 px-4 py-2.5">
-                    <span aria-hidden>{CATEGORIES[c].icon}</span>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm">{CATEGORIES[c].label}</div>
-                      <div className="text-xs text-slate-500">Dépensé : {eur(line?.spent ?? 0)}</div>
+                      <div className="text-xs text-muted">Dépensé : {eur(line?.spent ?? 0)}</div>
                     </div>
                     <Input
                       className="w-28 text-right"
@@ -89,7 +88,7 @@ export function BudgetPage() {
                       onBlur={() => commit(c)}
                       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                     />
-                    <span className="text-sm text-slate-500">€</span>
+                    <span className="text-sm text-muted">€</span>
                   </li>
                 );
               })}

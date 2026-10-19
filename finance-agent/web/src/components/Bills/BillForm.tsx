@@ -89,7 +89,7 @@ function BillFormBody({ bill, defaultDueDate, onDone }: { bill?: Bill | null; de
             <option value="">Automatique (d'après le fournisseur)</option>
             {CATEGORY_KEYS.map((c) => (
               <option key={c} value={c}>
-                {CATEGORIES[c].icon} {CATEGORIES[c].label}
+                {CATEGORIES[c].label}
               </option>
             ))}
           </Select>
@@ -115,19 +115,19 @@ function BillFormBody({ bill, defaultDueDate, onDone }: { bill?: Bill | null; de
           value={form.notes}
           onChange={(e) => set('notes', e.target.value)}
           rows={2}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100"
+          className="w-full rounded-2xl border border-transparent bg-white px-3.5 py-2 text-sm focus:border-ink focus:outline-none"
         />
       </Field>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={form.paid} onChange={(e) => set('paid', e.target.checked)} className="h-4 w-4 accent-brand-700" />
+        <input type="checkbox" checked={form.paid} onChange={(e) => set('paid', e.target.checked)} className="h-4 w-4 accent-black" />
         Déjà payée
       </label>
       {form.recurrence !== 'NONE' && (
-        <p className="rounded-lg bg-brand-50 p-2 text-xs text-brand-800">
+        <p className="rounded-2xl bg-card p-3 text-xs text-ink/70">
           Quand cette facture sera marquée payée, la suivante sera créée automatiquement avec le même montant.
         </p>
       )}
-      {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onDone}>
           Annuler

@@ -10,17 +10,19 @@ export function BillRow({ bill, today, onPay, onClick }: { bill: Bill; today: st
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${DUE_STYLES[status].dot}`} aria-hidden />
-      <button onClick={onClick} className="min-w-0 flex-1 text-left" disabled={!onClick}>
+      <div className="min-w-0 flex-1">
+      <button onClick={onClick} className="block w-full min-w-0 text-left" disabled={!onClick}>
         <div className="truncate text-sm font-medium">
-          <span aria-hidden>{cat.icon}</span> {bill.title}
+          {bill.title}
         </div>
-        <div className="truncate text-xs text-slate-500">
-          {bill.provider} · {formatDate(bill.dueDate)} · <span className={status === 'overdue' ? 'text-red-600' : ''}>{dueLabel(bill, today)}</span>
+        <div className="truncate text-xs text-muted">
+          {cat.label} · {bill.provider} · {formatDate(bill.dueDate)} · <span className={status === 'overdue' ? 'text-red-600' : ''}>{dueLabel(bill, today)}</span>
         </div>
       </button>
-      <div className="text-right text-sm font-semibold tabular-nums">{eur(bill.amount)}</div>
+      </div>
+      <div className="whitespace-nowrap text-right text-sm font-semibold tabular-nums">{eur(bill.amount)}</div>
       {onPay && !bill.paid && (
-        <button onClick={onPay} className="rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50" title="Marquer comme payée">
+        <button onClick={onPay} className="rounded-md border border-black/5 px-2 py-1 text-xs hover:bg-black/5" title="Marquer comme payée">
           ✓ Payée
         </button>
       )}

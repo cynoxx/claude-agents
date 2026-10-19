@@ -1,13 +1,13 @@
 import { useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border border-slate-200 bg-white shadow-sm ${className}`}>{children}</div>;
+  return <div className={`rounded-[28px] bg-card ${className}`}>{children}</div>;
 }
 
 export function CardHeader({ title, action }: { title: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-      <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+    <div className="flex items-center justify-between gap-2 px-5 pb-1 pt-4">
+      <h2 className="text-sm font-medium text-ink">{title}</h2>
       {action}
     </div>
   );
@@ -15,28 +15,28 @@ export function CardHeader({ title, action }: { title: ReactNode; action?: React
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-brand-700 text-white hover:bg-brand-800 disabled:bg-slate-300',
-  secondary: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
-  ghost: 'text-slate-600 hover:bg-slate-100',
+  primary: 'bg-ink text-white hover:bg-black disabled:bg-[#cfcecb]',
+  secondary: 'bg-card text-ink hover:bg-brand-50',
+  ghost: 'text-ink/70 hover:bg-black/5 hover:text-ink',
   danger: 'bg-red-600 text-white hover:bg-red-700',
 };
 
 export function Button({ variant = 'primary', className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
       {...props}
     />
   );
 }
 
 const fieldClass =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100';
+  'w-full rounded-2xl border border-transparent bg-white px-3.5 py-2 text-sm focus:border-ink focus:outline-none';
 
 export function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-600">{label}</span>
+      <span className="mb-1 block text-xs text-muted">{label}</span>
       {children}
       {error && <span className="mt-1 block text-xs text-red-600">{error}</span>}
     </label>
@@ -60,34 +60,34 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-xl sm:max-w-lg sm:rounded-2xl"
+        className="max-h-[92vh] w-full overflow-y-auto rounded-t-[28px] bg-surface shadow-2xl sm:max-w-lg sm:rounded-[28px]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div className="flex items-center justify-between px-6 pb-2 pt-5">
           <h2 className="font-semibold">{title}</h2>
-          <button onClick={onClose} className="rounded p-1 text-slate-500 hover:bg-slate-100" aria-label="Fermer">
+          <button onClick={onClose} className="rounded-full p-1.5 text-muted hover:bg-black/5" aria-label="Fermer">
             ✕
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="px-6 pb-6 pt-2">{children}</div>
       </div>
     </div>
   );
 }
 
 export function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="px-4 py-8 text-center text-sm text-slate-500">{children}</p>;
+  return <p className="px-4 py-8 text-center text-sm text-muted">{children}</p>;
 }
 
 export function Spinner() {
-  return <div className="flex justify-center p-8 text-sm text-slate-500">Chargement…</div>;
+  return <div className="flex justify-center p-8 text-sm text-muted">Chargement…</div>;
 }
 
 export function ErrorMessage({ error }: { error: unknown }) {
-  return <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">{error instanceof Error ? error.message : 'Une erreur est survenue'}</div>;
+  return <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{error instanceof Error ? error.message : 'Une erreur est survenue'}</div>;
 }
