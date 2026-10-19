@@ -82,7 +82,7 @@ finance-agent/
 │   ├── src/services/          billService, budgetService, notificationService, emailScanner, mailer
 │   ├── src/lib/               dates (calendrier), categories (fournisseurs → catégorie), config
 │   └── tests/                 Vitest : unitaires + API contre une vraie base
-├── web/                       React + Vite + Tailwind + React Query + Zustand + Recharts
+├── web/                       React + Vite + Tailwind + React Query + Zustand (graphiques en barres fines faits maison)
 │   └── src/components/        Dashboard, Bills (liste, formulaire, calendrier), Budget, Notifications, Settings
 └── docker-compose.yml         Postgres + API + interface (nginx)
 ```
