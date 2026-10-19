@@ -6,7 +6,7 @@ import { localToday } from '../../utils/dates';
 import { DUE_STYLES, dueLabel, dueStatus } from '../../utils/dueStatus';
 import { eur, formatDate } from '../../utils/format';
 import { PageTitle } from '../Layout/Layout';
-import { Button, Card, EmptyState, ErrorMessage, Input, Select, Spinner } from '../ui';
+import { Button, Card, EmptyState, ErrorMessage, Input, Modal, Select, Spinner } from '../ui';
 import { BillForm } from './BillForm';
 
 const SORTS: Record<string, string> = { dueDate: 'Échéance', amount: 'Montant', provider: 'Fournisseur', title: 'Intitulé', createdAt: 'Ajout' };
@@ -27,9 +27,9 @@ export function BillsPage() {
     setFormOpen(true);
   };
 
-  const onDelete = (bill: Bill) => {
-    if (window.confirm(`Supprimer « ${bill.title} » ?`)) remove.mutate(bill.id);
-  };
+  // Confirmation dans la page (les boîtes de dialogue du navigateur sont bloquées dans un artefact)
+  const [toDelete, setToDelete] = useState<Bill | null>(null);
+  const onDelete = (bill: Bill) => setToDelete(bill);
 
   return (
     <>
@@ -194,6 +194,25 @@ export function BillsPage() {
       )}
 
       <BillForm open={formOpen} onClose={() => setFormOpen(false)} bill={editing} />
+      <Modal open={toDelete !== null} onClose={() => setToDelete(null)} title="Supprimer la facture">
+        <p className="text-sm text-ink/70">
+          « {toDelete?.title} » ({toDelete?.provider}) sera supprimée définitivement, avec ses rappels.
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setToDelete(null)}>
+            Annuler
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              if (toDelete) remove.mutate(toDelete.id);
+              setToDelete(null);
+            }}
+          >
+            Supprimer
+          </Button>
+        </div>
+      </Modal>
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { STANDALONE } from '../../services/api';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../store/authStore';
 import { PageTitle } from '../Layout/Layout';
@@ -41,7 +42,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageTitle title="Paramètres" subtitle={user?.email} />
+      <PageTitle title="Paramètres" subtitle={user?.email || undefined} />
       <form onSubmit={submit} className="grid max-w-2xl gap-4">
         <Card>
           <CardHeader title="Profil" />
@@ -69,10 +70,12 @@ export function SettingsPage() {
               <input type="checkbox" className="h-4 w-4 accent-black" checked={notifyInApp} onChange={(e) => setNotifyInApp(e.target.checked)} />
               Dans l'application (pastille et liste des notifications)
             </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 accent-black" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} />
-              Par email à {user?.email}
-            </label>
+            {!STANDALONE && (
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="h-4 w-4 accent-black" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} />
+                Par email à {user?.email}
+              </label>
+            )}
             <p className="text-xs text-muted">Les notifications push et SMS arriveront dans une prochaine version.</p>
           </div>
         </Card>

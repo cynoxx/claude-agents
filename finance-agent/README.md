@@ -35,6 +35,13 @@ docker compose up --build
 
 L'application est sur http://localhost:8080. Les migrations sont appliquées au démarrage de l'API.
 
+### Version autonome (artefact)
+
+`cd web && npm run build:artifact` produit `dist-artifact/finance-agent.html`, une page unique qui embarque
+l'app et une copie de l'API qui tourne dans le navigateur (`web/src/standalone/`). Publiée comme artefact
+claude.ai, elle enregistre les données dans l'espace privé de chaque personne ; ouverte ailleurs, dans le
+stockage du navigateur. Elle démarre avec des données d'exemple jusqu'à la première modification.
+
 ### En développement
 
 Prérequis : Node 22 et un PostgreSQL 16.

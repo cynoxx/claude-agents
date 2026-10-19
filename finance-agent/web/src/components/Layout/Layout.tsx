@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useSessionKeepAlive } from '../../hooks/useSessionKeepAlive';
+import { STANDALONE } from '../../services/api';
+import { authService } from '../../services/authService';
 import { notificationService } from '../../services/notificationService';
+import { StandaloneBanner } from '../../standalone/StandaloneBanner';
 import { useAuthStore } from '../../store/authStore';
 import { Icon } from '../ui/icons';
 
@@ -16,7 +20,10 @@ const NAV = [
 
 export function Layout() {
   useSessionKeepAlive();
-  const { user, logout } = useAuthStore();
+  const { user, logout, setUser } = useAuthStore();
+  useEffect(() => {
+    if (STANDALONE) authService.me().then(setUser).catch(() => {});
+  }, [setUser]);
   const { data } = useQuery({ queryKey: ['notifications', 'count'], queryFn: () => notificationService.list(true), refetchInterval: 60_000 });
   const unread = user?.notifyInApp === false ? 0 : (data?.unreadCount ?? 0);
 
@@ -49,15 +56,20 @@ export function Layout() {
           ))}
         </nav>
         <div className="p-5 text-sm">
-          <div className="truncate text-ink/70">{user?.name || user?.email}</div>
-          <button onClick={logout} className="mt-1 text-muted hover:text-ink">
-            Se déconnecter
-          </button>
+          {!STANDALONE && (
+            <>
+              <div className="truncate text-ink/70">{user?.name || user?.email}</div>
+              <button onClick={logout} className="mt-1 text-muted hover:text-ink">
+                Se déconnecter
+              </button>
+            </>
+          )}
         </div>
       </aside>
 
       <main className="min-w-0 flex-1 pb-20 md:pb-0">
         <div className="mx-auto max-w-6xl p-4 md:p-8">
+          {STANDALONE && <StandaloneBanner />}
           <Outlet />
         </div>
       </main>

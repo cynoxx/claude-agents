@@ -7,12 +7,13 @@ import { DashboardPage } from './components/Dashboard/DashboardPage';
 import { Layout } from './components/Layout/Layout';
 import { NotificationsPage } from './components/Notifications/NotificationsPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
+import { STANDALONE } from './services/api';
 import { useAuthStore } from './store/authStore';
 
 export function App() {
   const token = useAuthStore((s) => s.token);
 
-  if (!token) {
+  if (!token && !STANDALONE) {
     return (
       <Routes>
         <Route path="/connexion" element={<AuthPage mode="login" />} />

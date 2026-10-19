@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { STANDALONE } from '../services/api';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 
@@ -14,7 +15,7 @@ export function useSessionKeepAlive() {
   const lastActivity = useRef(Date.now());
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || STANDALONE) return;
     const mark = () => (lastActivity.current = Date.now());
     ACTIVITY_EVENTS.forEach((e) => window.addEventListener(e, mark, { passive: true }));
     const timer = setInterval(async () => {

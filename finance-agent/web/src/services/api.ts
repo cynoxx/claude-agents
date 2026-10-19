@@ -10,8 +10,21 @@ export class ApiError extends Error {
   }
 }
 
+export const STANDALONE = import.meta.env.VITE_STANDALONE === '1';
+
 export async function api<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const { json, headers, ...rest } = init;
+  if (STANDALONE) {
+    // Mode autonome (artefact) : l'API tourne dans le navigateur
+    const { mockFetch, MockError } = await import('../standalone/mockApi');
+    try {
+      const body = json === undefined ? undefined : JSON.parse(JSON.stringify(json));
+      return (await mockFetch(rest.method ?? 'GET', path, body)) as T;
+    } catch (e) {
+      if (e instanceof MockError) throw new ApiError(e.status, e.message, e.details);
+      throw e;
+    }
+  }
   const token = useAuthStore.getState().token;
   const res = await fetch(`/api${path}`, {
     ...rest,
