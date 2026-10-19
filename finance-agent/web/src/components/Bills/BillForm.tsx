@@ -11,26 +11,29 @@ interface Props {
   onClose: () => void;
   bill?: Bill | null;
   defaultDueDate?: string;
+  /** Valeurs initiales d'une nouvelle facture (ex. un abonnement mensuel) */
+  preset?: { category: BillCategory; recurrence: Recurrence };
 }
 
-export function BillForm({ open, onClose, bill, defaultDueDate }: Props) {
+export function BillForm({ open, onClose, bill, defaultDueDate, preset }: Props) {
+  const title = bill ? 'Modifier la facture' : preset?.category === 'SUBSCRIPTION' ? 'Nouvel abonnement' : 'Nouvelle facture';
   return (
-    <Modal open={open} onClose={onClose} title={bill ? 'Modifier la facture' : 'Nouvelle facture'}>
+    <Modal open={open} onClose={onClose} title={title}>
       {/* La clé remonte le formulaire à chaque ouverture pour repartir des bonnes valeurs */}
-      {open && <BillFormBody key={bill?.id ?? defaultDueDate ?? 'new'} bill={bill} defaultDueDate={defaultDueDate} onDone={onClose} />}
+      {open && <BillFormBody key={bill?.id ?? defaultDueDate ?? 'new'} bill={bill} defaultDueDate={defaultDueDate} preset={preset} onDone={onClose} />}
     </Modal>
   );
 }
 
-function BillFormBody({ bill, defaultDueDate, onDone }: { bill?: Bill | null; defaultDueDate?: string; onDone: () => void }) {
+function BillFormBody({ bill, defaultDueDate, preset, onDone }: { bill?: Bill | null; defaultDueDate?: string; preset?: Props['preset']; onDone: () => void }) {
   const { create, update } = useBillMutations();
   const [form, setForm] = useState({
     title: bill?.title ?? '',
     provider: bill?.provider ?? '',
     amount: bill ? String(bill.amount) : '',
     dueDate: bill?.dueDate ?? defaultDueDate ?? localToday(),
-    category: (bill?.category ?? '') as BillCategory | '',
-    recurrence: (bill?.recurrence ?? 'NONE') as Recurrence,
+    category: (bill?.category ?? preset?.category ?? '') as BillCategory | '',
+    recurrence: (bill?.recurrence ?? preset?.recurrence ?? 'NONE') as Recurrence,
     reference: bill?.reference ?? '',
     documentUrl: bill?.documentUrl ?? '',
     notes: bill?.notes ?? '',
