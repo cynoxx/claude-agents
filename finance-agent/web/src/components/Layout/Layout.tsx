@@ -5,7 +5,7 @@ import { useSessionKeepAlive } from '../../hooks/useSessionKeepAlive';
 import { STANDALONE } from '../../services/api';
 import { authService } from '../../services/authService';
 import { notificationService } from '../../services/notificationService';
-import { StandaloneBanner } from '../../standalone/StandaloneBanner';
+import { SaveBar } from '../../standalone/LockGate';
 import { useAuthStore } from '../../store/authStore';
 import { Icon } from '../ui/icons';
 
@@ -29,14 +29,14 @@ export function Layout() {
 
   const badge = (to: string) =>
     to === '/notifications' && unread > 0 ? (
-      <span className="ml-auto rounded-full bg-ink px-1.5 text-xs font-medium text-white">{unread > 99 ? '99+' : unread}</span>
+      <span className="ml-auto rounded-full bg-ink px-1.5 text-xs font-medium text-on-ink">{unread > 99 ? '99+' : unread}</span>
     ) : null;
 
   return (
     <div className="min-h-screen md:flex">
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col md:flex">
         <div className="flex items-center gap-2 px-5 py-5">
-          <img src="/favicon.svg" alt="" className="h-8 w-8" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-[17px] font-bold text-on-ink" aria-hidden>€</span>
           <span className="font-semibold">Agent financier</span>
         </div>
         <nav className="flex-1 space-y-1 px-3">
@@ -69,7 +69,7 @@ export function Layout() {
 
       <main className="min-w-0 flex-1 pb-20 md:pb-0">
         <div className="mx-auto max-w-6xl p-4 md:p-8">
-          {STANDALONE && <StandaloneBanner />}
+          {STANDALONE && <SaveBar />}
           <Outlet />
         </div>
       </main>

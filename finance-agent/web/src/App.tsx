@@ -8,6 +8,7 @@ import { Layout } from './components/Layout/Layout';
 import { NotificationsPage } from './components/Notifications/NotificationsPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
 import { STANDALONE } from './services/api';
+import { LockGate } from './standalone/LockGate';
 import { useAuthStore } from './store/authStore';
 
 export function App() {
@@ -23,7 +24,7 @@ export function App() {
     );
   }
 
-  return (
+  const routes = (
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<DashboardPage />} />
@@ -36,4 +37,5 @@ export function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+  return STANDALONE ? <LockGate>{routes}</LockGate> : routes;
 }

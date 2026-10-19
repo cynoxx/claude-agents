@@ -115,11 +115,11 @@ function BillFormBody({ bill, defaultDueDate, onDone }: { bill?: Bill | null; de
           value={form.notes}
           onChange={(e) => set('notes', e.target.value)}
           rows={2}
-          className="w-full rounded-2xl border border-transparent bg-white px-3.5 py-2 text-sm focus:border-ink focus:outline-none"
+          className="w-full rounded-2xl border border-transparent bg-field px-3.5 py-2 text-sm focus:border-ink focus:outline-none"
         />
       </Field>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={form.paid} onChange={(e) => set('paid', e.target.checked)} className="h-4 w-4 accent-black" />
+        <input type="checkbox" checked={form.paid} onChange={(e) => set('paid', e.target.checked)} className="h-4 w-4 accent-white" />
         Déjà payée
       </label>
       {form.recurrence !== 'NONE' && (
@@ -127,7 +127,7 @@ function BillFormBody({ bill, defaultDueDate, onDone }: { bill?: Bill | null; de
           Quand cette facture sera marquée payée, la suivante sera créée automatiquement avec le même montant.
         </p>
       )}
-      {error && <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-300">{error}</p>}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onDone}>
           Annuler

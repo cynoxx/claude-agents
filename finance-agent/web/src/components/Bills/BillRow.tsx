@@ -16,13 +16,13 @@ export function BillRow({ bill, today, onPay, onClick }: { bill: Bill; today: st
           {bill.title}
         </div>
         <div className="truncate text-xs text-muted">
-          {cat.label} · {bill.provider} · {formatDate(bill.dueDate)} · <span className={status === 'overdue' ? 'text-red-600' : ''}>{dueLabel(bill, today)}</span>
+          {cat.label} · {bill.provider} · {formatDate(bill.dueDate)} · <span className={status === 'overdue' ? 'text-red-400' : ''}>{dueLabel(bill, today)}</span>
         </div>
       </button>
       </div>
       <div className="whitespace-nowrap text-right text-sm font-semibold tabular-nums">{eur(bill.amount)}</div>
       {onPay && !bill.paid && (
-        <button onClick={onPay} className="rounded-md border border-black/5 px-2 py-1 text-xs hover:bg-black/5" title="Marquer comme payée">
+        <button onClick={onPay} className="rounded-full border border-white/15 px-2.5 py-1 text-xs hover:bg-white/5" title="Marquer comme payée">
           ✓ Payée
         </button>
       )}

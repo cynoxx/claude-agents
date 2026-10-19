@@ -17,11 +17,11 @@ export function dueStatus(bill: Pick<Bill, 'paid' | 'dueDate'>, today: string): 
 }
 
 export const DUE_STYLES: Record<DueStatus, { label: string; badge: string; dot: string; chip: string }> = {
-  overdue: { label: 'En retard', badge: 'bg-red-100 text-red-800', dot: 'bg-red-500', chip: 'bg-red-50 text-red-800 border-red-200' },
-  urgent: { label: '≤ 3 jours', badge: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500', chip: 'bg-orange-50 text-orange-800 border-orange-200' },
-  soon: { label: '≤ 7 jours', badge: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-400', chip: 'bg-yellow-50 text-yellow-900 border-yellow-200' },
-  later: { label: '> 7 jours', badge: 'bg-green-100 text-green-800', dot: 'bg-green-500', chip: 'bg-green-50 text-green-800 border-green-200' },
-  paid: { label: 'Payée', badge: 'bg-black/5 text-ink/70', dot: 'bg-[#b5b4b0]', chip: 'bg-transparent text-muted border-black/10 line-through' },
+  overdue: { label: 'En retard', badge: 'bg-red-500/15 text-red-300', dot: 'bg-red-500', chip: 'bg-red-500/15 text-red-300 border-red-500/30' },
+  urgent: { label: '≤ 3 jours', badge: 'bg-orange-500/15 text-orange-300', dot: 'bg-orange-500', chip: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
+  soon: { label: '≤ 7 jours', badge: 'bg-yellow-400/15 text-yellow-200', dot: 'bg-yellow-400', chip: 'bg-yellow-400/15 text-yellow-200 border-yellow-500/30' },
+  later: { label: '> 7 jours', badge: 'bg-green-500/15 text-green-300', dot: 'bg-green-500', chip: 'bg-green-500/15 text-green-300 border-green-500/30' },
+  paid: { label: 'Payée', badge: 'bg-white/5 text-ink/70', dot: 'bg-stub', chip: 'bg-transparent text-muted border-white/10 line-through' },
 };
 
 export function dueLabel(bill: Pick<Bill, 'paid' | 'dueDate'>, today: string): string {

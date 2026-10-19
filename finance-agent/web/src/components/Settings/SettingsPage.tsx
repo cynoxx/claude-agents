@@ -67,19 +67,19 @@ export function SettingsPage() {
           <CardHeader title="Canaux de notification" />
           <div className="space-y-3 p-4 text-sm">
             <label className="flex items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 accent-black" checked={notifyInApp} onChange={(e) => setNotifyInApp(e.target.checked)} />
+              <input type="checkbox" className="h-4 w-4 accent-white" checked={notifyInApp} onChange={(e) => setNotifyInApp(e.target.checked)} />
               Dans l'application (pastille et liste des notifications)
             </label>
             {!STANDALONE && (
               <label className="flex items-center gap-2">
-                <input type="checkbox" className="h-4 w-4 accent-black" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} />
+                <input type="checkbox" className="h-4 w-4 accent-white" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} />
                 Par email à {user?.email}
               </label>
             )}
             <p className="text-xs text-muted">Les notifications push et SMS arriveront dans une prochaine version.</p>
           </div>
         </Card>
-        {status && <p className={`rounded-2xl p-3 text-sm ${status.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'}`}>{status.msg}</p>}
+        {status && <p className={`rounded-2xl p-3 text-sm ${status.ok ? 'bg-green-500/15 text-green-300' : 'bg-red-500/15 text-red-300'}`}>{status.msg}</p>}
         <div>
           <Button type="submit">Enregistrer</Button>
         </div>

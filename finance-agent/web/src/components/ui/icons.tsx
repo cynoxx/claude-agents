@@ -6,6 +6,7 @@ const paths = {
   budget: 'M6 20V12m6 8V5m6 15v-5',
   bell: 'M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zm4 4h4',
   settings: 'M4 7h10m4 0h2M4 17h4m4 0h8M16 5v4M10 15v4',
+  lock: 'M7 11V8a5 5 0 0 1 10 0v3M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z',
 } as const;
 
 export type IconName = keyof typeof paths;

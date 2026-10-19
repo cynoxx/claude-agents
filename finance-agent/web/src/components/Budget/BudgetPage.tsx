@@ -68,7 +68,7 @@ export function BudgetPage() {
         <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
           <Card>
             <CardHeader title="Limites par catégorie" />
-            <ul className="divide-y divide-black/5">
+            <ul className="divide-y divide-white/5">
               {CATEGORY_KEYS.map((c) => {
                 const line = lines.get(c);
                 const current = drafts[c] ?? (line?.limit ? String(line.limit) : '');

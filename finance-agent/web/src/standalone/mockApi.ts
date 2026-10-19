@@ -1,9 +1,10 @@
 // Réplique dans le navigateur de l'API du serveur (mêmes routes, mêmes règles),
 // pour faire tourner l'app sans backend, par exemple dans un artefact.
-import type { Bill, BillCategory, Recurrence, User } from '../types';
+import type { Bill, BillCategory, Recurrence } from '../types';
 import { addDays, daysBetween, localToday } from '../utils/dates';
 import { BILL_CATEGORIES, categorizeProvider } from './categories';
-import { getBackend, type Budget, type State, type StoredNotification } from './storage';
+import type { State, StoredNotification } from './storage';
+import { currentState, LockedError, scheduleSave } from './vault';
 
 export class MockError extends Error {
   constructor(
@@ -48,113 +49,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: 'Autres',
 };
 
-// ---------- Données d'exemple ----------
-
-function demoState(): State {
-  const today = localToday();
-  const now = new Date().toISOString();
-  const [y, m] = today.split('-').map(Number) as [number, number];
-  const ym = `${y}-${String(m).padStart(2, '0')}`;
-  const recurring: Array<[string, string, number, number]> = [
-    ['Loyer', 'Foncia', 850, 5],
-    ['Électricité', 'EDF', 78.4, 12],
-    ['Box internet', 'Free', 39.99, 16],
-    ['Forfait mobile', 'Sosh', 15.99, 20],
-    ['Assurance habitation', 'MAIF', 24.5, 8],
-    ['Netflix', 'Netflix', 13.49, 22],
-    ['Spotify', 'Spotify', 11.12, 25],
-  ];
-  const bills: Bill[] = [];
-  const mk = (b: Partial<Bill> & Pick<Bill, 'title' | 'provider' | 'amount' | 'dueDate'>): Bill => ({
-    id: uid(),
-    paid: false,
-    paidDate: null,
-    category: categorizeProvider(b.provider),
-    reference: null,
-    documentUrl: null,
-    notes: null,
-    recurrence: 'NONE',
-    createdAt: now,
-    updatedAt: now,
-    ...b,
-  });
-  const elec = [92.1, 85.3, 64.2, 58.9, 61.7, 78.4];
-  for (let back = 5; back >= 0; back--) {
-    for (const [title, provider, amount, day] of recurring) {
-      const due = addMonths(`${ym}-${String(day).padStart(2, '0')}`, -back);
-      const paid = due < today;
-      bills.push(mk({ title, provider, amount: title === 'Électricité' ? elec[5 - back]! : amount, dueDate: due, recurrence: 'MONTHLY', paid, paidDate: paid ? due : null }));
-    }
-  }
-  bills.push(mk({ title: 'Facture gaz', provider: 'Engie', amount: 96.3, dueDate: addDays(today, -2) }));
-  bills.push(mk({ title: 'Assurance auto', provider: 'Direct Assurance', amount: 312, dueDate: addDays(today, 2), recurrence: 'YEARLY' }));
-  const budgets: Budget[] = (
-    [
-      ['SUBSCRIPTION', 25],
-      ['UTILITIES', 250],
-      ['INTERNET', 60],
-      ['HOUSING', 900],
-    ] as const
-  ).map(([category, limitAmount]) => ({ id: uid(), category, limitAmount, month: m, year: y }));
-  const user: User = {
-    id: 'moi',
-    email: '',
-    name: null,
-    billReminderDays: [7, 3, 0],
-    budgetWarningThreshold: 80,
-    notifyEmail: false,
-    notifyInApp: true,
-    createdAt: now,
-  };
-  return { version: 1, demo: true, user, bills, budgets, notifications: [] };
-}
-
-function emptyState(user: User): State {
-  return { version: 1, demo: false, user, bills: [], budgets: [], notifications: [] };
-}
-
 // ---------- État ----------
 
-let state: State | null = null;
-
-async function getState(): Promise<State> {
-  if (state) return state;
-  const backend = await getBackend();
-  const loaded = await backend.load().catch(() => null);
-  state = loaded ?? demoState();
-  runReminders(state);
-  return state;
-}
-
-let saveTimer: ReturnType<typeof setTimeout> | undefined;
-/** Enregistre après une action ; les données d'exemple ne sont jamais enregistrées. */
-function persist() {
-  if (!state || state.demo) return;
-  clearTimeout(saveTimer);
-  const snapshot = state;
-  saveTimer = setTimeout(() => {
-    getBackend()
-      .then((b) => b.save(snapshot))
-      .catch((e) => console.error('[enregistrement]', e));
-  }, 400);
-}
-
-/** Toute modification sort du mode exemple : on repart des données affichées. */
-function mutate(s: State) {
-  s.demo = false;
-  persist();
-}
-
-export async function storageInfo() {
-  const s = await getState();
-  return { demo: s.demo, kind: (await getBackend()).kind };
-}
-
-/** Efface les exemples et repart d'une app vide. */
-export async function startFresh() {
-  const s = await getState();
-  state = emptyState(s.user);
-  mutate(state);
+/** Toute modification est enregistrée (chiffrée) dans la foulée. */
+function mutate(_s: State) {
+  scheduleSave();
 }
 
 // ---------- Règles métier (identiques au serveur) ----------
@@ -181,6 +80,8 @@ function reminderText(bill: Bill, plan: { stage: number | 'overdue'; daysUntil: 
 function addNotification(s: State, n: Omit<StoredNotification, 'id' | 'isRead' | 'createdAt'>): boolean {
   if (s.notifications.some((x) => x.dedupKey === n.dedupKey)) return false;
   s.notifications.unshift({ ...n, id: uid(), isRead: false, createdAt: new Date().toISOString() });
+  // Taille du coffre bornée : on oublie les plus anciennes notifications déjà lues
+  for (let i = s.notifications.length - 1; s.notifications.length > 300 && i >= 0; i--) if (s.notifications[i]!.isRead) s.notifications.splice(i, 1);
   return true;
 }
 
@@ -439,7 +340,14 @@ route('GET', '/dashboard', (s) => {
 });
 
 export async function mockFetch(method: string, path: string, body: unknown): Promise<unknown> {
-  const s = await getState();
+  let s: State;
+  try {
+    s = currentState();
+  } catch (e) {
+    if (e instanceof LockedError) throw new MockError(401, 'Application verrouillée');
+    throw e;
+  }
+  if (runReminders(s) > 0) scheduleSave();
   const [pathname, qs] = path.split('?');
   const query = new URLSearchParams(qs ?? '');
   for (const { method: m, re, keys, handler } of routes) {

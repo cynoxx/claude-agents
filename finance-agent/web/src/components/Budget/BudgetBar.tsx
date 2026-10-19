@@ -16,12 +16,12 @@ export function BudgetBar({ line, threshold }: { line: BudgetLine; threshold: nu
           {eur(line.spent)} / {eur(line.limit)}
         </span>
       </div>
-      <div className="h-[7px] overflow-hidden rounded-full bg-[#dddcd8]" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
+      <div className="h-[7px] overflow-hidden rounded-full bg-track" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
         <div className={`h-full rounded-full ${bar}`} style={{ width: `${Math.min(100, pct)}%` }} />
       </div>
       <div className="mt-0.5 flex justify-between text-xs text-muted">
         <span>{Math.round(pct)} %</span>
-        {text && <span className={state === 'over' ? 'font-medium text-red-700' : 'text-orange-700'}>{text}</span>}
+        {text && <span className={state === 'over' ? 'font-medium text-red-300' : 'text-orange-300'}>{text}</span>}
       </div>
     </div>
   );

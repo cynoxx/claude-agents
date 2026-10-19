@@ -20,7 +20,7 @@ const html = `<title>Agent financier</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(favicon)}">
 <style>${css.join('\n')}
-html, body { background: #fafaf9; color-scheme: light; }
+html, body { background: #0a0a0a; color: #f4f4f2; color-scheme: dark; }
 #root { padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px)); }
 </style>
 <div id="root"></div>

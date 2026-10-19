@@ -12,20 +12,29 @@ export interface StoredNotification extends AppNotification {
   dedupKey: string;
 }
 
-/** Tout l'état de l'app autonome, enregistré d'un bloc. */
+/** Tout l'état de l'app autonome, enregistré d'un bloc (chiffré). */
 export interface State {
   version: 1;
-  /** true tant que l'utilisateur n'a rien modifié : données d'exemple */
-  demo: boolean;
   user: User;
   bills: Bill[];
   budgets: Budget[];
   notifications: StoredNotification[];
 }
 
-interface Backend {
-  load(): Promise<State | null>;
-  save(state: State): Promise<void>;
+/** Coffre enregistré : l'état chiffré par le code d'accès (AES-GCM, clé PBKDF2). */
+export interface Sealed {
+  v: 2;
+  salt: string;
+  iv: string;
+  data: string;
+  /** contenu compressé (gzip) avant chiffrement */
+  z?: boolean;
+}
+
+export interface Backend {
+  load(): Promise<Sealed | null>;
+  save(sealed: Sealed): Promise<void>;
+  clear(): Promise<void>;
   /** Où vont les données, pour l'afficher à l'utilisateur */
   kind: 'cloud' | 'browser' | 'memory';
 }
@@ -33,12 +42,14 @@ interface Backend {
 interface DbDoc {
   get(): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
   set(body: Record<string, unknown>): Promise<unknown>;
+  delete(): Promise<unknown>;
 }
 interface ClaudeRuntime {
   use(name: string): Promise<unknown>;
 }
 
-const LS_KEY = 'finance-agent-state';
+const LS_KEY = 'finance-agent-vault';
+const isSealed = (x: unknown): x is Sealed => !!x && (x as Sealed).v === 2 && typeof (x as Sealed).data === 'string';
 
 function browserBackend(): Backend | null {
   try {
@@ -52,17 +63,17 @@ function browserBackend(): Backend | null {
     async load() {
       try {
         const raw = localStorage.getItem(LS_KEY);
-        return raw ? (JSON.parse(raw) as State) : null;
+        const parsed: unknown = raw ? JSON.parse(raw) : null;
+        return isSealed(parsed) ? parsed : null;
       } catch {
         return null;
       }
     },
-    async save(state) {
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify(state));
-      } catch {
-        /* stockage plein ou bloqué : on garde l'état en mémoire */
-      }
+    async save(sealed) {
+      localStorage.setItem(LS_KEY, JSON.stringify(sealed));
+    },
+    async clear() {
+      localStorage.removeItem(LS_KEY);
     },
   };
 }
@@ -76,7 +87,8 @@ async function cloudBackend(): Promise<Backend | null> {
   const claude = (window as unknown as { claude?: ClaudeRuntime }).claude;
   if (!claude?.use) return null;
   try {
-    const timeout = new Promise<null>((r) => setTimeout(() => r(null), 4000));
+    // Le runtime répond null au bout de 10 s s'il ne sert pas la capacité
+    const timeout = new Promise<null>((r) => setTimeout(() => r(null), 12000));
     const [db, user] = (await Promise.race([Promise.all([claude.use('db'), claude.use('user')]), timeout.then(() => [null, null])])) as [
       { doc(path: string): DbDoc } | null,
       { id(): Promise<string | null> } | null,
@@ -90,10 +102,14 @@ async function cloudBackend(): Promise<Backend | null> {
       async load() {
         const snap = await doc.get();
         const body = snap.exists ? snap.data() : undefined;
-        return body?.state ? (JSON.parse(body.state as string) as State) : null;
+        // Les anciens enregistrements non chiffrés (version d'essai) sont ignorés : on repart de zéro
+        return isSealed(body?.vault) ? body.vault : null;
       },
-      async save(state) {
-        await doc.set({ state: JSON.stringify(state), savedAt: new Date().toISOString() });
+      async save(sealed) {
+        await doc.set({ vault: sealed, savedAt: new Date().toISOString() });
+      },
+      async clear() {
+        await doc.delete();
       },
     };
   } catch {
@@ -105,7 +121,7 @@ let backendPromise: Promise<Backend> | null = null;
 
 export function getBackend(): Promise<Backend> {
   backendPromise ??= (async () => {
-    const memory: Backend = { kind: 'memory', load: async () => null, save: async () => {} };
+    const memory: Backend = { kind: 'memory', load: async () => null, save: async () => {}, clear: async () => {} };
     return (await cloudBackend()) ?? browserBackend() ?? memory;
   })();
   return backendPromise;

@@ -47,7 +47,7 @@ export function MiniBars({ bars, height = 96, format }: { bars: MiniBar[]; heigh
             >
               <span
                 className={`block w-[7px] rounded-full transition-opacity ${
-                  b.value <= 0 ? (b.highlight ? 'bg-ink/50' : 'bg-[#cfcecb]') : b.highlight ? 'bar-highlight' : 'bg-ink'
+                  b.value <= 0 ? (b.highlight ? 'bg-ink/50' : 'bg-stub') : b.highlight ? 'bar-highlight' : 'bg-ink'
                 } ${active && active !== b.key ? 'opacity-40' : ''}`}
                 style={{ height: h }}
               />
@@ -77,7 +77,7 @@ export function ThinBars({ rows, format }: { rows: { key: string; label: string;
             <span className="text-ink">{r.label}</span>
             <span className="tabular-nums text-muted">{format(r.value)}</span>
           </div>
-          <div className="h-[7px] rounded-full bg-[#dddcd8]">
+          <div className="h-[7px] rounded-full bg-track">
             <div className="h-full rounded-full bg-ink" style={{ width: `${max ? Math.max(3, (r.value / max) * 100) : 0}%` }} />
           </div>
         </li>

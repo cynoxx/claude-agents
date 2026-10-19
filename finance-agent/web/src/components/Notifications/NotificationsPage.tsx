@@ -40,7 +40,7 @@ export function NotificationsPage() {
           {data!.items.length === 0 ? (
             <EmptyState>Aucune notification.</EmptyState>
           ) : (
-            <ul className="divide-y divide-black/5">
+            <ul className="divide-y divide-white/5">
               {data!.items.map((n) => (
                 <li key={n.id} className={`flex items-start gap-3 px-4 py-3 ${n.isRead ? 'opacity-60' : ''}`}>
                   <span className="mt-0.5 w-24 shrink-0 text-xs uppercase tracking-wide text-muted">{KIND[n.type]}</span>

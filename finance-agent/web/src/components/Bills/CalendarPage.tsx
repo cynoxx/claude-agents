@@ -76,7 +76,7 @@ export function CalendarPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px] [&>*]:min-w-0">
         <Card className="overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-black/5 bg-black/[0.03] text-center text-xs font-medium text-muted">
+          <div className="grid grid-cols-7 border-b border-white/5 bg-white/[0.03] text-center text-xs font-medium text-muted">
             {WEEKDAYS.map((d) => (
               <div key={d} className="py-2">
                 {d}
@@ -94,12 +94,12 @@ export function CalendarPage() {
                   key={day}
                   onClick={() => setSelected(day)}
                   onDoubleClick={() => setForm({ open: true, bill: null, date: day })}
-                  className={`flex min-h-16 flex-col items-start justify-start border-b border-r border-black/5 p-1 text-left transition sm:min-h-24 sm:p-1.5 ${
+                  className={`flex min-h-16 flex-col items-start justify-start border-b border-r border-white/5 p-1 text-left transition sm:min-h-24 sm:p-1.5 ${
                     inMonth ? '' : 'text-muted/60'
-                  } ${isSelected ? 'ring-2 ring-inset ring-brand-500' : 'hover:bg-black/5'}`}
+                  } ${isSelected ? 'ring-2 ring-inset ring-brand-500' : 'hover:bg-white/5'}`}
                 >
                   <span
-                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${isToday ? 'bg-brand-700 font-semibold text-white' : ''}`}
+                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${isToday ? 'bg-brand-700 font-semibold text-on-ink' : ''}`}
                   >
                     {Number(day.slice(8))}
                   </span>
@@ -135,7 +135,7 @@ export function CalendarPage() {
           {selectedBills.length === 0 ? (
             <EmptyState>Aucune échéance ce jour-là.</EmptyState>
           ) : (
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-white/5">
               {selectedBills.map((b) => (
                 <BillRow key={b.id} bill={b} today={today} onPay={() => pay.mutate(b.id)} onClick={() => setForm({ open: true, bill: b })} />
               ))}

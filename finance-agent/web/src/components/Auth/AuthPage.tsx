@@ -58,7 +58,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
               autoComplete={isLogin ? 'current-password' : 'new-password'}
             />
           </Field>
-          {error && <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-300">{error}</p>}
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? '…' : isLogin ? 'Se connecter' : 'Créer mon compte'}
           </Button>

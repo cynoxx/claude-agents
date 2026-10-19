@@ -74,7 +74,7 @@ export function DashboardPage() {
           {urgent.length === 0 ? (
             <EmptyState>Rien à payer dans les 7 prochains jours. 🎉</EmptyState>
           ) : (
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-white/5">
               {urgent.map((b) => (
                 <BillRow key={b.id} bill={b} today={data.today} onPay={() => pay.mutate(b.id)} />
               ))}
@@ -87,7 +87,7 @@ export function DashboardPage() {
           {data.upcomingReminders.length === 0 ? (
             <EmptyState>Aucun rappel non lu.</EmptyState>
           ) : (
-            <ul className="divide-y divide-black/5">
+            <ul className="divide-y divide-white/5">
               {data.upcomingReminders.slice(0, 5).map((n) => (
                 <li key={n.id} className="flex items-start gap-2 px-4 py-3">
                   <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.type === 'BUDGET_ALERT' ? 'bg-orange-500' : 'bg-ink'}`} aria-hidden />
@@ -149,7 +149,7 @@ export function DashboardPage() {
           {data.recentTransactions.length === 0 ? (
             <EmptyState>Aucune facture payée pour l'instant.</EmptyState>
           ) : (
-            <div className="grid grid-cols-1 divide-y divide-black/5 md:grid-cols-2 md:divide-y-0">
+            <div className="grid grid-cols-1 divide-y divide-white/5 md:grid-cols-2 md:divide-y-0">
               {data.recentTransactions.map((b) => (
                 <BillRow key={b.id} bill={b} today={data.today} />
               ))}
@@ -168,7 +168,7 @@ function Stat({ label, value, hint, tone }: { label: string; value: string; hint
         {tone === 'danger' && <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />}
         {label}
       </div>
-      <div className={`mt-1 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl ${tone === 'danger' ? 'text-red-700' : 'text-ink'}`}>{value}</div>
+      <div className={`mt-1 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl ${tone === 'danger' ? 'text-red-300' : 'text-ink'}`}>{value}</div>
       <div className="text-xs text-muted">{hint}</div>
     </Card>
   );
