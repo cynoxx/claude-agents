@@ -73,6 +73,20 @@ Les icônes au-dessus des robots :
 
 Boutons du haut : **📄 Résultat**, **⏹ Arrêter**, **▶️ Reprendre** (après un quota atteint), **📜 Historique** (missions passées), **📁 Dossier** (ouvre le dossier dans le Finder).
 
+## Parler à Max (micro et voix)
+
+- **🎤 Parler** (ou **Option + Espace**) : dis ta mission, elle s'écrit dans la zone en bas. Le micro s'arrête tout seul quand tu fais une pause. Tu peux relire et corriger avant d'appuyer sur Entrée.
+- **Lancer dès que j'ai fini de parler** : coche cette case pour que la mission parte toute seule, sans toucher au clavier.
+- **Max te répond à voix haute** quand il annonce son équipe, quand la mission est finie (il lit le résumé en 3 lignes) et en cas de pause ou d'échec.
+- **🔊 / 🔇** en haut : coupe ou remet sa voix. Ton choix est retenu.
+
+À savoir :
+- Ça marche dans **Chrome ou Safari**. Firefox ne sait pas faire de dictée : les boutons n'y apparaissent pas.
+- Le navigateur te demande l'autorisation du micro la première fois. Sur Safari, la **Dictée** du Mac doit être activée (Réglages Système > Clavier).
+- Pour transcrire ta voix, le navigateur l'envoie à **Google (Chrome) ou Apple (Safari)**. Le Bureau, lui, ne l'enregistre nulle part.
+- Pour une voix de Max plus naturelle, télécharge une voix française « améliorée » ou « Premium » dans les réglages d'accessibilité du Mac (rubrique « Contenu énoncé »). Le Bureau choisit tout seul la meilleure voix française installée.
+- Si tu recharges la page pendant une mission, clique une fois n'importe où dans la page : sans ça, le navigateur peut empêcher Max de parler.
+
 ## Où sont les fichiers
 
 ```
