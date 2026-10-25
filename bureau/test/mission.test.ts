@@ -52,7 +52,7 @@ describe("MissionManager", () => {
     expect(v.robots[0].nom).toBe("Chercheur");
     expect(v.robots[0].actions.length).toBeGreaterThan(0);
     expect(v.resultat).toContain("Synthèse de test");
-    expect(v.max.bulle).toBe("Mission terminée !");
+    expect(v.max.bulle).toBe("Mission terminée\u00a0!");
 
     const d = dossier(m);
     for (const f of ["MISSION.md", "plan.json", "RESULTAT.md", "journal.jsonl", "equipe/chercheur-1/rapport.md", "equipe/redacteur-1/rapport.md"]) {

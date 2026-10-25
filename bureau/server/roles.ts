@@ -1,4 +1,5 @@
 import type { RoleId } from "../shared/protocol.ts";
+import { ROLE_AFFICHAGE } from "../shared/roles-affichage.ts";
 
 export interface RoleDef {
   nom: string;
@@ -16,41 +17,31 @@ Termine par une phrase courte qui résume ton travail.`;
 
 export const ROLES: Record<RoleId, RoleDef> = {
   chercheur: {
-    nom: "Chercheur",
-    emoji: "🔎",
-    couleur: "#4f9dde",
+    ...ROLE_AFFICHAGE.chercheur,
     outils: ["WebSearch", "WebFetch", "Read", "Write", "Edit", "Glob", "Grep"],
     instructions: `${COMMUN}
 Ton métier : chercheur. Tu trouves des informations fiables et récentes sur le web. Tu recoupes chaque chiffre important (prix, dates, montants) avec au moins deux sources quand c'est possible, et tu indiques clairement ce qui n'a pas pu être vérifié. Chaque fait de ton rapport renvoie à sa source.`,
   },
   codeur: {
-    nom: "Codeur",
-    emoji: "💻",
-    couleur: "#5cbf60",
+    ...ROLE_AFFICHAGE.codeur,
     outils: ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
     instructions: `${COMMUN}
 Ton métier : codeur. Tu modifies le code du projet dans le dossier courant, qui est une branche Git dédiée à la mission : tu peux y travailler librement. Lis le code existant avant de le changer et respecte son style. Lance les tests et le build du projet s'ils existent. Quand tu as fini, fais un commit Git de tes changements avec un message clair. Ne fais jamais de git push. Ton rapport liste les fichiers modifiés et comment vérifier le résultat.`,
   },
   designer: {
-    nom: "Designer",
-    emoji: "🎨",
-    couleur: "#d96bc8",
+    ...ROLE_AFFICHAGE.designer,
     outils: ["Read", "Write", "Edit", "Glob", "Grep", "WebFetch"],
     instructions: `${COMMUN}
 Ton métier : designer. Tu proposes des maquettes concrètes : fichiers HTML autonomes (CSS inclus) ou SVG que l'on peut ouvrir dans un navigateur, palettes de couleurs, parcours utilisateur. Ton rapport explique tes choix et liste les fichiers à ouvrir.`,
   },
   redacteur: {
-    nom: "Rédacteur",
-    emoji: "✍️",
-    couleur: "#e8a33d",
+    ...ROLE_AFFICHAGE.redacteur,
     outils: ["Read", "Write", "Edit", "Glob", "Grep"],
     instructions: `${COMMUN}
 Ton métier : rédacteur. Tu écris des textes prêts à l'emploi (posts, mails, articles, scripts), clairs et vivants, adaptés au public visé. Mets chaque texte final dans un fichier .md de ton dossier et résume-les dans ton rapport.`,
   },
   analyste: {
-    nom: "Analyste",
-    emoji: "📊",
-    couleur: "#9b7be0",
+    ...ROLE_AFFICHAGE.analyste,
     outils: ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
     instructions: `${COMMUN}
 Ton métier : analyste. Tu compares, calcules et structures : tableaux, fichiers CSV, classements, recommandations argumentées. Vérifie tes calculs (tu peux utiliser Bash pour calculer). Indique d'où vient chaque chiffre et signale les données manquantes ou douteuses.`,

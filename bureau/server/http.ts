@@ -81,6 +81,8 @@ export function createBureauServer(o: {
   });
 
   const wss = new WebSocketServer({ server, path: "/ws" });
+  // le WebSocketServer relaie les erreurs du serveur HTTP (ex. port pris) : c'est `server.on("error")` qui les traite
+  wss.on("error", () => {});
   const envoyer = (ws: WebSocket, msg: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(msg));
   const diffuser = (etat: ReturnType<MissionManager["snapshot"]>) => {
     for (const ws of wss.clients) envoyer(ws, { type: "etat", etat });

@@ -169,7 +169,7 @@ export class MissionManager extends EventEmitter {
     this.mission!.totalEtapes = this.plan.etapes.length;
     this.creerRobots(this.plan);
     await this.preparerProjet(this.plan);
-    this.maxDit(this.plan.annonce || "Voici mon équipe !");
+    this.maxDit(this.plan.annonce || "Voici mon équipe\u00a0!");
     this.reprise = "travail";
     this.mission!.etape = 0;
     return true;
@@ -278,7 +278,7 @@ export class MissionManager extends EventEmitter {
 
   private robotResultat(r: RobotInterne, res: RunResult): void {
     if (fs.existsSync(r.rapportPath)) r.vue.rapport = path.relative(this.dir, r.rapportPath);
-    if (res.ok) return this.robotFin(r, "fini", undefined, "Fini ! Je vais voir Max");
+    if (res.ok) return this.robotFin(r, "fini", undefined, "Fini\u00a0! Je vais voir Max");
     if (this.arretDemande) return this.robotFin(r, "arrete", "Arrêté", "Je rentre chez moi");
     if (res.quota) return this.robotFin(r, "quota", res.erreur, "Quota atteint, je fais une sieste");
     this.robotFin(r, "erreur", res.erreur, "Oups, un problème…");
@@ -331,7 +331,7 @@ export class MissionManager extends EventEmitter {
       );
     }
     this.mission!.resultat = fs.readFileSync(fichier, "utf8");
-    this.maxDit("Mission terminée !");
+    this.maxDit("Mission terminée\u00a0!");
     this.terminer("termine");
   }
 
@@ -379,7 +379,7 @@ export class MissionManager extends EventEmitter {
 
   private pause(ou: "plan" | "travail" | "relecture"): false {
     this.reprise = ou;
-    this.maxDit("Quota atteint : on fait une pause.");
+    this.maxDit("Quota atteint\u00a0: on fait une pause.");
     this.terminer("pause");
     return false;
   }

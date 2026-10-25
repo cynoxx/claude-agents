@@ -68,6 +68,18 @@ describe("serveur HTTP", () => {
     expect(await res.text()).toBe("# Super");
   });
 
+  it("signale proprement un port déjà utilisé, sans planter", async () => {
+    const config = { ...DEFAULT_CONFIG, dossierMissions: root };
+    const second = createBureauServer({ config, manager: new MissionManager(config, FAKE), webDir });
+    const port = (server.address() as AddressInfo).port;
+    const err = await new Promise<NodeJS.ErrnoException>((resolve) => {
+      second.on("error", resolve);
+      second.listen(port, "127.0.0.1");
+    });
+    expect(err.code).toBe("EADDRINUSE");
+    await new Promise((r) => setTimeout(r, 50));
+  });
+
   it("refuse de sortir du dossier de mission", async () => {
     const d = createMissionDir(root, "x", new Date());
     writeEtat(d, { statut: "terminee", titre: "X", texte: "x", debut: new Date().toISOString() });

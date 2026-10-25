@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Le Bureau</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>" />
+  </head>
+  <body>
+    <header class="barre">
+      <div class="titre">🏢 Le Bureau</div>
+      <div class="statut">
+        <span id="phase">Prêt pour une mission</span>
+        <span id="chrono"></span>
+        <span id="titre-mission"></span>
+      </div>
+      <nav>
+        <button id="btn-resultat" hidden>📄 Résultat</button>
+        <button id="btn-reprendre" hidden>▶️ Reprendre</button>
+        <button id="btn-arreter" class="danger" hidden>⏹ Arrêter</button>
+        <button id="btn-historique">📜 Historique</button>
+        <button id="btn-dossier">📁 Dossier</button>
+      </nav>
+    </header>
+    <div id="bandeau" class="bandeau" hidden></div>
+    <div id="connexion" class="bandeau" hidden>🔌 Connexion au Bureau perdue, reconnexion…</div>
+
+    <main>
+      <div id="jeu"></div>
+      <p class="aide">Clique sur un robot (ou sur Max) pour voir tout ce qu'il fait.</p>
+    </main>
+
+    <form id="mission">
+      <textarea id="texte" rows="2" placeholder="Quelle est la mission ? (Entrée pour lancer, Maj+Entrée pour aller à la ligne)"></textarea>
+      <button type="submit" id="btn-lancer">🚀 Lancer</button>
+    </form>
+
+    <aside id="panneau" class="panneau" hidden>
+      <button class="fermer" aria-label="Fermer">×</button>
+      <div class="contenu"></div>
+    </aside>
+    <div id="toast" class="toast" role="status" hidden></div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
