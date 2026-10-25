@@ -21,6 +21,10 @@ if (args.includes("--version")) {
   console.log("9.9.9 (Claude Code)");
   process.exit(0);
 }
+if (args[0] === "auth" && args[1] === "status") {
+  console.log(JSON.stringify({ loggedIn: process.env.FAKE_AUTH !== "out", authMethod: "oauth_token" }));
+  process.exit(process.env.FAKE_AUTH === "out" ? 1 : 0);
+}
 
 if (mode === "slow") await sleep(10_000);
 
