@@ -3,9 +3,8 @@
 > Une équipe d'agents Claude Code qui travaille sous tes yeux, dans un bureau en pixel art.
 > Inspiré du reel d'Alexis Dubain (15/10/2026).
 
-**Statut : design à valider.** Rien n'est encore codé. Ce document explique à quoi sert le Bureau,
-comment tu l'utiliseras, et comment il sera construit. Une fois validé, il sert de base au plan
-d'implémentation.
+**Statut : construit.** Le code est dans [`bureau/`](../../../bureau/README.md). Ce document explique à quoi sert le
+Bureau, comment l'utiliser et comment il est construit.
 
 ---
 
@@ -173,8 +172,9 @@ claude-agents/bureau/
 │   ├── main.ts              connexion WebSocket, routage des messages
 │   ├── office-scene.ts      la scène Phaser : carte, postes, porte, café, bureau de Max
 │   ├── robot.ts             un robot : sprite, déplacements, bulle, icône d'état
+│   ├── sprites-data.ts      cartes de pixels faites maison (16×16, agrandies ×3)
+│   ├── markdown.ts          rendu de RESULTAT.md et des rapports
 │   └── ui.ts                barre de mission, panneau robot, panneau résultat, historique
-├── assets/                  sprites pixel art faits maison (16×16, agrandis ×3)
 ├── test/
 │   ├── fixtures/            vrais flux stream-json enregistrés
 │   ├── fake-claude.mjs      faux `claude` qui rejoue des fixtures (tests sans quota)
@@ -210,7 +210,7 @@ n'écrire que dans son dossier.
 ```
 claude -p "<mission + liste des métiers + projets connus>" \
   --model opus --output-format json --json-schema <schéma du plan> \
-  --allowedTools Read,Glob,Grep --permission-mode default
+  --tools Read,Glob,Grep --allowedTools Read,Glob,Grep --strict-mcp-config
 ```
 
 Le plan validé ressemble à ceci :
@@ -238,8 +238,8 @@ s'arrête et l'erreur s'affiche.
 ```
 claude -p "<tâche + mission globale + rapports des étapes précédentes>" \
   --model sonnet --output-format stream-json --verbose \
-  --permission-mode acceptEdits --allowedTools <outils du métier> \
-  --disallowedTools "Bash(git push:*)" "Bash(rm -rf:*)" "Bash(sudo:*)" \
+  --permission-mode acceptEdits --tools <outils du métier> --allowedTools <outils du métier> \
+  --strict-mcp-config --settings '{"permissions":{"deny":["Bash(git push:*)","Bash(rm -rf:*)","Bash(sudo:*)"]}}' \
   --append-system-prompt <instructions du métier>
   (cwd = dossier du robot ; --add-dir <worktree> pour le Codeur)
 ```
@@ -255,7 +255,9 @@ et écrit `RESULTAT.md`.
 - aucune demande de validation ;
 - `acceptEdits` + `cwd` : les écritures de fichiers sont limitées au dossier du robot (et au worktree
   pour le Codeur). Une écriture ailleurs est refusée automatiquement ;
-- Bash seulement pour le Codeur et l'Analyste, sans `git push`, `rm -rf` ni `sudo` ;
+- `--tools` limite vraiment les outils de chaque métier (Glob et Grep, en lecture seule, sont donnés à tous) ;
+- Bash seulement pour le Codeur et l'Analyste, sans `git push`, `rm -rf` ni `sudo` (règles passées par `--settings`) ;
+- `--strict-mcp-config` : les robots n'ont pas accès à tes connecteurs MCP (mails, agenda…) ;
 - le Codeur travaille dans un `git worktree` sur la branche `bureau/<slug>`. Ta branche principale et
   ton dossier de travail habituel ne sont jamais modifiés ;
 - **risque accepté** : une commande Bash peut techniquement lire des fichiers hors du dossier. C'est le
@@ -312,11 +314,11 @@ Traduction des actions en bulles (exemples) :
 
 | Situation | Détection | Ce que tu vois | Ce que fait le Bureau |
 |---|---|---|---|
-| `claude` absent ou non connecté | `claude --version` + mini-appel au démarrage | bandeau rouge avec la commande pour corriger | refuse de lancer une mission |
+| `claude` absent ou non connecté | `claude --version` + `claude auth status` au démarrage | bandeau rouge avec la commande pour corriger | refuse de lancer une mission |
 | Quota d'abonnement atteint | message de limite dans le flux `result` | robots 💤, mission « en pause » | garde les `session_id` ; **Reprendre** relance avec `--resume` |
 | Robot planté ou bloqué | code de sortie ≠ 0, ou plus de 20 min sans finir | ❗ sur le robot, détail dans son panneau | les autres continuent ; Max est prévenu qu'un rapport manque |
 | Plan invalide | validation Zod | message « Max n'a pas réussi à planifier » | une seconde tentative, puis arrêt |
-| Projet introuvable ou dépôt Git sale | vérification avant le worktree | message clair | le Codeur ne démarre pas, la mission continue sans lui |
+| Projet introuvable ou pas un dépôt Git | vérification avant le worktree | message clair | le Codeur ne démarre pas, la mission continue sans lui |
 | Serveur fermé en pleine mission | au redémarrage, `etat.json` = en cours | mission marquée « interrompue » dans l'historique | les rapports déjà écrits sont conservés |
 | Tu cliques sur **Arrêter** | — | robots qui sortent par la porte | arrêt propre de tous les processus, mission « arrêtée » |
 
