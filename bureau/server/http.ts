@@ -50,7 +50,15 @@ export function createBureauServer(o: {
     res.end(texte);
   };
 
+  // Seule la page du Bureau, servie sur localhost, peut parler au serveur : un autre site ouvert
+  // dans le navigateur ne doit pas pouvoir lancer de mission (WebSocket inter-sites, DNS rebinding).
+  const hoteAutorise = (host: string | undefined) => {
+    const port = (server.address() as { port?: number } | null)?.port;
+    return !!host && (host === `localhost:${port}` || host === `127.0.0.1:${port}`);
+  };
+
   const server = http.createServer((req, res) => {
+    if (!hoteAutorise(req.headers.host)) return fin(res, 403, "Accès refusé");
     const url = new URL(req.url ?? "/", "http://localhost");
     let chemin: string;
     try {
@@ -80,7 +88,12 @@ export function createBureauServer(o: {
     envoyerFichier(res, fichier);
   });
 
-  const wss = new WebSocketServer({ server, path: "/ws" });
+  const wss = new WebSocketServer({
+    server,
+    path: "/ws",
+    verifyClient: ({ req, origin }: { req: http.IncomingMessage; origin?: string }, accepter: (ok: boolean, code?: number) => void) =>
+      accepter(hoteAutorise(req.headers.host) && (!origin || origin === `http://${req.headers.host}`), 403),
+  });
   // le WebSocketServer relaie les erreurs du serveur HTTP (ex. port pris) : c'est `server.on("error")` qui les traite
   wss.on("error", () => {});
   const envoyer = (ws: WebSocket, msg: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(msg));

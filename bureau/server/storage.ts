@@ -60,11 +60,11 @@ export function listMissions(root: string): MissionResume[] {
   return out.sort((a, b) => b.debut.localeCompare(a.debut));
 }
 
-/** Au démarrage : une mission restée « en cours » a été coupée par l'arrêt du serveur. */
+/** Au démarrage : une mission « en cours » ou « en pause » a été coupée par l'arrêt du serveur et ne peut plus reprendre. */
 export function markInterrupted(root: string): number {
   let n = 0;
   for (const m of listMissions(root)) {
-    if (m.statut !== "en-cours") continue;
+    if (m.statut !== "en-cours" && m.statut !== "en-pause") continue;
     const dir = path.join(root, m.nom);
     const etat = readEtat(dir)!;
     writeEtat(dir, { ...etat, statut: "interrompue" });

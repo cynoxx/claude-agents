@@ -72,10 +72,14 @@ describe("journal, état et historique", () => {
     expect(listMissions(path.join(root, "absent"))).toEqual([]);
   });
 
-  it("marque les missions en cours comme interrompues", () => {
-    const a = createMissionDir(root, "a", new Date());
-    writeEtat(a, { statut: "en-cours", titre: "A", texte: "a", debut: new Date().toISOString() });
-    expect(markInterrupted(root)).toBe(1);
-    expect(listMissions(root)[0].statut).toBe("interrompue");
+  it("marque les missions en cours ou en pause comme interrompues", () => {
+    const a = createMissionDir(root, "a", new Date(2026, 9, 25, 10, 0));
+    const b = createMissionDir(root, "b", new Date(2026, 9, 25, 11, 0));
+    const c = createMissionDir(root, "c", new Date(2026, 9, 25, 12, 0));
+    writeEtat(a, { statut: "en-cours", titre: "A", texte: "a", debut: "2026-10-25T10:00:00.000Z" });
+    writeEtat(b, { statut: "en-pause", titre: "B", texte: "b", debut: "2026-10-25T11:00:00.000Z" });
+    writeEtat(c, { statut: "terminee", titre: "C", texte: "c", debut: "2026-10-25T12:00:00.000Z" });
+    expect(markInterrupted(root)).toBe(2);
+    expect(listMissions(root).map((m) => m.statut)).toEqual(["terminee", "interrompue", "interrompue"]);
   });
 });

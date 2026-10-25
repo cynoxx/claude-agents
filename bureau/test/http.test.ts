@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { AddressInfo } from "node:net";
+import http from "node:http";
 import WebSocket from "ws";
 import { createBureauServer } from "../server/http.ts";
 import { checkClaude } from "../server/claude-check.ts";
@@ -87,6 +88,34 @@ describe("serveur HTTP", () => {
     expect((await fetch(`${base}/api/missions/${nom}/fichier?chemin=../../etc/passwd`)).status).toBe(400);
     expect((await fetch(`${base}/api/missions/..%2F..%2Fetc/resultat`)).status).toBe(400);
     expect((await fetch(`${base}/../../etc/passwd`)).status).toBe(404);
+  });
+});
+
+describe("protection contre les autres sites", () => {
+  it("refuse une requête dont l'hôte n'est pas localhost (DNS rebinding)", async () => {
+    const port = (server.address() as AddressInfo).port;
+    const status = await new Promise<number>((resolve) => {
+      http.get({ host: "127.0.0.1", port, path: "/api/missions", headers: { host: "evil.example" } }, (r) => resolve(r.statusCode!));
+    });
+    expect(status).toBe(403);
+  });
+
+  it("refuse un WebSocket ouvert depuis un autre site", async () => {
+    const ws = new WebSocket(base.replace("http", "ws") + "/ws", { origin: "http://evil.example" });
+    const code = await new Promise<number>((resolve) => {
+      ws.on("unexpected-response", (_req, res) => resolve(res.statusCode!));
+      ws.on("open", () => resolve(200));
+    });
+    expect(code).toBe(403);
+  });
+
+  it("accepte la page du Bureau elle-même", async () => {
+    const ws = new WebSocket(base.replace("http", "ws") + "/ws", { origin: base });
+    await new Promise<void>((resolve, reject) => {
+      ws.on("open", () => resolve());
+      ws.on("unexpected-response", () => reject(new Error("refusé")));
+    });
+    ws.close();
   });
 });
 
