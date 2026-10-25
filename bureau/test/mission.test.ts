@@ -162,6 +162,23 @@ describe("MissionManager", () => {
     expect(v.resultat).toContain("bureau/mission-test");
   });
 
+  it("garde l'annonce de Max assez courte pour une bulle", async () => {
+    process.env.FAKE_PLAN = JSON.stringify({
+      titre: "T",
+      slug: "t",
+      annonce: "Salut, je suis Max, chef du Bureau : pour cette mission je m'appuie sur un chercheur qui déniche trois recettes.",
+      projet: null,
+      etapes: [{ robots: [{ role: "redacteur", tache: "x" }] }],
+    });
+    const m = new MissionManager(config(), FAKE);
+    const annonces: string[] = [];
+    m.on("etat", (e) => e.mission?.phase === "travail" && annonces.push(e.mission.max.bulle));
+    m.lancer("x");
+    await m.attendreFin();
+    expect(annonces[0].length).toBeLessThanOrEqual(80);
+    expect(annonces[0].endsWith("…")).toBe(true);
+  });
+
   it("émet un état à chaque changement", async () => {
     const m = new MissionManager(config(), FAKE);
     const phases = new Set<string>();

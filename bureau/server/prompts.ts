@@ -31,7 +31,7 @@ Construis le plan de l'équipe :
 - donne à chaque robot une consigne précise et autonome (il ne peut pas te poser de question) ;
 - si la mission demande de modifier le code d'un projet connu, mets son nom exact dans « projet » et utilise le métier codeur ; sinon « projet » vaut null ;
 - tu peux lire les fichiers des projets pour mieux planifier, mais ne fais pas le travail toi-même ;
-- « annonce » est une phrase courte et sympathique où tu présentes ton équipe à l'utilisateur.`;
+- « annonce » est une phrase courte (moins de 70 caractères) et sympathique où tu présentes ton équipe, par exemple : « Deux chercheurs et une analyste, c'est parti ! ».`;
 }
 
 export function robotPrompt(o: {

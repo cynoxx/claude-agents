@@ -4,7 +4,7 @@ import path from "node:path";
 import type { ActionVue, EtatBureau, EtatFichier, MissionVue, Phase, RobotVue } from "../shared/protocol.ts";
 import type { BureauConfig, Projet } from "./config.ts";
 import { runAgent, type AgentHandle, type RunResult } from "./agent-runner.ts";
-import type { Traduction } from "./event-translator.ts";
+import { tronquer, type Traduction } from "./event-translator.ts";
 import { commitAll, createWorktree, ProjetInvalide } from "./git-worktree.ts";
 import { parsePlan, PlanInvalide, PLAN_JSON_SCHEMA, type Plan } from "./plan-schema.ts";
 import { planPrompt, resumePrompt, reviewPrompt, robotPrompt } from "./prompts.ts";
@@ -169,7 +169,7 @@ export class MissionManager extends EventEmitter {
     this.mission!.totalEtapes = this.plan.etapes.length;
     this.creerRobots(this.plan);
     await this.preparerProjet(this.plan);
-    this.maxDit(this.plan.annonce || "Voici mon équipe\u00a0!");
+    this.maxDit(tronquer(this.plan.annonce || "Voici mon équipe\u00a0!", 80));
     this.reprise = "travail";
     this.mission!.etape = 0;
     return true;

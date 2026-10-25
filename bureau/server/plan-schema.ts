@@ -20,7 +20,7 @@ export const PLAN_JSON_SCHEMA = {
   properties: {
     titre: { type: "string", description: "Titre court de la mission" },
     slug: { type: "string", description: "2 à 5 mots en minuscules séparés par des tirets" },
-    annonce: { type: "string", description: "Une phrase où Max annonce son équipe" },
+    annonce: { type: "string", description: "Une phrase courte (moins de 70 caractères) où Max annonce son équipe" },
     projet: { type: ["string", "null"], description: "Nom exact d'un projet connu si le codeur y travaille, sinon null" },
     etapes: {
       type: "array",
