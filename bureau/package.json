@@ -1,0 +1,30 @@
+{
+  "name": "bureau",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Le Bureau : une équipe d'agents Claude Code qui travaille sous tes yeux, en pixel art.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "vite build --logLevel warn && tsx server/index.ts",
+    "setup": "tsx server/setup.ts",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0",
+    "tsx": "^4.23.15",
+    "vite": "^5.4.21",
+    "ws": "^8.22.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/ws": "^8.18.2",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}
