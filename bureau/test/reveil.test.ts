@@ -177,6 +177,25 @@ describe("Twilio", () => {
     expect(await t.etat("CA123")).toEqual({ statut: "completed", duree: 31, reponduPar: "human" });
   });
 
+  it("rappelle sans détection du répondeur quand un compte d'essai refuse l'option (400)", async () => {
+    const corps: string[] = [];
+    const recuperer: Recuperer = async (_url, init) => {
+      corps.push(String(init.body));
+      return corps.length === 1
+        ? { ok: false, status: 400, json: async () => ({ message: "Invalid or disallowed parameters provided - trial accounts have limited parameter access" }) }
+        : { ok: true, status: 200, json: async () => ({ sid: "CA2" }) };
+    };
+    const t = new Twilio({ compte: "AC1", jeton: "x", numero: "+1" }, { dossierDonnees: tmp(), recuperer });
+    expect(await t.appeler("+33", "<Response/>")).toBe("CA2");
+    expect(corps[0]).toContain("MachineDetection");
+    expect(corps[1]).not.toContain("MachineDetection");
+    // une autre erreur (401, mauvais identifiants) n'est pas réessayée
+    corps.length = 0;
+    const t2 = new Twilio({ compte: "AC1", jeton: "x", numero: "+1" }, { dossierDonnees: tmp(), recuperer: async () => (corps.push("x"), { ok: false, status: 401, json: async () => ({ message: "Authenticate" }) }) });
+    await expect(t2.appeler("+33", "<Response/>")).rejects.toThrow("401");
+    expect(corps).toHaveLength(1);
+  });
+
   it("s'identifie avec une clé API (SK…) et son secret quand on en donne une", async () => {
     let auth = "";
     const recuperer: Recuperer = async (_url, init) => {

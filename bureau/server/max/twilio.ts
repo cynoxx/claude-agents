@@ -71,16 +71,19 @@ export class Twilio {
     return j;
   }
 
-  /** Appelle `vers` et lui fait entendre `twiml` ; le répondeur est détecté (pour ne pas le prendre pour toi). */
+  /**
+   * Appelle `vers` et lui fait entendre `twiml`. Le répondeur est détecté (pour ne pas le prendre pour toi) ; un compte
+   * d'essai refuse cette option (erreur 400) : on rappelle alors sans, et le Bureau se contente de la durée de l'appel.
+   */
   async appeler(vers: string, twiml: string): Promise<string> {
-    const r = await this.requete<{ sid: string }>("POST", `${API}/Accounts/${this.id.compte}/Calls.json`, {
-      To: vers,
-      From: this.id.numero,
-      Twiml: twiml,
-      MachineDetection: "Enable",
-      Timeout: "40",
-    });
-    return r.sid;
+    const url = `${API}/Accounts/${this.id.compte}/Calls.json`;
+    const base = { To: vers, From: this.id.numero, Twiml: twiml };
+    try {
+      return (await this.requete<{ sid: string }>("POST", url, { ...base, MachineDetection: "Enable", Timeout: "40" })).sid;
+    } catch (e) {
+      if (!/\(400\)/.test((e as Error).message)) throw e;
+      return (await this.requete<{ sid: string }>("POST", url, base)).sid;
+    }
   }
 
   async etat(sid: string): Promise<EtatAppel> {
