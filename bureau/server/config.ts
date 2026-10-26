@@ -17,8 +17,15 @@ export interface VoixConfig {
   modele: string | null;
   /** Micro au format avfoundation (ex. ":1") ; null = choisi automatiquement. */
   micro: string | null;
+  /** « auto » : la voix Piper si elle est installée (`npm run voix`), sinon `say` ; ou imposer l'un des deux. */
+  moteur: "auto" | "piper" | "say";
+  /** La voix Piper (un nom de rhasspy/piper-voices). */
+  voixPiper: string;
+  /** Vitesse de la voix Piper (1 = normale, 1.1 = un peu plus rapide). */
+  vitessePiper: number;
   /** Nom d'une voix de `say -v ?` ; null = meilleure voix française installée. */
   voixMac: string | null;
+  /** Vitesse de `say`, en mots par minute. */
   debit: number;
   motCle: string;
   /** Le nom du raccourci Siri (« Dis Siri, <phrase> »), rappelé quand Max s'endort. */
@@ -68,8 +75,11 @@ export const DEFAULT_CONFIG: BureauConfig = {
     say: "say",
     modele: null,
     micro: null,
+    moteur: "auto",
+    voixPiper: "fr_FR-tom-medium",
+    vitessePiper: 1,
     voixMac: null,
-    debit: 185,
+    debit: 175,
     motCle: "max",
     phraseSiri: "Max au rapport",
     suiteSecondes: 10,

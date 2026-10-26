@@ -39,8 +39,11 @@ describe("loadConfig", () => {
       say: "say",
       modele: path.join(donnees, "modeles", "ggml-large-v3-turbo-q5_0.bin"),
       micro: null,
+      moteur: "auto",
+      voixPiper: "fr_FR-tom-medium",
+      vitessePiper: 1,
       voixMac: null,
-      debit: 185,
+      debit: 175,
       motCle: "max",
       phraseSiri: "Max au rapport",
       suiteSecondes: 10,
@@ -58,7 +61,7 @@ describe("loadConfig", () => {
     expect(c.dossierDonnees).toBe(path.join(os.homedir(), "donnees"));
     expect(c.voix.micro).toBe(":1");
     expect(c.voix.modele).toBe(path.join(os.homedir(), "m.bin"));
-    expect(c.voix.debit).toBe(185);
+    expect(c.voix.debit).toBe(175);
     expect(c.modeles.conversation).toBe("sonnet");
   });
 

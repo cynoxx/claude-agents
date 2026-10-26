@@ -18,7 +18,7 @@ import { Visage } from "./max/visage.ts";
 import { ecrireConfigMcp } from "./max/mcp-config.ts";
 import { MissionManager } from "./mission.ts";
 import { listMissions, markInterrupted } from "./storage.ts";
-import { Bouche } from "./voix/bouche.ts";
+import { creerBouche } from "./voix/voix-config.ts";
 import { preparerOreille } from "./voix/diagnostic.ts";
 
 const racine = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -31,10 +31,10 @@ if (interrompues) console.log(`${interrompues} mission(s) coupée(s) au dernier 
 
 const manager = new MissionManager(config, bin, { ok: false, erreur: "vérification en cours…" });
 
-// Max : jeton pour ses outils, oreille (micro + Whisper), bouche (say), cerveau (claude en continu)
+// Max : jeton pour ses outils, oreille (micro + Whisper), bouche (Piper ou say), cerveau (claude en continu)
 const jeton = creerJeton(config.dossierDonnees);
 const mcpConfig = ecrireConfigMcp({ racine, port: config.port, dossierDonnees: config.dossierDonnees });
-const bouche = new Bouche({ bin: config.voix.say, voix: config.voix.voixMac, debit: config.voix.debit });
+const bouche = creerBouche(config);
 const [{ oreille, dispo: dispoOreille }, dispoBouche] = await Promise.all([preparerOreille(config), bouche.preparer()]);
 // Le coach (minuteur, journal de travail, rappels) et les conseillers (un par domaine de la vie)
 const coach = new Coach({ dossier: config.dossierMissions, dossierDonnees: config.dossierDonnees });
@@ -129,6 +129,7 @@ const fermer = () => {
   console.log("\nFermeture du Bureau…");
   fs.rmSync(fichierPid, { force: true });
   assistant.veille();
+  bouche.arreter();
   coach.fermer();
   jarvis.arreter();
   conseillers.arreterTout();

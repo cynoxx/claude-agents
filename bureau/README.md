@@ -16,11 +16,13 @@ git clone https://github.com/cynoxx/claude-agents.git ~/claude-agents
 cd ~/claude-agents/bureau
 npm install
 npm run modele
+npm run voix
 npm run setup
 ```
 
 - `brew install` installe Node.js, ffmpeg (pour le micro), Whisper (la reconnaissance vocale locale) et icalBuddy (pour que Max lise bien ton agenda, cours qui se répètent compris).
 - `npm run modele` télécharge le modèle Whisper (environ 550 Mo, une seule fois).
+- `npm run voix` installe **la voix de Max** : Piper, une voix neuronale qui articule bien, gratuite, qui tourne sur ton Mac sans internet (environ 70 Mo, une minute). À la fin, Max te dit bonjour pour que tu l'entendes. Sans elle, Max parle avec la voix du Mac (`say`), bien moins naturelle.
 - `npm run setup` crée `bureau.config.json` et te dit ce qui marche (✔) et ce qui manque (✘). Ouvre ensuite `bureau.config.json` et indique où sont tes projets, pour que le Codeur puisse y travailler :
 
 ```json
@@ -33,7 +35,7 @@ npm run setup
   ],
   "modeles": { "chef": "opus", "robots": "sonnet", "conversation": "opus" },
   "limites": { "robots": 5, "etapes": 3, "minutesParRobot": 20 },
-  "voix": { "micro": null, "voixMac": null, "debit": 185, "veilleMinutes": 30 }
+  "voix": { "micro": null, "voixMac": null, "debit": 175, "veilleMinutes": 30 }
 }
 ```
 
@@ -46,8 +48,11 @@ npm run setup
 | `modeles.robots` | le modèle des robots ; `sonnet` économise ton quota, `haiku` encore plus |
 | `limites` | au maximum 5 robots et 3 étapes par mission, 20 minutes par robot |
 | `voix.micro` | le micro à utiliser (`npm run micros` les liste) ; `null` = choisi tout seul |
-| `voix.voixMac` | la voix de Max (une voix de `say -v ?`) ; `null` = la meilleure voix française installée |
-| `voix.debit` | la vitesse à laquelle Max parle (mots par minute) |
+| `voix.moteur` | `"auto"` (la voix Piper si elle est installée, sinon celle du Mac), `"piper"` ou `"say"` |
+| `voix.voixPiper` | la voix Piper (par défaut `fr_FR-tom-medium`, une voix d'homme claire) ; d'autres voix françaises : `fr_FR-upmc-medium`, `fr_FR-siwis-medium`, à installer avec `npm run voix fr_FR-siwis-medium` |
+| `voix.vitessePiper` | la vitesse de la voix Piper (`1` normale, `1.1` un peu plus rapide, `0.9` plus posée) |
+| `voix.voixMac` | la voix du Mac si Piper n'est pas installé (une voix de `say -v ?`) ; `null` = la meilleure voix française installée |
+| `voix.debit` | la vitesse de la voix du Mac (mots par minute) |
 | `voix.veilleMinutes` | Max se met en veille après ce temps sans échange |
 | `voix.phraseSiri` | le nom de ton raccourci Siri (« Max au rapport »), que Max te rappelle quand il s'endort |
 | `conseillers` | (facultatif) ta propre liste de conseillers, à la place des cinq par défaut ; voir « Les conseillers » |
@@ -73,10 +78,11 @@ Dans le Terminal, une commande à la fois :
 cd ~/claude-agents/bureau
 git pull
 npm install
+npm run voix
 npm run arreter
 ```
 
-`npm install` ajoute ce qui est nouveau (par exemple la reconnaissance du visage) ; `npm run arreter` éteint l'ancien Bureau. Ensuite, « Dis Siri, Max au rapport » relance la nouvelle version.
+`npm run voix` n'est à faire qu'une fois (il installe la nouvelle voix de Max). `npm install` ajoute ce qui est nouveau (par exemple la reconnaissance du visage) ; `npm run arreter` éteint l'ancien Bureau. Ensuite, « Dis Siri, Max au rapport » relance la nouvelle version.
 
 ## Parler à Max
 
@@ -104,6 +110,8 @@ Tu peux aussi **lui écrire** dans le champ « Écris à Max… », par exemple 
 Quand une mission se termine, Max te le dit tout seul et te résume le résultat. Le résultat complet s'ouvre aussi à l'écran.
 
 **Mémoire.** Max tient un carnet, `~/Documents/Bureau/carnet.md`, avec ce qu'il apprend de toi. Il le relit à chaque réveil. Tu peux lui dire « oublie ça » ou modifier le fichier toi-même.
+
+**Le bureau, façon jeu vidéo.** En haut, ton **niveau** et ta **barre d'XP** : chaque minute de vraie session de travail rapporte 1 XP (1 h pour passer niveau 2, puis 2 h, 3 h…), avec ta série de jours 🔥 et ton J-N. Les fenêtres suivent l'heure réelle (aube, jour, soir, nuit étoilée), l'horloge du mur est à l'heure, le bandeau lumineux de l'enseigne annonce la quête en cours, les écrans des robots qui travaillent font défiler du code, et un chat se promène dans le bureau (clique dessus). En entrant, une carte « ZONE : LE BUREAU » s'affiche comme au début d'un niveau.
 
 **Le bureau pixel art** fonctionne comme avant. Clique sur un robot (ou sur Max) pour voir sa tâche, tout ce qu'il a fait et son rapport. Les icônes au-dessus des robots : ☕ attend son tour, ✅ a fini, 💤 quota atteint (**▶️ Reprendre** plus tard), ❗ problème (clique dessus). Boutons du haut : **📄 Résultat**, **⏹ Arrêter**, **▶️ Reprendre**, **📜 Historique**, **📁 Dossier**. Tu peux aussi lancer une mission **sans passer par Max**, dans « Lancer une mission directement » en bas de la page.
 
@@ -310,6 +318,9 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 | Bandeau « pas connecté » | Lance `claude auth login` dans le Terminal, puis relance le Bureau. |
 | « ⚠️ ffmpeg / whisper-cli introuvable » dans le panneau | `brew install ffmpeg whisper-cpp`, puis relance le Bureau. |
 | « ⚠️ Modèle Whisper absent » | `npm run modele`, puis relance le Bureau. |
+| La voix de Max est robotique | Installe la voix neuronale : `npm run voix`, puis relance le Bureau. `npm run setup` dit quelle voix est utilisée. |
+| `npm run voix` dit qu'il faut Python | `brew install python`, puis relance `npm run voix`. |
+| Max parle trop vite ou trop lentement | `"voix": { "vitessePiper": 0.9 }` (plus posé) ou `1.1` (plus rapide) dans `bureau.config.json`. |
 | Max ne t'entend pas | Vérifie l'autorisation du micro (Réglages Système > Confidentialité et sécurité > Micro). `npm run micros` montre le micro utilisé ; impose-en un autre avec `"voix": { "micro": ":1" }`. |
 | Max réagit à la télé | Il ne répond qu'aux phrases qui commencent par « Max » : baisse un peu le son, ou mets-le en veille. |
 | Max met du temps à répondre | Opus réfléchit quelques secondes. Pour plus de vitesse : `"modeles": { "conversation": "sonnet" }`. |

@@ -1,6 +1,9 @@
-// La bouche de Max : la commande `say` du Mac, phrase par phrase.
+// La bouche de Max, phrase par phrase : la voix neuronale Piper si elle est installée (`npm run voix`), sinon la
+// commande `say` du Mac. Avec Piper, la phrase suivante est préparée pendant que la précédente est dite.
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
+import fs from "node:fs";
+import path from "node:path";
 import type { Dispo } from "../../shared/protocol.ts";
 import { choisirVoix, type VoixInfo } from "../../shared/parole.ts";
 
@@ -14,20 +17,38 @@ export function lireVoixSay(sortie: string): VoixInfo[] {
   return out;
 }
 
+export interface PiperLike {
+  demarrer(): Promise<void>;
+  synthetiser(texte: string, fichier: string): Promise<void>;
+  arreter(): void;
+}
+
 export interface OptionsBouche {
   bin: string;
   /** Voix imposée ; null = meilleure voix française installée. */
   voix: string | null;
   /** Mots par minute. */
   debit: number;
+  /** La voix Piper : le moteur, le lecteur de WAV (`afplay`), un dossier pour les fichiers, le nom de la voix. */
+  piper?: { moteur: PiperLike; lecteur: string; dossier: string; nom: string };
+}
+
+interface Phrase {
+  texte: string;
+  /** Avec Piper : le fichier WAV, une fois prêt (null si la synthèse a raté). */
+  wav?: Promise<string | null>;
 }
 
 /** Événements : `debut` (il se met à parler), `phrase` (chaque phrase dite), `fin` (il a fini ou s'est tu). */
 export class Bouche extends EventEmitter {
-  private file: string[] = [];
+  private file: Phrase[] = [];
   private enCours?: ChildProcess;
+  private occupe = false;
+  private generation = 0;
+  private numero = 0;
   private voix: string | null;
   private disponible = true;
+  private avecPiper = false;
 
   constructor(private o: OptionsBouche) {
     super();
@@ -35,11 +56,33 @@ export class Bouche extends EventEmitter {
   }
 
   get parle(): boolean {
-    return !!this.enCours || this.file.length > 0;
+    return this.occupe || this.file.length > 0;
   }
 
-  /** Vérifie que `say` existe et choisit la voix. */
+  /** Démarre Piper s'il est là ; sinon vérifie que `say` existe et choisit la voix. */
   async preparer(): Promise<Dispo> {
+    let soucisPiper = "";
+    if (this.o.piper) {
+      try {
+        await this.o.piper.moteur.demarrer();
+        fs.mkdirSync(this.o.piper.dossier, { recursive: true });
+        this.avecPiper = true;
+        this.disponible = true;
+        return { ok: true, detail: `Voix : ${this.o.piper.nom} (Piper)` };
+      } catch (e) {
+        soucisPiper = ` (la voix Piper n'a pas démarré : ${(e as Error).message})`;
+      }
+    }
+    const say = await this.preparerSay();
+    return say.ok ? { ...say, detail: say.detail + soucisPiper } : say;
+  }
+
+  arreter(): void {
+    this.taire();
+    this.o.piper?.moteur.arreter();
+  }
+
+  private async preparerSay(): Promise<Dispo> {
     try {
       const { stdout } = await new Promise<{ stdout: string }>((resolve, reject) =>
         execFile(this.o.bin, ["-v", "?"], { timeout: 10_000 }, (e, stdout) => (e ? reject(e) : resolve({ stdout }))),
@@ -65,8 +108,18 @@ export class Bouche extends EventEmitter {
     const texte = phrase.replace(/^[\s\-–—]+/, "").trim();
     if (!texte) return;
     const silencieux = !this.parle;
-    this.file.push(texte);
+    const item: Phrase = { texte };
+    // avec Piper, la synthèse commence tout de suite (pendant que la phrase d'avant est dite)
+    if (this.avecPiper && this.o.piper) {
+      const fichier = path.join(this.o.piper.dossier, `max-${process.pid}-${++this.numero}.wav`);
+      item.wav = this.o.piper.moteur.synthetiser(texte, fichier).then(
+        () => fichier,
+        () => null,
+      );
+    }
+    this.file.push(item);
     if (silencieux) {
+      this.occupe = true;
       this.emit("debut");
       this.suivante();
     }
@@ -75,7 +128,10 @@ export class Bouche extends EventEmitter {
   /** Se tait tout de suite et oublie les phrases en attente. */
   taire(): void {
     if (!this.parle) return;
+    this.generation++;
+    for (const item of this.file) void item.wav?.then((f) => f && fs.rmSync(f, { force: true }));
     this.file = [];
+    this.occupe = false;
     const p = this.enCours;
     this.enCours = undefined;
     p?.kill("SIGKILL");
@@ -83,18 +139,33 @@ export class Bouche extends EventEmitter {
   }
 
   private suivante(): void {
-    const texte = this.file.shift();
-    if (texte === undefined) {
+    const item = this.file.shift();
+    if (item === undefined) {
       this.enCours = undefined;
+      this.occupe = false;
       this.emit("fin");
       return;
     }
-    this.emit("phrase", texte);
-    const args = [...(this.voix ? ["-v", this.voix] : []), "-r", String(this.o.debit), texte];
-    const p = spawn(this.o.bin, args, { stdio: "ignore" });
+    this.emit("phrase", item.texte);
+    if (item.wav && this.o.piper) {
+      const generation = this.generation;
+      const lecteur = this.o.piper.lecteur;
+      void item.wav.then((fichier) => {
+        if (generation !== this.generation) return void (fichier && fs.rmSync(fichier, { force: true }));
+        if (!fichier) return this.suivante(); // phrase ratée : on passe à la suivante
+        this.jouer(lecteur, [fichier], () => fs.rmSync(fichier, { force: true }));
+      });
+      return;
+    }
+    this.jouer(this.o.bin, [...(this.voix ? ["-v", this.voix] : []), "-r", String(this.o.debit), item.texte]);
+  }
+
+  private jouer(bin: string, args: string[], ensuite?: () => void): void {
+    const p = spawn(bin, args, { stdio: "ignore" });
     this.enCours = p;
     p.on("error", () => {});
     p.on("close", () => {
+      ensuite?.();
       if (this.enCours !== p) return;
       this.suivante();
     });

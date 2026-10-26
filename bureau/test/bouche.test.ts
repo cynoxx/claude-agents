@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { Bouche, lireVoixSay } from "../server/voix/bouche.ts";
+import { Piper } from "../server/voix/piper.ts";
 
 const FAKE_SAY = path.join(__dirname, "fake-say.mjs");
 const envAvant = { ...process.env };
@@ -109,5 +110,83 @@ describe("Bouche", () => {
     b.dire("Bonjour.");
     await attendre(50);
     expect(evts).toEqual([]);
+  });
+});
+
+describe("Bouche avec la voix Piper", () => {
+  const FAKE_PIPER = path.join(__dirname, "fake-piper.mjs");
+  const FAKE_LECTEUR = path.join(__dirname, "fake-lecteur.mjs");
+  let dossier: string;
+  let lus: string;
+  beforeEach(() => {
+    dossier = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-piper-"));
+    lus = path.join(dossier, "lus.txt");
+    process.env.FAKE_LECTEUR_LOG = lus;
+  });
+  const avecPiper = () =>
+    new Bouche({
+      bin: FAKE_SAY,
+      voix: null,
+      debit: 175,
+      piper: {
+        moteur: new Piper({ python: "python3", modele: "m.onnx", vitesse: 1, commande: { bin: FAKE_PIPER, args: [] } }),
+        lecteur: FAKE_LECTEUR,
+        dossier: path.join(dossier, "wav"),
+        nom: "fr_FR-tom-medium",
+      },
+    });
+  const lignesLues = () => (fs.existsSync(lus) ? fs.readFileSync(lus, "utf8").trim().split("\n") : []);
+
+  it("prépare chaque phrase avec Piper et la fait jouer, dans l'ordre, puis efface les fichiers", async () => {
+    const b = avecPiper();
+    expect(await b.preparer()).toEqual({ ok: true, detail: "Voix : fr_FR-tom-medium (Piper)" });
+    const evts = suivre(b);
+    b.dire("Bonjour.");
+    b.dire("Je t'écoute.");
+    expect(b.parle).toBe(true);
+    for (let i = 0; i < 100 && evts.at(-1) !== "fin"; i++) await attendre(20);
+    expect(evts).toEqual(["debut", "phrase:Bonjour.", "phrase:Je t'écoute.", "fin"]);
+    expect(lignesLues()).toEqual(["WAV:Bonjour.", "WAV:Je t'écoute."]);
+    expect(dits()).toEqual([]);
+    await attendre(50);
+    expect(fs.readdirSync(path.join(dossier, "wav"))).toEqual([]);
+    b.arreter();
+  });
+
+  it("se tait tout de suite, même pendant qu'une phrase se prépare", async () => {
+    const b = avecPiper();
+    await b.preparer();
+    const evts = suivre(b);
+    b.dire("Une très longue phrase.");
+    b.dire("Une autre.");
+    b.taire();
+    expect(b.parle).toBe(false);
+    await attendre(200);
+    expect(evts).toEqual(["debut", "phrase:Une très longue phrase.", "fin"]);
+    expect(lignesLues()).toEqual([]);
+    b.arreter();
+  });
+
+  it("passe une phrase que Piper n'arrive pas à dire, sans se bloquer", async () => {
+    process.env.FAKE_PIPER_MODE = "rate";
+    const b = avecPiper();
+    await b.preparer();
+    const evts = suivre(b);
+    b.dire("Phrase ratée.");
+    for (let i = 0; i < 100 && evts.at(-1) !== "fin"; i++) await attendre(20);
+    expect(evts).toEqual(["debut", "phrase:Phrase ratée.", "fin"]);
+    b.arreter();
+  });
+
+  it("reprend la voix du Mac (say) si Piper ne démarre pas, et dit pourquoi", async () => {
+    process.env.FAKE_PIPER_MODE = "plante";
+    const b = avecPiper();
+    const d = await b.preparer();
+    expect(d.ok).toBe(true);
+    expect(d.detail).toContain("Voix : Audrey (Premium)");
+    expect(d.detail).toContain("No module named 'piper'");
+    b.dire("Salut.");
+    await attendre(300);
+    expect(dits()).toEqual([["-v", "Audrey (Premium)", "-r", "175", "Salut."]]);
   });
 });

@@ -16,7 +16,8 @@
     "modele": "tsx server/telecharger-modele.ts",
     "micros": "tsx server/micros.ts",
     "reveiller": "bash scripts/reveiller-max.sh",
-    "arreter": "bash scripts/arreter-bureau.sh"
+    "arreter": "bash scripts/arreter-bureau.sh",
+    "voix": "tsx server/installer-voix.ts"
   },
   "dependencies": {
     "@fontsource/pixelify-sans": "^5.3.0",

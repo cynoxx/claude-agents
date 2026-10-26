@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { CONFIG_FILE, DEFAULT_CONFIG, loadConfig } from "./config.ts";
 import { FICHIER_PROFIL } from "./max/coach.ts";
 import { checkClaude } from "./claude-check.ts";
-import { Bouche } from "./voix/bouche.ts";
+import { creerBouche } from "./voix/voix-config.ts";
 import { preparerOreille } from "./voix/diagnostic.ts";
 
 const racine = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -50,8 +50,11 @@ else {
 
 const { dispo: oreille } = await preparerOreille(config);
 console.log(`${oreille.ok ? "✔ Oreille de Max :" : "✘ Oreille de Max :"} ${oreille.detail}`);
-const bouche = await new Bouche({ bin: config.voix.say, voix: config.voix.voixMac, debit: config.voix.debit }).preparer();
+const b = creerBouche(config);
+const bouche = await b.preparer();
+b.arreter();
 console.log(`${bouche.ok ? "✔ Voix de Max :" : "✘ Voix de Max :"} ${bouche.detail}`);
+if (!bouche.detail?.includes("Piper")) console.log("  → Pour une voix bien plus naturelle (neuronale, locale) : npm run voix");
 
 console.log(
   `\nPour « Dis Siri, ${config.voix.phraseSiri} », le raccourci nommé « ${config.voix.phraseSiri} » doit exécuter :\n  /bin/bash "${path.join(racine, "scripts", "reveiller-max.sh")}"\n(pas-à-pas dans le README, section « Dis Siri, Max au rapport »).`,
