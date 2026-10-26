@@ -2,16 +2,16 @@
 
 Une équipe d'agents Claude Code qui travaille sous tes yeux, dans un bureau en pixel art.
 
-Tu parles à **Max**, le chef, comme à Jarvis : « Max, compare les mutuelles pour moi ». Il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et il a cinq **conseillers**, un par domaine de ta vie, assis à leur bureau : 🩺 Prof (études), 💪 Coach (santé), 💼 Associé (business), 📱 Dev (apps), 🏠 Majordome (vie perso). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
+Tu parles à **Max**, le chef, comme à Jarvis. Il vit sur un **écran façon Jarvis** (une sphère lumineuse qui réagit quand il écoute, réfléchit et parle) et **pilote ton Mac** : apps, sites, musique, volume, iMessage, mails, agenda, météo. « Max, emmène-moi au bureau » te fait plonger dans le bureau pixel art. Quand tu lui dis « Max, compare les mutuelles pour moi », il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et il a cinq **conseillers**, un par domaine de ta vie, assis à leur bureau : 🩺 Prof (études), 💪 Coach (santé), 💼 Associé (business), 📱 Dev (apps), 🏠 Majordome (vie perso). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
 
-> Le guide complet : [le Bureau](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md), [Max vocal](../docs/superpowers/specs/2026-10-26-max-vocal-design.md) et [Max coach et les conseillers](../docs/superpowers/specs/2026-10-26-max-coach-conseillers-design.md).
+> Le guide complet : [le Bureau](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md), [Max vocal](../docs/superpowers/specs/2026-10-26-max-vocal-design.md) et [Max coach et les conseillers](../docs/superpowers/specs/2026-10-26-max-coach-conseillers-design.md) et [Max façon Jarvis](../docs/superpowers/specs/2026-10-27-max-jarvis-design.md).
 
 ## Installation (une seule fois)
 
 Il te faut un Mac avec **Claude Code** installé et connecté (`claude` doit marcher dans le Terminal), et **Homebrew** (https://brew.sh). Dans le Terminal, colle ces lignes **une par une** (Entrée après chacune) :
 
 ```bash
-brew install node ffmpeg whisper-cpp
+brew install node ffmpeg whisper-cpp ical-buddy
 git clone https://github.com/cynoxx/claude-agents.git ~/claude-agents
 cd ~/claude-agents/bureau
 npm install
@@ -19,7 +19,7 @@ npm run modele
 npm run setup
 ```
 
-- `brew install` installe Node.js, ffmpeg (pour le micro) et Whisper (la reconnaissance vocale locale).
+- `brew install` installe Node.js, ffmpeg (pour le micro), Whisper (la reconnaissance vocale locale) et icalBuddy (pour que Max lise bien ton agenda, cours qui se répètent compris).
 - `npm run modele` télécharge le modèle Whisper (environ 550 Mo, une seule fois).
 - `npm run setup` crée `bureau.config.json` et te dit ce qui marche (✔) et ce qui manque (✘). Ouvre ensuite `bureau.config.json` et indique où sont tes projets, pour que le Codeur puisse y travailler :
 
@@ -51,6 +51,9 @@ npm run setup
 | `voix.veilleMinutes` | Max se met en veille après ce temps sans échange |
 | `voix.phraseSiri` | le nom de ton raccourci Siri (« Max au rapport »), que Max te rappelle quand il s'endort |
 | `conseillers` | (facultatif) ta propre liste de conseillers, à la place des cinq par défaut ; voir « Les conseillers » |
+| `mac.ville` | la ville de la météo (`null` = devinée) |
+| `mac.musique` | `"auto"` (Spotify s'il est installé, sinon Musique), `"spotify"` ou `"musique"` |
+| `mac.dossierCaptures` | où ranger les captures d'écran (`null` = le Bureau du Mac) |
 
 ## Lancer le Bureau
 
@@ -89,6 +92,52 @@ Quand une mission se termine, Max te le dit tout seul et te résume le résultat
 **Mémoire.** Max tient un carnet, `~/Documents/Bureau/carnet.md`, avec ce qu'il apprend de toi. Il le relit à chaque réveil. Tu peux lui dire « oublie ça » ou modifier le fichier toi-même.
 
 **Le bureau pixel art** fonctionne comme avant. Clique sur un robot (ou sur Max) pour voir sa tâche, tout ce qu'il a fait et son rapport. Les icônes au-dessus des robots : ☕ attend son tour, ✅ a fini, 💤 quota atteint (**▶️ Reprendre** plus tard), ❗ problème (clique dessus). Boutons du haut : **📄 Résultat**, **⏹ Arrêter**, **▶️ Reprendre**, **📜 Historique**, **📁 Dossier**. Tu peux aussi lancer une mission **sans passer par Max**, dans « Lancer une mission directement » en bas de la page.
+
+## L'écran de Max et ses pouvoirs
+
+Quand tu dis « Dis Siri, Max au rapport », la page s'ouvre sur **l'écran de Max** : au centre la sphère (bleue quand il écoute, dorée quand il réfléchit, qui vibre quand il parle), ce qu'il dit en grand, et autour l'heure, la météo, ton agenda du jour, ton objectif (J-49), le minuteur en cours et la mission en cours.
+
+- **« Max, emmène-moi au bureau »** (ou « montre-moi l'équipe ») : on plonge dans la sphère et on arrive dans le bureau pixel art. **« Max, reviens »**, ou le bouton **🔵 Max** en haut du bureau, te ramène.
+- Tu peux aussi écrire à Max en bas de l'écran.
+
+Ce que Max sait faire sur ton Mac :
+
+| Tu dis | Max |
+|---|---|
+| « Max, ouvre Notes » · « ferme Safari » | ouvre ou quitte l'app |
+| « Max, ouvre Doctolib » · « mets la vidéo de… sur YouTube » | ouvre le site, ou cherche la vidéo et l'ouvre |
+| « Max, mets le son à 30 » · « coupe le son » · « baisse la luminosité » | règle le Mac |
+| « Max, fais une capture d'écran » · « verrouille l'écran » | capture sur le Bureau du Mac · écran verrouillé |
+| « Max, mets du lo-fi » · « pause » · « suivant » · « c'est quoi ce morceau ? » | pilote Spotify (ou Musique) |
+| « Max, envoie à Maman que je rentre à 20 h » | prépare l'iMessage, te le lit et demande « Je l'envoie ? » |
+| « Max, j'ai des nouveaux mails ? » | résume tes derniers mails non lus |
+| « Max, j'ai quoi aujourd'hui ? » · « et demain ? » | lit ton agenda |
+| « Max, ajoute dentiste mercredi à 17 h 30 » | prépare le rendez-vous et demande « Je l'ajoute ? » |
+| « Max, quel temps il fait ? » | la météo |
+
+**Rien ne part sans ton oui.** Un message ou un rendez-vous est d'abord préparé ; c'est le Bureau lui-même (pas seulement Max) qui refuse de l'envoyer tant que ta phrase suivante n'est pas un oui (« oui », « vas-y », « ok »…). Si tu dis « non, change… », Max le prépare de nouveau. Un mail ou une page web ne peut donc pas lui faire envoyer quelque chose à ta place.
+
+Max n'a pas le droit de taper des commandes sur ton Mac : il n'a que cette liste de gestes, comme une télécommande.
+
+### Les autorisations du Mac (la première fois)
+
+macOS te demande ton accord la première fois que Max touche à une app. Accepte (« OK ») :
+
+- **Contrôler Musique, Spotify, Messages, Mail, Calendrier, Contacts** : une fenêtre « Raccourcis souhaite contrôler… » (ou « Terminal », si tu as lancé avec `npm start`). Si tu as refusé : **Réglages Système > Confidentialité et sécurité > Automatisation**.
+- **Contacts** et **Calendriers** : **Réglages Système > Confidentialité et sécurité > Contacts** (et **Calendriers**).
+- **Luminosité** : Max appuie sur les touches de luminosité pour toi, ce qui demande **Réglages Système > Confidentialité et sécurité > Accessibilité** (ajoute et coche Raccourcis, ou Terminal).
+
+Si une autorisation manque, Max te dit où l'activer.
+
+### Gmail et Google Agenda
+
+Max lit tes mails dans l'app **Mail** et ton agenda dans **Calendrier**. Pour y mettre ton compte Google (une seule fois) :
+
+1. **Réglages Système > Comptes Internet > Google**, connecte-toi.
+2. Coche **Mail** et **Calendriers**.
+3. Ouvre l'app Mail une fois, le temps qu'elle télécharge tes mails.
+
+Pour les rendez-vous, Max utilise le premier calendrier modifiable ; pour en imposer un : « ajoute-le dans mon calendrier Google ».
 
 ## Max, ton coach
 
@@ -214,6 +263,7 @@ Pour faire le ménage une fois la branche fusionnée ou abandonnée : `git workt
 - **Ta voix** est transcrite **sur ton Mac** par Whisper. Elle n'est envoyée nulle part, et le Bureau ne garde aucun enregistrement.
 - **Le micro** n'est ouvert que quand Max est réveillé. En veille (😴), il est vraiment coupé.
 - **Seules les phrases qui commencent par « Max »** (ou la suite d'une conversation) partent chez Claude, comme le reste de la conversation et le carnet.
+- **Tes mails, ton agenda et tes contacts** ne sont lus que quand tu le demandes à Max, et seulement ce qu'il faut pour répondre (les derniers mails, la journée demandée, le contact cherché). Ce qu'il lit part chez Claude, comme le reste de la conversation.
 
 ## Ton quota d'abonnement
 
@@ -233,6 +283,10 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 | Siri demande « à quelle heure programmer l'alarme ? » | Le mot « réveille » déclenche l'alarme : renomme le raccourci « Max au rapport ». |
 | Siri ouvre le Bureau du Finder | Renomme le raccourci « Max au rapport » (pas « Bureau »). |
 | Un rappel n'a pas sonné | Les rappels ne sonnent que si le Bureau est ouvert. Un rappel manqué de plus d'une heure est abandonné. |
+| Max dit qu'il lui faut une autorisation | Suis la phrase qu'il te donne (voir « Les autorisations du Mac »). |
+| Max ne voit pas un cours qui se répète dans l'agenda | Installe icalBuddy : `brew install ical-buddy`, puis relance le Bureau. |
+| « Aucun contact ne s'appelle… » | Vérifie le nom dans l'app Contacts, ou donne le numéro. |
+| La musique cherchée ne se lance pas dans Spotify | Spotify ne peut que t'ouvrir la recherche : clique sur le morceau. Avec Musique, Max lance ce qu'il trouve dans ta bibliothèque. |
 | Un conseiller affiche ❗ | Il n'a pas pu répondre (quota, réseau). Clique dessus pour voir, puis redemande à Max. |
 | Siri lance le raccourci mais rien ne s'ouvre | Regarde `~/Library/Logs/Bureau.log`, et vérifie que le chemin du script est le bon. |
 | « Le port 4747 est déjà utilisé » | Le Bureau tourne déjà (peut-être démarré par Siri) : `npm run arreter`, ou change `port` dans `bureau.config.json`. |

@@ -17,7 +17,7 @@ interface EnAttente {
 
 const DUREE_MS = 5 * 60_000;
 const OUI = /\b(oui|ouais|ouai|yes|vas y|envoie|envoie le|envoie la|ok|okay|d accord|dac|confirme|confirmer|c est bon|go|valide|parfait)\b/;
-const NON = /\b(non|nan|pas|annule|annuler|attends|attend|stop|change|modifie|corrige)\b/;
+const NON = /\b(non|nan|pas|annule|annuler|attends|attend|stop|change|modifie|corrige|plutot|autre)\b/;
 
 const normaliser = (t: string) =>
   t

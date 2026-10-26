@@ -8,7 +8,7 @@ describe("estUnOui", () => {
     }
   });
   it("refuse un non, une hésitation ou une autre demande", () => {
-    for (const t of ["non", "Non attends", "oui mais non", "pas encore", "annule", "attends", "change le texte", "Ok non en fait", "Bonjour"]) {
+    for (const t of ["non", "Non attends", "oui mais non", "pas encore", "annule", "attends", "change le texte", "Ok non en fait", "Bonjour", "envoie plutôt à papa", "envoie un autre message"]) {
       expect(estUnOui(t), t).toBe(false);
     }
   });
