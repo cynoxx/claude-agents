@@ -65,3 +65,12 @@ export function enregistrerChoix(fichier: string, choix: { cle?: string; voix: s
   c.voix = { ...voix, elevenlabs: { ...el, ...(choix.cle ? { cle: choix.cle } : {}), voix: choix.voix, nomVoix: choix.nomVoix } };
   fs.writeFileSync(fichier, JSON.stringify(c, null, 2) + "\n");
 }
+
+/** Retient la voix XTTS choisie dans bureau.config.json (le reste du fichier ne bouge pas). */
+export function enregistrerLocuteurXtts(fichier: string, locuteur: string): void {
+  let c: Record<string, unknown> = {};
+  if (fs.existsSync(fichier)) c = JSON.parse(fs.readFileSync(fichier, "utf8"));
+  const voix = (c.voix ?? {}) as Record<string, unknown>;
+  c.voix = { ...voix, xtts: { ...((voix.xtts ?? {}) as Record<string, unknown>), locuteur } };
+  fs.writeFileSync(fichier, JSON.stringify(c, null, 2) + "\n");
+}

@@ -96,13 +96,13 @@ export class Piper {
     });
   }
 
-  /** Écrit la phrase dite par la voix dans `fichier` (WAV). */
-  synthetiser(texte: string, fichier: string): Promise<void> {
+  /** Écrit la phrase dite par la voix dans `fichier` (WAV). `extra` : d'autres champs de la demande (le locuteur de XTTS). */
+  synthetiser(texte: string, fichier: string, extra: Record<string, unknown> = {}): Promise<void> {
     if (!this.actif) return Promise.reject(new Error("Piper n'est pas démarré."));
     const id = this.prochainId++;
     return new Promise((resolve, reject) => {
       this.attente.set(id, { resolve, reject });
-      this.processus!.stdin!.write(JSON.stringify({ id, texte, fichier }) + "\n");
+      this.processus!.stdin!.write(JSON.stringify({ ...extra, id, texte, fichier }) + "\n");
     });
   }
 

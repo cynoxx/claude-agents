@@ -19,6 +19,7 @@
     "arreter": "bash scripts/arreter-bureau.sh",
     "voix": "tsx server/installer-voix.ts",
     "voix-humaine": "tsx server/choisir-voix.ts",
+    "voix-xtts": "tsx server/installer-xtts.ts",
     "appel": "tsx server/appel-essai.ts"
   },
   "dependencies": {

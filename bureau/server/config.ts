@@ -4,6 +4,7 @@ import path from "node:path";
 import { CONSEILLERS_DEFAUT, type ConseillerDef } from "./max/conseillers.ts";
 import type { FenetreConfig } from "./fenetre.ts";
 import type { ElevenLabsConfig } from "./voix/elevenlabs.ts";
+import type { XttsConfig } from "./voix/xtts.ts";
 
 export interface Projet {
   nom: string;
@@ -20,10 +21,13 @@ export interface VoixConfig {
   /** Micro au format avfoundation (ex. ":1") ; null = choisi automatiquement. */
   micro: string | null;
   /**
-   * « auto » : ElevenLabs si une voix est choisie (`npm run voix-humaine`), sinon Piper s'il est installé
+   * « auto » : ElevenLabs si une voix est choisie (`npm run voix-humaine`), sinon XTTS s'il est installé
+   * (`npm run voix-xtts`), sinon Piper s'il est installé
    * (`npm run voix`), sinon `say` ; ou imposer l'un d'eux.
    */
-  moteur: "auto" | "elevenlabs" | "piper" | "say";
+  moteur: "auto" | "elevenlabs" | "xtts" | "piper" | "say";
+  /** La voix neuronale locale XTTS (`npm run voix-xtts`). */
+  xtts: XttsConfig;
   /** La voix humaine de Max (ElevenLabs, dans le nuage). */
   elevenlabs: ElevenLabsConfig;
   /** La voix Piper (un nom de rhasspy/piper-voices). */
@@ -113,6 +117,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
     micro: null,
     moteur: "auto",
     elevenlabs: { cle: "", voix: null, nomVoix: null, modele: "eleven_multilingual_v2", stabilite: 0.45, similarite: 0.8, style: 0.2, vitesse: 1 },
+    xtts: { locuteur: "Damien Black", vitesse: 1, appareil: "cpu" },
     voixPiper: "fr_FR-tom-medium",
     vitessePiper: 1,
     voixMac: null,
@@ -172,7 +177,7 @@ export function loadConfig(dir: string): BureauConfig {
     projets: (user.projets ?? DEFAULT_CONFIG.projets).map((p) => ({ nom: p.nom, chemin: expandHome(p.chemin) })),
     modeles: { ...DEFAULT_CONFIG.modeles, ...user.modeles },
     limites: { ...DEFAULT_CONFIG.limites, ...user.limites },
-    voix: { ...DEFAULT_CONFIG.voix, ...user.voix, elevenlabs: { ...DEFAULT_CONFIG.voix.elevenlabs, ...user.voix?.elevenlabs } },
+    voix: { ...DEFAULT_CONFIG.voix, ...user.voix, elevenlabs: { ...DEFAULT_CONFIG.voix.elevenlabs, ...user.voix?.elevenlabs }, xtts: { ...DEFAULT_CONFIG.voix.xtts, ...user.voix?.xtts } },
     mac: { ...DEFAULT_CONFIG.mac, ...user.mac },
     visage: { ...DEFAULT_CONFIG.visage, ...user.visage },
     tempsParJour: { ...DEFAULT_CONFIG.tempsParJour, ...user.tempsParJour },

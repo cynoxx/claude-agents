@@ -1,3 +1,4 @@
 node_modules/
 web/dist/
 bureau.config.json
+__pycache__/

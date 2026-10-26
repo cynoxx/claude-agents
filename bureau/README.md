@@ -211,6 +211,23 @@ Dans `bureau.config.json` :
 
 `tempsParJour` est la limite en minutes par jour (0 = pas de limite) ; `objectifsParJour` est la barre à remplir (6 h d'études).
 
+## Une voix bien plus naturelle, gratuite, sur ton Mac (XTTS)
+
+XTTS v2 est une voix neuronale qui tourne sur ton Mac : pas d'abonnement, rien sur internet une fois installée, et bien plus naturelle que Piper.
+
+```bash
+cd ~/claude-agents/bureau
+git pull
+npm run voix-xtts
+```
+
+1. La commande te demande d'accepter la **licence du modèle** (Coqui CPML : usage personnel, non commercial). Tape **o**.
+2. Elle installe tout (environ **2,5 Go**, compte 5 à 15 minutes), puis télécharge le modèle (environ **1,8 Go**, une seule fois).
+3. Elle te fait **écouter 8 voix d'homme graves** qui disent une phrase de Max. Tape le numéro de celle que tu veux (`e3` pour réécouter la 3).
+4. `npm run arreter`, puis « Dis Siri, Max au rapport ».
+
+À savoir : Max met **1 à 3 secondes de plus** avant de parler (le Mac fabrique la voix). La commande affiche le temps de préparation de chaque voix pour que tu juges. Si XTTS plante, Max reprend tout seul Piper, puis la voix du Mac. Plus rapide sur un Mac Apple (M1, M2…) : essaie `"voix": { "xtts": { "appareil": "mps" } }` ; si ça plante, remets `"cpu"`. Pour revenir à Piper : `"voix": { "moteur": "piper" }`.
+
 ## Une voix vraiment humaine pour Max (ElevenLabs)
 
 Piper est gratuit mais sonne un peu robot. Pour une voix qu'on ne distingue presque pas d'un vrai doubleur :
