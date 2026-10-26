@@ -26,6 +26,41 @@ if (args[0] === "auth" && args[1] === "status") {
   process.exit(process.env.FAKE_AUTH === "out" ? 1 : 0);
 }
 
+// Mode conversation (Max en continu) : lit les messages sur stdin, répond en streaming.
+// Le message contient « quota » → limite atteinte ; « plante » → le processus meurt ; « outil » → appelle un outil.
+if (args.includes("--input-format")) {
+  const session = `fake-conv-${Math.random().toString(36).slice(2, 8)}`;
+  emit({ type: "system", subtype: "init", session_id: session });
+  const { createInterface } = await import("node:readline");
+  const rl = createInterface({ input: process.stdin });
+  let file = Promise.resolve();
+  rl.on("line", (ligne) => {
+    file = file.then(async () => {
+      const texte = JSON.parse(ligne).message.content;
+      if (process.env.FAKE_LOG) fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ message: texte }) + "\n");
+      if (texte.includes("plante")) {
+        process.stderr.write("erreur interne\n");
+        process.exit(1);
+      }
+      if (texte.includes("quota")) {
+        emit({ type: "result", subtype: "success", is_error: true, result: "Claude AI usage limit reached|1793865600", session_id: session });
+        return;
+      }
+      if (texte.includes("outil")) {
+        emit({ type: "assistant", message: { content: [{ type: "tool_use", id: "t1", name: "mcp__bureau__etat_bureau", input: {} }] } });
+      }
+      const reponse = process.env.FAKE_REPONSE ?? `Bien reçu : ${texte}. Autre chose ?`;
+      for (let i = 0; i < reponse.length; i += 7) {
+        emit({ type: "stream_event", event: { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: reponse.slice(i, i + 7) } } });
+        await sleep(delay);
+      }
+      emit({ type: "assistant", message: { content: [{ type: "text", text: reponse }] } });
+      emit({ type: "result", subtype: "success", is_error: false, result: reponse, session_id: session });
+    });
+  });
+  rl.on("close", () => file.then(() => process.exit(0)));
+} else {
+
 if (mode === "slow") await sleep(10_000);
 
 if (args.includes("--json-schema")) {
@@ -73,3 +108,4 @@ if (relecture) {
 await sleep(delay);
 emit({ type: "assistant", message: { content: [{ type: "text", text: "Travail terminé." }] } });
 emit({ type: "result", subtype: "success", is_error: false, result: "Travail terminé.", session_id: session });
+}
