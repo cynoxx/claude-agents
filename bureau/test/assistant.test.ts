@@ -1,0 +1,393 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { EventEmitter } from "node:events";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { Assistant, type OptionsAssistant } from "../server/max/assistant.ts";
+import { Cerveau } from "../server/max/cerveau.ts";
+import { Bouche } from "../server/voix/bouche.ts";
+import type { EtatBureau, MissionVue } from "../shared/protocol.ts";
+
+const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
+async function jusqua(cond: () => boolean, ms = 3000) {
+  const fin = Date.now() + ms;
+  while (!cond()) {
+    if (Date.now() > fin) throw new Error("délai dépassé");
+    await attendre(5);
+  }
+}
+
+class FausseOreille extends EventEmitter {
+  muet = false;
+  active = false;
+  demarrages = 0;
+  demarrer() {
+    this.active = true;
+    this.demarrages++;
+  }
+  arreter() {
+    this.active = false;
+    this.emit("arret");
+  }
+}
+
+/** Fausse bouche : chaque phrase dure `dureeMs`. */
+class FausseBouche extends EventEmitter {
+  dites: string[] = [];
+  private file: string[] = [];
+  private timer?: NodeJS.Timeout;
+  constructor(private dureeMs = 20) {
+    super();
+  }
+  get parle() {
+    return !!this.timer || this.file.length > 0;
+  }
+  dire(p: string) {
+    if (!p.trim()) return;
+    const silencieux = !this.parle;
+    this.file.push(p);
+    if (silencieux) {
+      this.emit("debut");
+      this.suivante();
+    }
+  }
+  taire() {
+    if (!this.parle) return;
+    this.file = [];
+    clearTimeout(this.timer);
+    this.timer = undefined;
+    this.emit("fin");
+  }
+  private suivante() {
+    const p = this.file.shift();
+    if (p === undefined) {
+      this.timer = undefined;
+      this.emit("fin");
+      return;
+    }
+    this.dites.push(p);
+    this.emit("phrase", p);
+    this.timer = setTimeout(() => this.suivante(), this.dureeMs);
+  }
+}
+
+class FauxCerveau extends EventEmitter {
+  actif = false;
+  recus: string[] = [];
+  consigne = "";
+  demarrer() {
+    this.actif = true;
+  }
+  envoyer(t: string) {
+    if (!this.actif) return false;
+    this.recus.push(t);
+    return true;
+  }
+  arreter() {
+    if (!this.actif) return;
+    this.actif = false;
+    this.emit("arret", { code: 0 });
+  }
+  repondre(texte: string, morceaux = 5) {
+    for (let i = 0; i < texte.length; i += morceaux) this.emit("texte", texte.slice(i, i + morceaux));
+    this.emit("fin", { texte, ok: true, quota: false });
+  }
+}
+
+class FauxManager extends EventEmitter {
+  mission: MissionVue | null = null;
+  snapshot(): EtatBureau {
+    return { claude: { ok: true }, mission: this.mission };
+  }
+  changer(m: MissionVue) {
+    this.mission = m;
+    this.emit("etat", this.snapshot());
+  }
+}
+
+const missionVue = (o: Partial<MissionVue>): MissionVue => ({
+  nom: "m1",
+  texte: "t",
+  titre: "Comparatif mutuelles",
+  phase: "travail",
+  etape: 0,
+  totalEtapes: 1,
+  debut: "2026-10-26T10:00:00.000Z",
+  max: { bulle: "", actions: [] },
+  robots: [],
+  ...o,
+});
+
+let oreille: FausseOreille;
+let bouche: FausseBouche;
+let cerveaux: FauxCerveau[];
+let manager: FauxManager;
+let a: Assistant;
+const cerveau = () => cerveaux.at(-1)!;
+
+function creer(o: Partial<OptionsAssistant> = {}) {
+  oreille = new FausseOreille();
+  bouche = new FausseBouche();
+  cerveaux = [];
+  manager = new FauxManager();
+  a = new Assistant({
+    oreille,
+    bouche,
+    creerCerveau: (consigne) => {
+      const c = new FauxCerveau();
+      c.consigne = consigne;
+      cerveaux.push(c);
+      return c;
+    },
+    manager,
+    carnet: () => ["- [2026-10-26] Prénom : Johan"],
+    missions: () => [],
+    motCle: "max",
+    suiteMs: 300,
+    veilleMs: 60_000,
+    dispos: { oreille: { ok: true }, bouche: { ok: true } },
+    ...o,
+  });
+}
+beforeEach(() => creer());
+afterEach(() => a.veille());
+
+describe("Assistant — réveil", () => {
+  it("dort au départ", () => {
+    expect(a.vue().etat).toBe("veille");
+    expect(oreille.active).toBe(false);
+  });
+
+  it("se réveille : micro allumé, cerveau démarré avec le carnet, et accueil immédiat", async () => {
+    a.reveiller();
+    expect(oreille.active).toBe(true);
+    expect(cerveau().actif).toBe(true);
+    expect(cerveau().consigne).toContain("Prénom : Johan");
+    expect(bouche.dites).toEqual(["Salut ! Je t'écoute."]);
+    await jusqua(() => a.vue().etat === "ecoute");
+    expect(a.vue().messages.map((m) => [m.de, m.texte])).toEqual([["max", "Salut ! Je t'écoute."]]);
+  });
+
+  it("ne refait rien si on le réveille alors qu'il est déjà réveillé", () => {
+    a.reveiller();
+    a.reveiller();
+    expect(cerveaux).toHaveLength(1);
+    expect(oreille.demarrages).toBe(1);
+    expect(bouche.dites).toHaveLength(1);
+  });
+});
+
+describe("Assistant — écoute", () => {
+  beforeEach(async () => {
+    a.reveiller();
+    await jusqua(() => a.vue().etat === "ecoute");
+    await attendre(400); // fin de la fenêtre de suite après l'accueil
+  });
+
+  it("transmet à Max ce qui commence par « Max »", () => {
+    oreille.emit("phrase", "Max, quelle heure est-il ?");
+    expect(cerveau().recus).toEqual(["quelle heure est-il ?"]);
+    expect(a.vue().etat).toBe("reflechit");
+    expect(a.vue().messages.at(-1)).toMatchObject({ de: "toi", texte: "quelle heure est-il ?" });
+  });
+
+  it("ignore ce qui ne lui est pas adressé", () => {
+    oreille.emit("phrase", "Tu peux baisser la télé ?");
+    expect(cerveau().recus).toEqual([]);
+    expect(a.vue().messages).toHaveLength(1);
+  });
+
+  it("répond « Oui ? » quand on l'appelle sans rien dire d'autre, puis écoute la suite sans son nom", async () => {
+    oreille.emit("phrase", "Max ?");
+    expect(bouche.dites.at(-1)).toBe("Oui ?");
+    await jusqua(() => a.vue().etat === "ecoute");
+    oreille.emit("phrase", "Quel temps fait-il ?");
+    expect(cerveau().recus).toEqual(["Quel temps fait-il ?"]);
+  });
+
+  it("dit la réponse phrase par phrase pendant qu'elle s'écrit, puis l'affiche en entier", async () => {
+    oreille.emit("phrase", "Max, quelle heure est-il ?");
+    cerveau().repondre("Il est midi. Bonne journée !");
+    await jusqua(() => a.vue().etat === "ecoute");
+    expect(bouche.dites.slice(1)).toEqual(["Il est midi.", "Bonne journée !"]);
+    expect(a.vue().messages.at(-1)).toMatchObject({ de: "max", texte: "Il est midi. Bonne journée !" });
+  });
+
+  it("enlève le markdown et les emojis avant de parler", async () => {
+    oreille.emit("phrase", "Max, liste ?");
+    cerveau().repondre("**Voici** la liste ✅\n- un\n- deux");
+    await jusqua(() => a.vue().etat === "ecoute");
+    expect(bouche.dites.slice(1)).toEqual(["Voici la liste.", "un.", "deux."]);
+  });
+
+  it("a l'oreille coupée pendant qu'il parle, puis la rouvre", async () => {
+    oreille.emit("phrase", "Max, raconte");
+    cerveau().repondre("Une phrase. Une autre.");
+    expect(oreille.muet).toBe(true);
+    oreille.emit("phrase", "Max, coucou");
+    expect(cerveau().recus).toEqual(["raconte"]);
+    await jusqua(() => !oreille.muet);
+    expect(a.vue().etat).toBe("ecoute");
+  });
+
+  it("écoute la suite sans son nom pendant quelques secondes après sa réponse, puis plus", async () => {
+    oreille.emit("phrase", "Max, ça va ?");
+    cerveau().repondre("Oui, et toi ?");
+    await jusqua(() => !oreille.muet);
+    oreille.emit("phrase", "Très bien merci");
+    expect(cerveau().recus).toEqual(["ça va ?", "Très bien merci"]);
+    cerveau().repondre("Super.");
+    await jusqua(() => !oreille.muet);
+    await attendre(400);
+    oreille.emit("phrase", "Et la télé alors");
+    expect(cerveau().recus).toHaveLength(2);
+  });
+
+  it("se tait sur demande et ne dit pas la fin de la réponse en cours", async () => {
+    oreille.emit("phrase", "Max, raconte une histoire");
+    cerveau().emit("texte", "Il était une fois. ");
+    a.taire();
+    cerveau().emit("texte", "Un roi. ");
+    cerveau().emit("fin", { texte: "Il était une fois. Un roi.", ok: true, quota: false });
+    await jusqua(() => a.vue().etat === "ecoute");
+    expect(bouche.dites).not.toContain("Un roi.");
+    oreille.emit("phrase", "Max, encore");
+    cerveau().repondre("Deuxième réponse.");
+    await jusqua(() => bouche.dites.includes("Deuxième réponse."));
+  });
+
+  it("prévient quand le quota est atteint", async () => {
+    oreille.emit("phrase", "Max, bonjour");
+    cerveau().emit("fin", { texte: "usage limit", ok: false, quota: true });
+    await jusqua(() => a.vue().etat === "ecoute");
+    expect(bouche.dites.at(-1)).toBe("Mon quota Claude est atteint. Réessaie un peu plus tard.");
+  });
+
+  it("raconte les outils qu'il utilise", () => {
+    oreille.emit("phrase", "Max, lance une recherche");
+    cerveau().emit("outil", { nom: "mcp__bureau__lancer_mission", entree: { texte: "x" } });
+    cerveau().emit("outil", { nom: "mcp__bureau__memoriser", entree: { note: "Aime le café" } });
+    cerveau().emit("outil", { nom: "WebSearch", entree: { query: "météo Paris" } });
+    expect(a.vue().messages.slice(-3).map((m) => [m.de, m.texte])).toEqual([
+      ["bureau", "🛠 Max lance une mission"],
+      ["bureau", "📝 Max note dans son carnet : Aime le café"],
+      ["bureau", "🔎 Max cherche sur le web : météo Paris"],
+    ]);
+  });
+
+  it("se relance au message suivant si son cerveau s'arrête", async () => {
+    cerveau().actif = false;
+    cerveau().emit("arret", { code: 1, erreur: "erreur interne" });
+    expect(a.vue().cerveau).toEqual({ ok: false, detail: "erreur interne" });
+    expect(a.vue().messages.at(-1)?.texte).toContain("Max a eu un problème");
+    a.ecrire("Tu es là ?");
+    expect(cerveaux).toHaveLength(2);
+    expect(cerveau().recus).toEqual(["Tu es là ?"]);
+    expect(a.vue().cerveau.ok).toBe(true);
+  });
+});
+
+describe("Assistant — veille", () => {
+  it("se met en veille après sa phrase quand Max le demande", async () => {
+    a.reveiller();
+    await jusqua(() => a.vue().etat === "ecoute");
+    oreille.emit("phrase", "Max, bonne nuit");
+    a.veilleApresParole();
+    expect(a.vue().etat).not.toBe("veille");
+    cerveau().repondre("Bonne nuit !");
+    await jusqua(() => a.vue().etat === "veille");
+    expect(bouche.dites.at(-1)).toBe("Bonne nuit !");
+    expect(oreille.active).toBe(false);
+    expect(cerveau().actif).toBe(false);
+  });
+
+  it("se met en veille tout seul après un long silence", async () => {
+    creer({ veilleMs: 300 });
+    a.reveiller();
+    await jusqua(() => a.vue().etat === "veille", 3000);
+    expect(bouche.dites.at(-1)).toBe("Je me mets en veille.");
+    expect(oreille.active).toBe(false);
+  });
+
+  it("se réveille sans accueil quand on lui écrit pendant qu'il dort", () => {
+    a.ecrire("Bonjour Max");
+    expect(a.vue().etat).toBe("reflechit");
+    expect(bouche.dites).toEqual([]);
+    expect(cerveau().recus).toEqual(["Bonjour Max"]);
+  });
+
+  it("marche sans micro (écrit seulement) et le dit", () => {
+    creer({ oreille: null, dispos: { oreille: { ok: false, detail: "whisper-cli introuvable" }, bouche: { ok: true } } });
+    a.reveiller();
+    expect(a.vue().oreille).toEqual({ ok: false, detail: "whisper-cli introuvable" });
+    a.ecrire("Salut");
+    expect(cerveau().recus).toEqual(["Salut"]);
+  });
+});
+
+describe("Assistant — missions", () => {
+  it("annonce une mission terminée avec son résumé", async () => {
+    a.reveiller();
+    await jusqua(() => a.vue().etat === "ecoute");
+    manager.changer(missionVue({ phase: "relecture" }));
+    manager.changer(missionVue({ phase: "termine", resultat: "# R\n## En 3 lignes\n- La MAIF est la moins chère.\n## Détail\nlong" }));
+    const recu = cerveau().recus.at(-1)!;
+    expect(recu.startsWith("[Bureau] La mission « Comparatif mutuelles » est terminée.")).toBe(true);
+    expect(recu).toContain("La MAIF est la moins chère.");
+    expect(a.vue().messages.at(-1)).toMatchObject({ de: "bureau", texte: "✅ Mission terminée : Comparatif mutuelles" });
+  });
+
+  it("prévient d'une pause ou d'un échec, une seule fois", async () => {
+    a.reveiller();
+    await jusqua(() => a.vue().etat === "ecoute");
+    manager.changer(missionVue({ phase: "travail" }));
+    manager.changer(missionVue({ phase: "pause" }));
+    manager.changer(missionVue({ phase: "pause" }));
+    expect(cerveau().recus.filter((r) => r.includes("en pause"))).toHaveLength(1);
+    manager.changer(missionVue({ nom: "m2", phase: "planification" }));
+    manager.changer(missionVue({ nom: "m2", phase: "echec", erreur: "plan invalide" }));
+    expect(cerveau().recus.at(-1)).toContain("a échoué : plan invalide");
+  });
+
+  it("ne dit rien des missions pendant qu'il dort", () => {
+    manager.changer(missionVue({ phase: "relecture" }));
+    manager.changer(missionVue({ phase: "termine", resultat: "# R\n\nFini." }));
+    expect(cerveaux).toHaveLength(0);
+  });
+});
+
+describe("Assistant — intégration avec un vrai cerveau et une vraie bouche (faux binaires)", () => {
+  const envAvant = { ...process.env };
+  afterEach(() => {
+    process.env = { ...envAvant };
+  });
+
+  it("entend « Max, bonjour », fait répondre le faux claude et le fait dire au faux say", async () => {
+    const dossier = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-assistant-"));
+    process.env.FAKE_SAY_LOG = path.join(dossier, "say.jsonl");
+    process.env.FAKE_DELAY = "1";
+    oreille = new FausseOreille();
+    const vraieBouche = new Bouche({ bin: path.join(__dirname, "fake-say.mjs"), voix: "Thomas", debit: 185 });
+    await vraieBouche.preparer();
+    a = new Assistant({
+      oreille,
+      bouche: vraieBouche,
+      creerCerveau: (consigne) => new Cerveau({ bin: path.join(__dirname, "fake-claude.mjs"), modele: "opus", consigne, mcpConfig: "/m.json", cwd: dossier }),
+      manager: new FauxManager(),
+      carnet: () => [],
+      missions: () => [],
+      motCle: "max",
+      suiteMs: 300,
+      veilleMs: 60_000,
+      dispos: { oreille: { ok: true }, bouche: { ok: true } },
+    });
+    a.reveiller();
+    await jusqua(() => a.vue().etat === "ecoute");
+    await attendre(400);
+    oreille.emit("phrase", "Max, bonjour");
+    await jusqua(() => a.vue().messages.some((m) => m.de === "max" && m.texte.startsWith("Bien reçu")), 5000);
+    await jusqua(() => a.vue().etat === "ecoute");
+    const dits = fs.readFileSync(process.env.FAKE_SAY_LOG!, "utf8").trim().split("\n").map((l) => JSON.parse(l).at(-1));
+    expect(dits).toEqual(["Salut ! Je t'écoute.", "Bien reçu : bonjour.", "Autre chose ?"]);
+  }, 15_000);
+});
