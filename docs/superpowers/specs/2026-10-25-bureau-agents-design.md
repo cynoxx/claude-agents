@@ -56,7 +56,7 @@ Node.js 20 ou plus (`node --version` pour vérifier ; sinon `brew install node`)
 git clone https://github.com/cynoxx/claude-agents.git
 cd claude-agents/bureau
 npm install
-npm run setup     # crée bureau.config.json et vérifie que `claude` répond
+npm run setup
 ```
 
 Ouvre ensuite `bureau.config.json` et indique où sont tes projets, pour que le Codeur puisse y
