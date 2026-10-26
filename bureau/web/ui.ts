@@ -93,7 +93,7 @@ export class Interface {
 
     const enCours = !!m && EN_COURS.includes(m.phase);
     const pause = m?.phase === "pause";
-    $("phase").textContent = m ? this.libellePhase(m) : "Prêt pour une mission";
+    $("phase").textContent = m ? this.libellePhase(m) : "En attente d'une quête";
     $("titre-mission").textContent = m ? m.titre : "";
     $("btn-arreter").hidden = !(enCours || pause);
     $("btn-reprendre").hidden = !pause;
@@ -170,12 +170,12 @@ export class Interface {
       c.querySelector("[data-dossier]")!.addEventListener("click", () => this.envoyer({ type: "ouvrir-dossier", nom: v.nom }));
       return;
     }
-    c.innerHTML = "<h2>📜 Historique</h2><p class='discret'>Chargement…</p>";
+    c.innerHTML = "<h2>📜 Journal des quêtes</h2><p class='discret'>Chargement…</p>";
     try {
       const missions: MissionResume[] = await (await fetch("/api/missions")).json();
       if (this.vue !== v) return;
       c.innerHTML =
-        "<h2>📜 Historique</h2>" +
+        "<h2>📜 Journal des quêtes</h2>" +
         (missions.length
           ? `<ul class="historique">${missions
               .map(
@@ -186,7 +186,7 @@ export class Interface {
           : "<p class='discret'>Aucune mission pour l'instant.</p>");
       c.querySelectorAll<HTMLButtonElement>("[data-nom]").forEach((b) => b.addEventListener("click", () => this.ouvrirAncienne(b.dataset.nom!)));
     } catch {
-      c.innerHTML = "<h2>📜 Historique</h2><p>Impossible de charger l'historique.</p>";
+      c.innerHTML = "<h2>📜 Journal des quêtes</h2><p>Impossible de charger l'historique.</p>";
     }
   }
 

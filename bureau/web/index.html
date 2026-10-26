@@ -67,31 +67,46 @@
       </form>
     </section>
 
-    <header class="barre">
-      <div class="titre">🏢 Le Bureau</div>
-      <div class="statut">
-        <span id="phase">Prêt pour une mission</span>
+    <header class="hud">
+      <div class="hud-logo" aria-label="Le Bureau"><span class="hud-logo-haut">LE</span><span class="hud-logo-bas">BUREAU</span></div>
+      <div id="hud-joueur" class="hud-joueur" hidden>
+        <div class="hud-niv"><span>NIV</span><strong id="hud-niveau">1</strong></div>
+        <div class="hud-xp">
+          <div class="hud-xp-barre" role="progressbar" aria-label="Expérience" aria-valuemin="0" aria-valuemax="100"><div id="hud-xp" class="hud-xp-plein"></div></div>
+          <div id="hud-xp-texte" class="hud-xp-texte">0 / 60 XP</div>
+        </div>
+        <div id="hud-serie" class="hud-pastille" title="Jours d'affilée avec au moins une session">🔥 0</div>
+        <div id="hud-echeance" class="hud-pastille" hidden></div>
+      </div>
+      <div class="statut hud-quete">
+        <span class="hud-quete-titre">QUÊTE</span>
+        <span id="phase">En attente d'une quête</span>
         <span id="chrono"></span>
         <span id="titre-mission"></span>
       </div>
-      <nav>
+      <nav class="hud-menu">
         <button id="btn-jarvis" title="Revenir à l'écran de Max">🔵 Max</button>
-        <button id="btn-resultat" hidden>📄 Résultat</button>
+        <button id="btn-resultat" hidden>🏆 Résultat</button>
         <button id="btn-reprendre" hidden>▶️ Reprendre</button>
         <button id="btn-arreter" class="danger" hidden>⏹ Arrêter</button>
-        <button id="btn-historique">📜 Historique</button>
-        <button id="btn-dossier">📁 Dossier</button>
+        <button id="btn-historique" title="Les quêtes passées">📜 Quêtes</button>
+        <button id="btn-dossier" title="Ouvrir le dossier des missions">📁 Dossier</button>
       </nav>
     </header>
     <div id="bandeau" class="bandeau" hidden></div>
     <div id="connexion" class="bandeau" hidden>🔌 Connexion au Bureau perdue, reconnexion…</div>
+    <div id="carte-zone" class="carte-zone" aria-hidden="true" hidden><small>— ZONE —</small><strong>LE BUREAU</strong><span>Max et son équipe</span></div>
 
     <main>
-      <div id="jeu"></div>
-      <p class="aide">Clique sur un robot (ou sur Max) pour voir tout ce qu'il fait. Pour parler à Max, commence ta phrase par « Max ».</p>
+      <div class="borne">
+        <div class="borne-haut"><span class="borne-etoile">★</span> LE BUREAU <span class="borne-etoile">★</span><span class="borne-direct"><i></i> EN DIRECT</span></div>
+        <div id="jeu"></div>
+      </div>
+      <p class="aide">Clique sur un personnage (et sur le chat 🐈) pour voir ce qu'il fait. Pour parler à Max, commence ta phrase par « Max ».</p>
     </main>
 
-    <section id="conversation" class="conversation" hidden>
+    <section id="conversation" class="conversation fenetre" hidden>
+      <div class="fenetre-titre">💬 Conversation avec Max</div>
       <div class="conv-tete">
         <span id="voyant" class="voyant">😴 Max dort</span>
         <span id="organes" class="organes"></span>
@@ -104,24 +119,24 @@
         <span id="coach-jour" class="puce-coach"></span>
         <span id="coach-echeance" class="puce-coach" hidden></span>
         <span class="espace"></span>
-        <button type="button" id="btn-session">⏱ Session 25 min</button>
+        <button type="button" id="btn-session" class="bouton-action">⏱ Session 25 min</button>
         <button type="button" id="btn-fin-session" hidden>⏹ Stop</button>
       </div>
       <ol id="messages" class="messages" aria-live="polite"></ol>
       <form id="form-max" class="form-max">
         <input id="texte-max" autocomplete="off" placeholder="Écris à Max… ou dis-lui « Max, … »" />
-        <button type="submit">Envoyer</button>
+        <button type="submit" class="bouton-action">Envoyer ▶</button>
       </form>
     </section>
 
-    <details class="mission-directe">
-      <summary>Lancer une mission directement, sans passer par Max</summary>
-    <form id="mission">
-      <textarea id="texte" rows="2" placeholder="Quelle est la mission ? (Entrée pour lancer, Maj+Entrée pour aller à la ligne)"></textarea>
-      <div class="boutons">
-        <button type="submit" id="btn-lancer">🚀 Lancer</button>
-      </div>
-    </form>
+    <details class="mission-directe fenetre">
+      <summary>📜 Proposer une quête directement, sans passer par Max</summary>
+      <form id="mission">
+        <textarea id="texte" rows="2" placeholder="Quelle est la quête ? (Entrée pour lancer, Maj+Entrée pour aller à la ligne)"></textarea>
+        <div class="boutons">
+          <button type="submit" id="btn-lancer" class="bouton-action">🚀 Lancer</button>
+        </div>
+      </form>
     </details>
 
     <aside id="panneau" class="panneau" hidden>

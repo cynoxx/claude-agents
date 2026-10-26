@@ -19,6 +19,8 @@
     "arreter": "bash scripts/arreter-bureau.sh"
   },
   "dependencies": {
+    "@fontsource/pixelify-sans": "^5.3.0",
+    "@fontsource/press-start-2p": "^5.3.0",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@vladmandic/face-api": "^1.7.15",
     "phaser": "^3.90.0",

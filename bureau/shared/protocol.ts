@@ -100,6 +100,10 @@ export interface CoachVue {
   minuteur: { type: "travail" | "pause"; sujet: string; fin: string } | null;
   /** Minutes de travail notées aujourd'hui. */
   aujourdhui: number;
+  /** Minutes de travail notées depuis le début (l'XP du joueur). */
+  total: number;
+  /** Jours d'affilée avec au moins une session. */
+  serie: number;
   echeance: { nom: string; jours: number } | null;
 }
 

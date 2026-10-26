@@ -358,7 +358,7 @@ describe("Assistant — missions", () => {
 
 class FauxCoach extends EventEmitter {
   vue() {
-    return { minuteur: null, aujourdhui: 50, echeance: { nom: "Examen PASS", jours: 49 } };
+    return { minuteur: null, aujourdhui: 50, total: 50, serie: 1, echeance: { nom: "Examen PASS", jours: 49 } };
   }
   contexte() {
     return "Nous sommes le lundi 26 octobre 2026.";

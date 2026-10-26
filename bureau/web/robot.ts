@@ -36,23 +36,24 @@ export class Robot extends Phaser.GameObjects.Container {
   ) {
     super(scene, x, y);
     this.corridorY = corridorY;
+    const ombre = scene.add.ellipse(0, -1, 34, 9, 0x000000, 0.28);
     this.sprite = scene.add.image(0, 0, cleRobot(role)).setOrigin(0.5, 1).setScale(ECHELLE);
+    // une plaque de nom, façon jeu vidéo
     const etiquette = scene.add
-      .text(0, 4, nom, { fontFamily: "ui-monospace, Menlo, monospace", fontSize: "12px", color: "#ffffff", fontStyle: "bold" })
-      .setOrigin(0.5, 0)
-      .setStroke("#1b1b2f", 4);
+      .text(0, 5, nom, { fontFamily: '"Pixelify Sans", sans-serif', fontSize: "13px", color: "#ffffff", backgroundColor: "#1b1b2fd9", padding: { x: 5, y: 1 } })
+      .setOrigin(0.5, 0);
     this.icone = scene.add.text(20, -58, "", { fontSize: "20px" }).setOrigin(0.5, 1);
 
     this.bulleFond = scene.add.graphics();
     this.bulleTexte = scene.add.text(0, 0, "", {
-      fontFamily: "ui-monospace, Menlo, monospace",
-      fontSize: "13px",
+      fontFamily: '"Pixelify Sans", sans-serif',
+      fontSize: "14px",
       color: "#1b1b2f",
       wordWrap: { width: 176 },
     });
     this.bulle = scene.add.container(0, -56, [this.bulleFond, this.bulleTexte]).setVisible(false);
 
-    this.add([this.sprite, etiquette, this.icone, this.bulle]);
+    this.add([ombre, this.sprite, etiquette, this.icone, this.bulle]);
     this.setSize(48, 60);
     // la zone cliquable est relative au coin haut-gauche du conteneur (48×60) : on la recale sur le sprite
     this.setInteractive(new Phaser.Geom.Rectangle(0, -24, 48, 64), Phaser.Geom.Rectangle.Contains);
@@ -144,16 +145,24 @@ export class Robot extends Phaser.GameObjects.Container {
       this.bulle.setVisible(false);
       return;
     }
+    const apparait = !this.bulle.visible;
     this.bulleTexte.setText(texte);
     const pad = 7;
     const l = this.bulleTexte.width + pad * 2;
     const h = this.bulleTexte.height + pad * 2;
     this.bulleTexte.setPosition(-l / 2 + pad, -h - 8 + pad);
+    // une bulle de BD en pixels : coins carrés, bord épais, petite ombre
     this.bulleFond.clear();
-    this.bulleFond.fillStyle(0xffffff, 1).lineStyle(2, 0x1b1b2f, 1);
-    this.bulleFond.fillRoundedRect(-l / 2, -h - 8, l, h, 6).strokeRoundedRect(-l / 2, -h - 8, l, h, 6);
-    this.bulleFond.fillTriangle(-6, -9, 6, -9, 0, 0).lineBetween(-6, -8, 0, 0).lineBetween(6, -8, 0, 0);
+    this.bulleFond.fillStyle(0x000000, 0.3).fillRect(-l / 2 + 3, -h - 5, l, h);
+    this.bulleFond.fillStyle(0x1b1b2f, 1).fillRect(-l / 2 - 2, -h - 10, l + 4, h + 4);
+    this.bulleFond.fillStyle(0xffffff, 1).fillRect(-l / 2, -h - 8, l, h);
+    this.bulleFond.fillStyle(0x1b1b2f, 1).fillTriangle(-7, -7, 7, -7, 0, 1);
+    this.bulleFond.fillStyle(0xffffff, 1).fillTriangle(-4, -8, 4, -8, 0, -2);
     this.bulle.setVisible(true);
+    if (apparait) {
+      this.bulle.setScale(0.4);
+      this.scene.tweens.add({ targets: this.bulle, scale: 1, duration: 180, ease: "Back.easeOut" });
+    }
     this.bulleL = l;
     this.recadrerBulle();
   }

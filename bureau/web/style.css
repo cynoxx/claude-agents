@@ -1,13 +1,20 @@
+/* Le Bureau, façon jeu vidéo : polices pixel, fenêtres de RPG, boutons d'arcade, HUD du joueur. */
 :root {
-  --fond: #14142b;
-  --surface: #22223b;
-  --surface-2: #2d2d4d;
+  --fond: #0e0c1d;
+  --surface: #1b1838;
+  --surface-2: #2a2656;
   --texte: #f4f4f4;
-  --discret: #a9a9c8;
-  --or: #f2c14e;
+  --discret: #a9a6d6;
+  --or: #ffcd3c;
+  --or-fonce: #c77d0a;
+  --cyan: #7df9ff;
+  --vert: #47d16c;
   --rouge: #e43b44;
-  --contour: #0b0b18;
+  --contour: #05040c;
+  --cadre: #f4f4f4;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --pixel: "Pixelify Sans", system-ui, sans-serif;
+  --titre: "Press Start 2P", var(--mono);
 }
 
 * {
@@ -17,69 +24,213 @@
 html,
 body {
   margin: 0;
-  background: var(--fond);
   color: var(--texte);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 15px;
+  font-family: var(--pixel);
+  font-size: 16px;
+}
+body {
+  min-height: 100vh;
+  background-color: var(--fond);
+  /* un ciel d'étoiles en pixels, et une grille très discrète */
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff8 50%, transparent 51%),
+    radial-gradient(1px 1px at 120px 90px, #fff6 50%, transparent 51%),
+    radial-gradient(2px 2px at 190px 150px, #7df9ff55 50%, transparent 51%),
+    radial-gradient(1px 1px at 260px 40px, #fff5 50%, transparent 51%),
+    linear-gradient(#ffffff05 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff05 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 0%, #2a2460 0%, transparent 60%);
+  background-size: 300px 200px, 300px 200px, 300px 200px, 300px 200px, 24px 24px, 24px 24px, 100% 100%;
 }
 
+/* --- boutons d'arcade -------------------------------------------------------------------------- */
 button {
-  font: inherit;
+  font-family: var(--pixel);
+  font-size: 15px;
   color: var(--texte);
-  background: var(--surface-2);
-  border: 2px solid var(--contour);
-  border-radius: 6px;
-  padding: 6px 12px;
-  box-shadow: 0 3px 0 var(--contour);
+  background: linear-gradient(#433d86 0 50%, #37327a 50% 100%);
+  border: 0;
+  border-radius: 0;
+  padding: 7px 13px 9px;
+  box-shadow:
+    0 0 0 2px var(--contour),
+    inset 0 2px 0 #ffffff30,
+    inset 0 -3px 0 #00000055,
+    0 4px 0 2px var(--contour);
   cursor: pointer;
+  transition: transform 0.05s, filter 0.1s;
 }
 button:hover:not(:disabled) {
-  filter: brightness(1.2);
+  filter: brightness(1.25);
 }
 button:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--contour);
+  transform: translateY(3px);
+  box-shadow:
+    0 0 0 2px var(--contour),
+    inset 0 2px 0 #ffffff30,
+    inset 0 -2px 0 #00000055,
+    0 1px 0 2px var(--contour);
+}
+button:focus-visible {
+  outline: 3px solid var(--or);
+  outline-offset: 4px;
 }
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 button.danger {
-  background: #7a2530;
+  background: linear-gradient(#c6303c 0 50%, #a8252f 50% 100%);
+}
+.bouton-action {
+  color: #1b1b2f;
+  font-weight: 700;
+  background: linear-gradient(#ffd94f 0 50%, #f5b81c 50% 100%);
 }
 [hidden] {
   display: none !important;
 }
+input,
+textarea {
+  font-family: var(--pixel);
+  font-size: 16px;
+}
 
-.barre {
+/* --- le HUD du haut --------------------------------------------------------------------------- */
+.hud {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 10px 16px;
-  background: var(--surface);
-  border-bottom: 3px solid var(--contour);
+  gap: 10px 18px;
+  padding: 10px 18px 12px;
+  background: linear-gradient(#1f1b47, #15122f);
+  box-shadow:
+    0 3px 0 #3f388f,
+    0 6px 0 var(--contour);
+  position: relative;
+  z-index: 5;
 }
-.titre {
-  font-family: var(--mono);
-  font-weight: bold;
-  font-size: 18px;
+.hud-logo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  font-family: var(--titre);
   color: var(--or);
+  text-shadow:
+    2px 2px 0 var(--or-fonce),
+    4px 4px 0 var(--contour);
 }
-.statut {
+.hud-logo-haut {
+  font-size: 9px;
+  letter-spacing: 0.5em;
+  color: var(--cyan);
+  text-shadow: 2px 2px 0 var(--contour);
+  margin-bottom: 4px;
+}
+.hud-logo-bas {
+  font-size: 18px;
+}
+.hud-joueur {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #0b0a1a;
+  box-shadow:
+    0 0 0 2px #3f388f,
+    0 0 0 4px var(--contour);
+}
+.hud-joueur.monte {
+  animation: niveau-gagne 1.2s ease-out;
+}
+@keyframes niveau-gagne {
+  20% {
+    box-shadow:
+      0 0 0 2px var(--or),
+      0 0 24px 6px var(--or);
+  }
+}
+.hud-niv {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(#ffd94f, #f0a818);
+  color: #1b1b2f;
+  box-shadow:
+    0 0 0 2px var(--contour),
+    inset 0 -3px 0 #00000040;
+  line-height: 1;
+}
+.hud-niv span {
+  font-family: var(--titre);
+  font-size: 7px;
+  margin-top: 4px;
+}
+.hud-niv strong {
+  font-family: var(--titre);
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+.hud-xp {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.hud-xp-barre {
+  width: 150px;
+  height: 14px;
+  background: #241f4d;
+  box-shadow: 0 0 0 2px var(--contour);
+  position: relative;
+  overflow: hidden;
+}
+.hud-xp-plein {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #47d16c 0 8px, #3bb35b 8px 10px);
+  box-shadow: inset 0 3px 0 #ffffff40;
+  transition: width 0.8s steps(12);
+}
+.hud-xp-texte {
+  font-size: 12px;
+  color: var(--discret);
+  font-variant-numeric: tabular-nums;
+}
+.hud-pastille {
+  font-size: 14px;
+  padding: 4px 8px;
+  background: #241f4d;
+  box-shadow: 0 0 0 2px var(--contour);
+  white-space: nowrap;
+}
+.hud-pastille[data-chaud="oui"] {
+  color: #ffb347;
+}
+.hud-quete {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
-  align-items: baseline;
+  gap: 4px 10px;
+  align-items: center;
   min-width: 0;
 }
+.hud-quete-titre {
+  font-family: var(--titre);
+  font-size: 8px;
+  color: #1b1b2f;
+  background: var(--cyan);
+  padding: 4px 6px;
+  box-shadow: 0 0 0 2px var(--contour);
+}
 #phase {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 17px;
 }
 #chrono {
-  font-family: var(--mono);
-  color: var(--discret);
+  font-family: var(--titre);
+  font-size: 10px;
+  color: var(--or);
 }
 #titre-mission {
   color: var(--discret);
@@ -88,63 +239,206 @@ button.danger {
   white-space: nowrap;
   max-width: 40ch;
 }
-nav {
+.hud-menu {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .bandeau {
   padding: 10px 16px;
   background: #5c1d24;
-  border-bottom: 2px solid var(--contour);
+  box-shadow: 0 3px 0 var(--contour);
 }
 
+/* --- la carte « ZONE : LE BUREAU » ------------------------------------------------------------ */
+.carte-zone {
+  position: fixed;
+  left: 50%;
+  top: 38%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 34px;
+  transform: translate(-50%, -50%);
+  background: #05040cdd;
+  box-shadow:
+    0 0 0 3px var(--cadre),
+    0 0 0 6px var(--contour);
+  pointer-events: none;
+  opacity: 0;
+}
+.carte-zone.visible {
+  animation: zone 2.5s ease-in-out forwards;
+}
+.carte-zone small {
+  font-family: var(--titre);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--cyan);
+}
+.carte-zone strong {
+  font-family: var(--titre);
+  font-size: 26px;
+  color: var(--or);
+  text-shadow:
+    3px 3px 0 var(--or-fonce),
+    6px 6px 0 var(--contour);
+}
+.carte-zone span {
+  color: var(--discret);
+}
+@keyframes zone {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.4em;
+  }
+  18%,
+  75% {
+    opacity: 1;
+    letter-spacing: normal;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* --- la borne d'arcade autour du jeu ---------------------------------------------------------- */
 main {
-  padding: 12px 16px 0;
+  padding: 18px 16px 0;
+}
+.borne {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 14px 14px;
+  background: linear-gradient(#26224f, #17142f);
+  box-shadow:
+    0 0 0 4px var(--contour),
+    inset 0 3px 0 #4b44a3,
+    inset 0 -4px 0 #0b0a1a,
+    0 10px 0 4px #00000066;
+}
+.borne-haut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  padding: 10px 0;
+  font-family: var(--titre);
+  font-size: 13px;
+  color: var(--or);
+  text-shadow:
+    0 0 8px #ffcd3c88,
+    2px 2px 0 var(--contour);
+}
+.borne-etoile {
+  color: var(--cyan);
+  animation: scintille 1.6s steps(2) infinite;
+}
+.borne-direct {
+  position: absolute;
+  right: 4px;
+  font-size: 8px;
+  color: #ff8a8a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-shadow: none;
+}
+.borne-direct i {
+  width: 8px;
+  height: 8px;
+  background: var(--rouge);
+  box-shadow: 0 0 8px var(--rouge);
+  animation: scintille 1s steps(2) infinite;
+}
+@keyframes scintille {
+  50% {
+    opacity: 0.25;
+  }
 }
 #jeu {
-  max-width: 960px;
-  margin: 0 auto;
-  border: 3px solid var(--contour);
-  border-radius: 8px;
-  overflow: hidden;
+  position: relative;
   line-height: 0;
+  box-shadow:
+    0 0 0 3px var(--contour),
+    0 0 0 6px #4b44a3,
+    0 0 0 8px var(--contour);
+  margin: 0 8px;
+}
+/* un léger effet d'écran cathodique : lignes de balayage et bords assombris */
+#jeu::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(#0000 0 2px, #00000014 2px 3px),
+    radial-gradient(ellipse at 50% 50%, transparent 65%, #00000055 100%);
 }
 .aide {
   text-align: center;
   color: var(--discret);
-  font-size: 13px;
-  margin: 8px 0 0;
+  font-size: 14px;
+  margin: 14px 0 0;
 }
 
+/* --- les fenêtres de RPG ------------------------------------------------------------------- */
+.fenetre {
+  position: relative;
+  background: linear-gradient(180deg, #221e63 0%, #15123a 100%);
+  box-shadow:
+    0 0 0 3px var(--cadre),
+    0 0 0 6px var(--contour),
+    inset 0 0 0 3px #3b35a0,
+    0 10px 0 6px #00000055;
+}
+.fenetre-titre {
+  position: absolute;
+  top: -14px;
+  left: 18px;
+  font-family: var(--titre);
+  font-size: 9px;
+  color: #1b1b2f;
+  background: var(--or);
+  padding: 6px 9px;
+  box-shadow: 0 0 0 3px var(--contour);
+}
 .conversation {
   max-width: 960px;
-  margin: 12px auto 0;
-  padding: 0 16px;
+  margin: 34px auto 0;
+  padding: 24px 18px 16px;
+}
+@media (min-width: 1000px) {
+  .conversation {
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 .conv-tete {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  margin-bottom: 8px;
+  gap: 10px 12px;
+  margin-bottom: 10px;
 }
 .voyant {
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 2px solid var(--contour);
+  font-weight: 700;
+  padding: 5px 10px;
+  background: #0b0a1a;
+  box-shadow: 0 0 0 2px var(--contour);
 }
 .voyant[data-etat="ecoute"] {
-  background: #23533a;
+  background: #1d5a34;
 }
 .voyant[data-etat="reflechit"] {
-  background: #5a4a1f;
+  background: #6a4e12;
 }
 .voyant[data-etat="parle"] {
-  background: #2c3f7a;
+  background: #23407e;
 }
 .organes {
   font-size: 13px;
@@ -157,41 +451,39 @@ main {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
-  margin-bottom: 8px;
+  gap: 8px 10px;
+  margin-bottom: 12px;
 }
 .coach[hidden] {
   display: none;
 }
 .puce-coach {
-  font-size: 13px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 2px solid var(--contour);
+  font-size: 14px;
+  padding: 4px 9px;
+  background: #0b0a1a;
+  box-shadow: 0 0 0 2px var(--contour);
   font-variant-numeric: tabular-nums;
 }
 .puce-coach[hidden] {
   display: none;
 }
 #coach-minuteur[data-type="travail"] {
-  background: #5a2430;
-  font-weight: 600;
+  background: #6b1f2c;
+  font-weight: 700;
 }
 #coach-minuteur[data-type="pause"] {
-  background: #23533a;
+  background: #1d5a34;
 }
 .messages {
   list-style: none;
   margin: 0;
-  padding: 10px;
-  max-height: 280px;
+  padding: 12px;
+  max-height: 300px;
   overflow-y: auto;
-  background: var(--surface);
-  border: 2px solid var(--contour);
-  border-radius: 8px;
+  background: #0b0a1acc;
+  box-shadow: inset 0 0 0 2px var(--contour);
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 .messages:empty::before {
   content: "Dis « Max, … » ou écris-lui ci-dessous.";
@@ -199,38 +491,51 @@ main {
 }
 .messages li {
   max-width: 85%;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 8px 12px;
   background: var(--surface-2);
+  box-shadow: 0 0 0 2px var(--contour);
 }
 .messages li p {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 .messages .qui {
-  font-weight: 600;
-  font-size: 12px;
+  font-weight: 700;
+  font-size: 13px;
   margin-right: 6px;
 }
 .messages time {
-  font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--discret);
 }
 .messages .de-toi {
   justify-self: end;
-  background: #2c3f7a;
+  background: #23407e;
 }
 .messages .de-max {
-  border-left: 3px solid var(--or);
+  background: #2a2656;
+  box-shadow:
+    0 0 0 2px var(--contour),
+    inset 4px 0 0 var(--or);
+}
+.messages .de-max .qui {
+  color: var(--or);
+}
+/* la dernière réplique de Max finit par un ▼ qui clignote, comme dans un RPG */
+.messages .de-max:last-child p::after {
+  content: " ▼";
+  color: var(--or);
+  animation: scintille 0.8s steps(2) infinite;
 }
 .messages .de-bureau {
   justify-self: center;
   max-width: 100%;
   background: transparent;
+  box-shadow: none;
   color: var(--discret);
-  font-size: 13px;
+  font-size: 14px;
   padding: 0;
 }
 .messages .de-bureau .qui,
@@ -239,58 +544,45 @@ main {
 }
 .form-max {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 14px;
 }
-#texte-max {
+#texte-max,
+#texte {
   flex: 1;
   min-width: 0;
-  font: inherit;
   color: var(--texte);
-  background: var(--surface);
-  border: 2px solid var(--contour);
-  border-radius: 6px;
-  padding: 8px 10px;
+  background: #0b0a1a;
+  border: 0;
+  box-shadow: 0 0 0 2px var(--contour), inset 0 0 0 2px #3b35a0;
+  padding: 10px 12px;
 }
-#texte-max:focus {
-  outline: 2px solid var(--or);
+#texte-max:focus,
+#texte:focus {
+  outline: 3px solid var(--or);
+  outline-offset: 2px;
 }
 .mission-directe {
   max-width: 960px;
-  margin: 16px auto 24px;
-  padding: 0 16px;
+  margin: 30px auto 34px;
+  padding: 14px 18px;
 }
 .mission-directe summary {
   cursor: pointer;
   color: var(--discret);
-  font-size: 14px;
-  margin-bottom: 8px;
+  font-size: 15px;
 }
-.mission-directe #mission {
-  margin: 0;
-  padding: 0;
+.mission-directe[open] summary {
+  margin-bottom: 12px;
 }
-
 #mission {
   display: flex;
-  gap: 10px;
-  max-width: 960px;
-  margin: 12px auto 24px;
-  padding: 0 16px;
+  gap: 12px;
+  margin: 0;
 }
 #texte {
-  flex: 1;
   resize: vertical;
-  min-height: 52px;
-  font: inherit;
-  color: var(--texte);
-  background: var(--surface);
-  border: 2px solid var(--contour);
-  border-radius: 6px;
-  padding: 10px;
-}
-#texte:focus {
-  outline: 2px solid var(--or);
+  min-height: 56px;
 }
 .boutons {
   display: flex;
@@ -298,71 +590,78 @@ main {
 }
 #btn-lancer {
   padding: 0 18px;
-  font-weight: 600;
-  background: #2f6b3a;
 }
 
+/* --- le panneau de côté (robot, résultat, quêtes) ------------------------------------------- */
 .panneau {
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(420px, 100vw);
-  background: var(--surface);
-  border-left: 3px solid var(--contour);
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.4);
-  padding: 16px 20px;
+  width: min(440px, 100vw);
+  background: linear-gradient(180deg, #221e63 0%, #110f2e 100%);
+  box-shadow:
+    -3px 0 0 var(--cadre),
+    -6px 0 0 var(--contour),
+    -18px 0 30px #00000088;
+  padding: 18px 22px;
   overflow-y: auto;
   z-index: 10;
+  animation: glisse 0.18s steps(4);
+}
+@keyframes glisse {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
 }
 .panneau.large {
-  width: min(760px, 100vw);
+  width: min(780px, 100vw);
 }
 .panneau .fermer {
   position: absolute;
-  top: 10px;
-  right: 12px;
-  padding: 2px 10px;
+  top: 12px;
+  right: 14px;
+  padding: 2px 10px 4px;
   font-size: 20px;
 }
 .panneau h2 {
-  margin: 4px 40px 12px 0;
-  font-size: 19px;
+  margin: 4px 48px 14px 0;
+  font-size: 20px;
 }
 .panneau h3 {
-  margin: 18px 0 6px;
-  font-size: 14px;
+  margin: 20px 0 8px;
+  font-family: var(--titre);
+  font-size: 9px;
   color: var(--or);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 .puce {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: normal;
-  background: var(--surface-2);
-  border-radius: 10px;
+  background: #0b0a1a;
+  box-shadow: 0 0 0 2px var(--contour);
   padding: 2px 8px;
   vertical-align: middle;
 }
 .pastille {
   display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--contour);
-  border-radius: 3px;
-  margin-right: 6px;
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 0 2px var(--contour);
+  margin-right: 8px;
 }
 .tache {
   white-space: pre-wrap;
-  background: var(--surface-2);
-  border-radius: 6px;
-  padding: 8px 10px;
+  background: #0b0a1a;
+  box-shadow: 0 0 0 2px var(--contour);
+  padding: 9px 11px;
   margin: 0;
 }
 .erreur {
   background: #5c1d24;
-  border-radius: 6px;
-  padding: 8px 10px;
+  box-shadow: 0 0 0 2px var(--contour);
+  padding: 9px 11px;
 }
 .discret {
   color: var(--discret);
@@ -373,31 +672,29 @@ main {
   margin: 0;
   max-height: 55vh;
   overflow-y: auto;
-  font-size: 13px;
+  font-size: 14px;
 }
 .actions li {
-  padding: 5px 0;
-  border-bottom: 1px solid var(--surface-2);
+  padding: 6px 0;
+  border-bottom: 2px dotted #3b35a0;
   overflow-wrap: anywhere;
 }
 .actions time {
-  font-family: var(--mono);
-  color: var(--discret);
+  color: var(--cyan);
   margin-right: 6px;
 }
 .actions-resultat {
-  margin: 0 40px 12px 0;
+  margin: 0 48px 14px 0;
 }
 .retour {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
-
 .historique {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 8px;
+  gap: 12px;
 }
 .historique button {
   width: 100%;
@@ -406,21 +703,25 @@ main {
   gap: 2px;
 }
 .historique span {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--discret);
 }
 
 .markdown {
   line-height: 1.55;
   overflow-wrap: anywhere;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
 }
 .markdown h1 {
-  font-size: 22px;
+  font-family: var(--pixel);
+  font-size: 24px;
   color: var(--or);
   margin-top: 0;
 }
 .markdown h2 {
-  font-size: 18px;
+  font-family: var(--pixel);
+  font-size: 19px;
   margin: 20px 0 8px;
 }
 .markdown table {
@@ -442,7 +743,6 @@ main {
 .markdown pre {
   background: var(--fond);
   padding: 10px;
-  border-radius: 6px;
   overflow-x: auto;
 }
 .markdown code {
@@ -456,23 +756,58 @@ main {
   color: var(--discret);
 }
 .markdown a {
-  color: #7df9ff;
+  color: var(--cyan);
 }
 
+/* --- la notification ------------------------------------------------------------------------ */
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  bottom: 26px;
   transform: translateX(-50%);
-  background: #5c1d24;
-  border: 2px solid var(--contour);
-  border-radius: 8px;
-  padding: 10px 16px;
-  max-width: calc(100vw - 32px);
+  background: linear-gradient(#221e63, #15123a);
+  box-shadow:
+    0 0 0 3px var(--or),
+    0 0 0 6px var(--contour),
+    0 8px 0 6px #00000066;
+  padding: 12px 18px 12px 46px;
+  max-width: calc(100vw - 40px);
   z-index: 20;
+  animation: monte 0.2s steps(4);
+}
+.toast::before {
+  content: "!";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-family: var(--titre);
+  font-size: 11px;
+  color: #1b1b2f;
+  background: var(--or);
+  box-shadow: 0 0 0 2px var(--contour);
+}
+@keyframes monte {
+  from {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
 }
 
 @media (max-width: 640px) {
+  .hud {
+    padding: 10px 14px 12px;
+  }
+  .hud-xp-barre {
+    width: 110px;
+  }
+  .hud-quete {
+    flex-basis: 100%;
+  }
   #mission {
     flex-direction: column;
   }
@@ -482,6 +817,31 @@ main {
   }
   #titre-mission {
     display: none;
+  }
+  .borne {
+    padding: 0 6px 8px;
+  }
+  .borne-direct {
+    display: none;
+  }
+  #jeu {
+    margin: 0 4px;
+  }
+  .carte-zone strong {
+    font-size: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .borne-etoile,
+  .borne-direct i,
+  .messages .de-max:last-child p::after,
+  .carte-zone.visible,
+  .panneau,
+  .toast {
+    animation: none;
+  }
+  .carte-zone.visible {
+    opacity: 1;
   }
 }
 

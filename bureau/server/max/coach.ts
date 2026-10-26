@@ -332,9 +332,13 @@ export class Coach extends EventEmitter {
 
   vue(): CoachVue {
     const e = echeances(lireProfil(this.o.dossier), new Date())[0];
+    const journal = lireJournal(this.o.dossier);
+    const b = bilan(journal, new Date());
     return {
       minuteur: this.minuteur ? { type: this.minuteur.type, sujet: this.minuteur.sujet, fin: this.minuteur.fin } : null,
-      aujourdhui: this.bilan().aujourdhui,
+      aujourdhui: b.aujourdhui,
+      total: journal.reduce((t, s) => t + s.minutes, 0),
+      serie: b.serie,
       echeance: e ? { nom: e.nom, jours: e.jours } : null,
     };
   }

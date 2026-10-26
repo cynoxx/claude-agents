@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import type { AssistantVue, ConseillerVue, EtatMax, MissionVue, RobotVue } from "../shared/protocol.ts";
 import { creerTextureConseiller, creerTextures } from "./sprites.ts";
 import { ECHELLE, Robot, type Point } from "./robot.ts";
+import { Chat } from "./chat.ts";
+import { Decor, texteBandeau } from "./decor.ts";
 
 export const LARGEUR = 960;
 export const HAUTEUR = 690;
@@ -71,6 +73,8 @@ export class OfficeScene extends Phaser.Scene {
   private finiDepuis = new Map<string, number>();
   private conseillers = new Map<string, { robot: Robot; poste: Phaser.GameObjects.Image }>();
   private conseillersEnAttente?: ConseillerVue[];
+  private decor!: Decor;
+  private allumes = new Set<Phaser.GameObjects.Image>();
 
   constructor(private rappels: Rappels) {
     super("bureau");
@@ -81,6 +85,15 @@ export class OfficeScene extends Phaser.Scene {
     this.dessinerDecor();
     this.max = new Robot(this, MAX.x, MAX.y, "max", "👑 Max", ALLEE_Y, () => this.rappels.onClic("max"));
     this.max.setBulle("Donne-moi une mission\u00a0!");
+    new Chat(this, [
+      { x: 250, y: 360 },
+      { x: 560, y: 360 },
+      { x: 820, y: 470 },
+      { x: 300, y: 500 },
+      { x: 640, y: 500 },
+      { x: 400, y: 280 },
+      { x: 860, y: 330 },
+    ]);
     this.time.addEvent({ delay: 500, loop: true, callback: () => this.cacherBullesFinies() });
     if (this.enAttente !== undefined) this.sync(this.enAttente.m, this.enAttente.a);
     if (this.conseillersEnAttente) this.syncConseillers(this.conseillersEnAttente);
@@ -109,57 +122,68 @@ export class OfficeScene extends Phaser.Scene {
       place.robot.travailler(occupe);
       place.robot.setIcone(occupe ? "💭" : "");
       place.robot.setBulle(c.bulle);
-      place.poste.setTexture(occupe ? "bureau-on" : "bureau-off");
+      this.allumer(place.poste, occupe);
     });
   }
 
   private dessinerDecor(): void {
-    const g = this.add.graphics().setDepth(-10);
-    // sol en damier
-    const t = 48;
-    for (let y = MUR; y < AILE; y += t) {
-      for (let x = 0; x < LARGEUR; x += t) {
-        g.fillStyle(((x + y) / t) % 2 === 0 ? 0x7a5c48 : 0x6f5241, 1).fillRect(x, y, t, t);
-      }
-    }
-    // mur, plinthe, fenêtres
-    g.fillStyle(0x3b3f63, 1).fillRect(0, 0, LARGEUR, MUR);
-    g.fillStyle(0x4a4f7a, 1).fillRect(0, 0, LARGEUR, 10);
-    g.fillStyle(0x2a2c45, 1).fillRect(0, MUR - 8, LARGEUR, 8);
-    for (const fx of [190, 690]) {
-      g.fillStyle(0x1b1b2f, 1).fillRect(fx - 4, 18, 128, 62);
-      g.fillStyle(0x8fd3ff, 1).fillRect(fx, 22, 120, 54);
-      g.fillStyle(0xc9ecff, 1).fillRect(fx + 8, 28, 30, 10);
-      g.fillStyle(0x1b1b2f, 1).fillRect(fx + 58, 22, 4, 54).fillRect(fx, 47, 120, 4);
-    }
-    // tapis sous le bureau de Max
-    g.fillStyle(0x9e4a5a, 0.9).fillRoundedRect(BUREAU_MAX.x - 170, 118, 340, 140, 18);
-    g.lineStyle(4, 0xc76b7c, 1).strokeRoundedRect(BUREAU_MAX.x - 160, 126, 320, 124, 14);
-    // enseigne
-    g.fillStyle(0x1b1b2f, 1).fillRoundedRect(LARGEUR / 2 - 110, 26, 220, 44, 6);
-    this.add
-      .text(LARGEUR / 2, 48, "LE BUREAU", { fontFamily: "ui-monospace, Menlo, monospace", fontSize: "24px", fontStyle: "bold", color: "#f2c14e" })
-      .setOrigin(0.5)
-      .setDepth(-9);
+    this.decor = new Decor(this, {
+      largeur: LARGEUR,
+      mur: MUR,
+      aile: AILE,
+      fenetres: [190, 690],
+      enseigne: { x: 360, y: 10, l: 240, h: 64 },
+      lumieres: [BUREAU_MAX, ...POSTES.map((p) => ({ x: p.x, y: p.y + 30 })), { x: CAFE.x - 30, y: 240 }],
+      cafe: CAFE,
+    });
+    this.decor.creer();
+    this.decor.annoncer(texteBandeau(null));
 
-    // l'aile des conseillers : moquette bleue, cloison et enseigne
-    g.fillStyle(0x2f4b6e, 1).fillRect(0, AILE, LARGEUR, HAUTEUR - AILE);
-    for (let x = 0; x < LARGEUR; x += 24) g.fillStyle(0x34547a, 1).fillRect(x, AILE, 12, HAUTEUR - AILE);
-    g.fillStyle(0x2a2c45, 1).fillRect(0, AILE - 6, LARGEUR, 10);
-    g.fillStyle(0x1b1b2f, 1).fillRoundedRect(LARGEUR / 2 - 92, AILE - 12, 184, 22, 5);
+    // l'enseigne de l'aile des conseillers
+    const g = this.add.graphics().setDepth(-7);
+    g.fillStyle(0x05040c, 1).fillRect(LARGEUR / 2 - 104, AILE - 16, 208, 28);
+    g.fillStyle(0x1b1b2f, 1).fillRect(LARGEUR / 2 - 100, AILE - 12, 200, 20);
     this.add
-      .text(LARGEUR / 2, AILE - 1, "LES CONSEILLERS", { fontFamily: "ui-monospace, Menlo, monospace", fontSize: "13px", fontStyle: "bold", color: "#7df9ff" })
+      .text(LARGEUR / 2, AILE - 2, "LES CONSEILLERS", { fontFamily: '"Press Start 2P", monospace', fontSize: "9px", color: "#7df9ff" })
       .setOrigin(0.5)
-      .setDepth(-9);
+      .setShadow(0, 0, "#00c8ff", 8, false, true)
+      .setDepth(-6);
 
     this.add.image(PORTE.x, MUR, "porte").setOrigin(0.5, 1).setScale(ECHELLE).setDepth(-8);
     this.add.image(CAFE.x, CAFE.y, "cafe").setOrigin(0.5, 1).setScale(ECHELLE).setDepth(CAFE.y);
-    this.add.text(CAFE.x, CAFE.y + 4, "café", { fontFamily: "ui-monospace, monospace", fontSize: "11px", color: "#f4f4f4" }).setOrigin(0.5, 0).setDepth(CAFE.y);
+    this.add
+      .text(CAFE.x, CAFE.y + 4, "CAFÉ", { fontFamily: '"Press Start 2P", monospace', fontSize: "7px", color: "#f4f4f4" })
+      .setOrigin(0.5, 0)
+      .setStroke("#1b1b2f", 3)
+      .setDepth(CAFE.y);
     for (const p of [{ x: 34, y: 520 }, { x: 930, y: 520 }, { x: 300, y: 140 }, { x: 660, y: 140 }]) {
-      this.add.image(p.x, p.y, "plante").setOrigin(0.5, 1).setScale(ECHELLE).setDepth(p.y);
+      const plante = this.add.image(p.x, p.y, "plante").setOrigin(0.5, 1).setScale(ECHELLE).setDepth(p.y);
+      // les plantes bougent un peu, comme s'il y avait de l'air
+      this.tweens.add({ targets: plante, scaleX: ECHELLE * 1.04, duration: 1800 + (p.x % 7) * 150, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     }
     this.add.image(BUREAU_MAX.x, BUREAU_MAX.y, "bureau-off").setScale(ECHELLE * 1.25).setDepth(BUREAU_MAX.y + 30);
     this.postes = POSTES.map((p) => this.add.image(p.x, p.y, "bureau-off").setScale(ECHELLE).setDepth(p.y + 22));
+    // les écrans allumés font défiler du code
+    let image = 0;
+    this.time.addEvent({
+      delay: 260,
+      loop: true,
+      callback: () => {
+        image = (image + 1) % 3;
+        for (const poste of this.allumes) poste.setTexture(`bureau-code-${image}`);
+      },
+    });
+  }
+
+  private allumer(poste: Phaser.GameObjects.Image, oui: boolean): void {
+    if (oui === this.allumes.has(poste)) return;
+    if (oui) {
+      this.allumes.add(poste);
+      poste.setTexture("bureau-code-0");
+    } else {
+      this.allumes.delete(poste);
+      poste.setTexture("bureau-off");
+    }
   }
 
   /** Met la scène en accord avec l'état reçu du serveur (mission et conversation avec Max). */
@@ -169,6 +193,7 @@ export class OfficeScene extends Phaser.Scene {
       return;
     }
     if ((m?.nom ?? null) !== this.missionNom) this.nouvelleMission(m);
+    this.decor.annoncer(texteBandeau(m));
 
     // la bulle de Max : ce qu'il dit à voix haute, sinon l'état de la mission, sinon son humeur du moment
     const auRepos = a ? BULLE_REPOS[a.etat] : "Donne-moi une mission\u00a0!";
@@ -198,7 +223,7 @@ export class OfficeScene extends Phaser.Scene {
       if (r.statut !== "fini" || Date.now() - (this.finiDepuis.get(r.id) ?? 0) < 4000) {
         robot.setBulle(r.statut === "attente" ? "" : r.bulle);
       }
-      this.postes[i % POSTES.length].setTexture(r.statut === "travail" ? "bureau-on" : "bureau-off");
+      this.allumer(this.postes[i % POSTES.length], r.statut === "travail");
     });
 
     if (m.phase === "termine" && !this.fete) {
@@ -227,7 +252,7 @@ export class OfficeScene extends Phaser.Scene {
     this.robots.forEach((r) => r.partir(PORTE));
     this.robots.clear();
     this.finiDepuis.clear();
-    this.postes.forEach((p) => p.setTexture("bureau-off"));
+    this.postes.forEach((p) => this.allumer(p, false));
     this.fete = false;
     this.missionNom = m?.nom ?? null;
   }

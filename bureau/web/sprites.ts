@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { ROLE_AFFICHAGE, COULEUR_MAX } from "../shared/roles-affichage.ts";
 import type { RoleId } from "../shared/protocol.ts";
-import { CARTES, ECRAN_ALLUME, PALETTE_BASE, paletteRobot } from "./sprites-data.ts";
+import { CARTES, CODE_ECRAN, ECRAN_ALLUME, PALETTE_BASE, PALETTE_CHAT, paletteRobot } from "./sprites-data.ts";
 
 function dessiner(scene: Phaser.Scene, cle: string, carte: string[], palette: Record<string, string>): void {
   if (scene.textures.exists(cle)) return;
@@ -35,6 +35,15 @@ export function creerTextures(scene: Phaser.Scene): void {
   dessiner(scene, cleRobot("max", true), CARTES.maxMarche, paletteRobot(COULEUR_MAX));
   dessiner(scene, "bureau-off", CARTES.bureau, PALETTE_BASE);
   dessiner(scene, "bureau-on", CARTES.bureau, { ...PALETTE_BASE, M: ECRAN_ALLUME });
+  const ecran = { ...PALETTE_BASE, M: "#1d6f8a", l: CODE_ECRAN };
+  dessiner(scene, "bureau-code-0", CARTES.bureauCode0, ecran);
+  dessiner(scene, "bureau-code-1", CARTES.bureauCode1, ecran);
+  dessiner(scene, "bureau-code-2", CARTES.bureauCode2, ecran);
+  dessiner(scene, "bibliotheque", CARTES.bibliotheque, PALETTE_BASE);
+  dessiner(scene, "serveur", CARTES.serveur, PALETTE_BASE);
+  dessiner(scene, "arcade", CARTES.arcade, PALETTE_BASE);
+  dessiner(scene, "chat", CARTES.chat, PALETTE_CHAT);
+  dessiner(scene, "chat-dort", CARTES.chatDort, PALETTE_CHAT);
   dessiner(scene, "cafe", CARTES.cafe, PALETTE_BASE);
   dessiner(scene, "plante", CARTES.plante, PALETTE_BASE);
   dessiner(scene, "porte", CARTES.porte, PALETTE_BASE);

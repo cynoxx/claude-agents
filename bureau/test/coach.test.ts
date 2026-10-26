@@ -162,7 +162,7 @@ describe("Coach — minuteur de travail", () => {
     expect(fins).toEqual([{ type: "travail", sujet: "Anatomie", minutes: 25, aujourdhui: 25 }]);
     expect(lireJournal(d)).toMatchObject([{ sujet: "Anatomie", minutes: 25 }]);
     expect(c.vue().minuteur).toBeNull();
-    expect(c.vue().aujourdhui).toBe(25);
+    expect(c.vue()).toMatchObject({ aujourdhui: 25, total: 25, serie: 1 });
   });
 
   it("refuse une deuxième session en même temps, et des durées absurdes", () => {

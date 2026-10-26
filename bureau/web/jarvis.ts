@@ -140,6 +140,7 @@ export class Jarvis {
         ecran.hidden = true;
         document.body.dataset.vue = "bureau";
         window.dispatchEvent(new Event("resize"));
+        window.dispatchEvent(new Event("zone-bureau"));
       }, 650);
     } else {
       this.sphere.agrandir(1);

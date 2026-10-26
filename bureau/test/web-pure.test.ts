@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { CARTES, PALETTE_BASE, paletteRobot } from "../web/sprites-data.ts";
+import { CARTES, PALETTE_BASE, PALETTE_CHAT, paletteRobot } from "../web/sprites-data.ts";
 import { renderMarkdown } from "../web/markdown.ts";
 import { ROLE_AFFICHAGE } from "../shared/roles-affichage.ts";
 
 describe("cartes de pixels", () => {
   it("sont rectangulaires et n'utilisent que des couleurs connues", () => {
-    const connues = new Set([".", ...Object.keys(PALETTE_BASE), ...Object.keys(paletteRobot("#4f9dde"))]);
+    const connues = new Set([".", ...Object.keys(PALETTE_BASE), ...Object.keys(paletteRobot("#4f9dde")), ...Object.keys(PALETTE_CHAT)]);
     for (const [nom, carte] of Object.entries(CARTES)) {
       const largeur = carte[0].length;
       for (const [i, ligne] of carte.entries()) {
@@ -142,5 +142,29 @@ describe("reconnaissance du visage (calculs)", () => {
     expect(tete.vu).toBe(true);
     expect(tete.reste).toBeNull();
     expect(new MouvementTete().ajouter(NaN)).toBe(false);
+  });
+});
+
+describe("niveau du joueur", () => {
+  it("1 minute de travail = 1 XP ; il faut 1 h pour le niveau 2, puis 2 h, 3 h…", async () => {
+    const { niveau } = await import("../shared/niveau.ts");
+    expect(niveau(0)).toEqual({ niveau: 1, xp: 0, prochain: 60 });
+    expect(niveau(59)).toEqual({ niveau: 1, xp: 59, prochain: 60 });
+    expect(niveau(60)).toEqual({ niveau: 2, xp: 0, prochain: 120 });
+    expect(niveau(60 + 120 + 30)).toEqual({ niveau: 3, xp: 30, prochain: 180 });
+    expect(niveau(-5).niveau).toBe(1);
+  });
+});
+
+describe("décor du bureau", () => {
+  it("suit le moment de la journée", async () => {
+    const { momentDe } = await import("../web/decor-pur.ts");
+    expect([0, 5, 6, 7, 8, 12, 17, 18, 20, 21, 23].map(momentDe)).toEqual(["nuit", "nuit", "aube", "aube", "jour", "jour", "jour", "soir", "soir", "nuit", "nuit"]);
+  });
+  it("annonce la quête sur le bandeau lumineux", async () => {
+    const { texteBandeau } = await import("../web/decor-pur.ts");
+    expect(texteBandeau(null)).toContain("EN ATTENTE D'UNE QUÊTE");
+    const m = { titre: "Comparer les mutuelles", phase: "travail" } as Parameters<typeof texteBandeau>[0];
+    expect(texteBandeau(m)).toBe("QUÊTE : COMPARER LES MUTUELLES · L'ÉQUIPE TRAVAILLE · ");
   });
 });
