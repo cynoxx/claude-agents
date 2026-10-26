@@ -17,7 +17,13 @@ function dessiner(scene: Phaser.Scene, cle: string, carte: string[], palette: Re
   tex.refresh();
 }
 
-export const cleRobot = (role: RoleId | "max", marche = false) => `robot-${role}${marche ? "-marche" : ""}`;
+export const cleRobot = (role: string, marche = false) => `robot-${role}${marche ? "-marche" : ""}`;
+
+/** Les textures d'un conseiller (sa couleur à lui), créées à son arrivée dans le bureau. */
+export function creerTextureConseiller(scene: Phaser.Scene, cle: string, couleur: string): void {
+  dessiner(scene, cleRobot(cle), CARTES.robot, paletteRobot(couleur));
+  dessiner(scene, cleRobot(cle, true), CARTES.robotMarche, paletteRobot(couleur));
+}
 
 /** Crée toutes les textures du bureau à partir des cartes de pixels. */
 export function creerTextures(scene: Phaser.Scene): void {

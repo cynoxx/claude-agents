@@ -1,10 +1,14 @@
 import Phaser from "phaser";
-import type { AssistantVue, EtatMax, MissionVue, RobotVue } from "../shared/protocol.ts";
-import { creerTextures } from "./sprites.ts";
+import type { AssistantVue, ConseillerVue, EtatMax, MissionVue, RobotVue } from "../shared/protocol.ts";
+import { creerTextureConseiller, creerTextures } from "./sprites.ts";
 import { ECHELLE, Robot, type Point } from "./robot.ts";
 
 export const LARGEUR = 960;
-export const HAUTEUR = 540;
+export const HAUTEUR = 690;
+/** En dessous : l'aile des conseillers, un bureau par domaine de la vie. */
+const AILE = 540;
+const AILE_POSTE_Y = 590;
+const AILE_DEVANT = 48;
 
 const MUR = 100;
 const ALLEE_Y = 392;
@@ -65,6 +69,8 @@ export class OfficeScene extends Phaser.Scene {
   private fete = false;
   private enAttente: { m: MissionVue | null; a?: AssistantVue } | undefined;
   private finiDepuis = new Map<string, number>();
+  private conseillers = new Map<string, { robot: Robot; poste: Phaser.GameObjects.Image }>();
+  private conseillersEnAttente?: ConseillerVue[];
 
   constructor(private rappels: Rappels) {
     super("bureau");
@@ -77,13 +83,41 @@ export class OfficeScene extends Phaser.Scene {
     this.max.setBulle("Donne-moi une mission\u00a0!");
     this.time.addEvent({ delay: 500, loop: true, callback: () => this.cacherBullesFinies() });
     if (this.enAttente !== undefined) this.sync(this.enAttente.m, this.enAttente.a);
+    if (this.conseillersEnAttente) this.syncConseillers(this.conseillersEnAttente);
+  }
+
+  /** Les conseillers à leur bureau : ils travaillent quand Max leur pose une question. */
+  syncConseillers(liste: ConseillerVue[] | undefined): void {
+    if (!liste) return;
+    if (!this.max) {
+      this.conseillersEnAttente = liste;
+      return;
+    }
+    const pas = LARGEUR / Math.max(liste.length, 1);
+    liste.forEach((c, i) => {
+      let place = this.conseillers.get(c.id);
+      if (!place) {
+        const x = Math.round(pas * (i + 0.5));
+        const cle = `conseiller-${c.id}`;
+        creerTextureConseiller(this, cle, c.couleur);
+        const poste = this.add.image(x, AILE_POSTE_Y, "bureau-off").setScale(ECHELLE).setDepth(AILE_POSTE_Y + 22);
+        const robot = new Robot(this, x, AILE_POSTE_Y + AILE_DEVANT, cle, `${c.emoji} ${c.nom}`, AILE_POSTE_Y + AILE_DEVANT, () => this.rappels.onClic(`conseiller:${c.id}`));
+        place = { robot, poste };
+        this.conseillers.set(c.id, place);
+      }
+      const occupe = c.statut === "reflechit";
+      place.robot.travailler(occupe);
+      place.robot.setIcone(occupe ? "💭" : "");
+      place.robot.setBulle(c.bulle);
+      place.poste.setTexture(occupe ? "bureau-on" : "bureau-off");
+    });
   }
 
   private dessinerDecor(): void {
     const g = this.add.graphics().setDepth(-10);
     // sol en damier
     const t = 48;
-    for (let y = MUR; y < HAUTEUR; y += t) {
+    for (let y = MUR; y < AILE; y += t) {
       for (let x = 0; x < LARGEUR; x += t) {
         g.fillStyle(((x + y) / t) % 2 === 0 ? 0x7a5c48 : 0x6f5241, 1).fillRect(x, y, t, t);
       }
@@ -105,6 +139,16 @@ export class OfficeScene extends Phaser.Scene {
     g.fillStyle(0x1b1b2f, 1).fillRoundedRect(LARGEUR / 2 - 110, 26, 220, 44, 6);
     this.add
       .text(LARGEUR / 2, 48, "LE BUREAU", { fontFamily: "ui-monospace, Menlo, monospace", fontSize: "24px", fontStyle: "bold", color: "#f2c14e" })
+      .setOrigin(0.5)
+      .setDepth(-9);
+
+    // l'aile des conseillers : moquette bleue, cloison et enseigne
+    g.fillStyle(0x2f4b6e, 1).fillRect(0, AILE, LARGEUR, HAUTEUR - AILE);
+    for (let x = 0; x < LARGEUR; x += 24) g.fillStyle(0x34547a, 1).fillRect(x, AILE, 12, HAUTEUR - AILE);
+    g.fillStyle(0x2a2c45, 1).fillRect(0, AILE - 6, LARGEUR, 10);
+    g.fillStyle(0x1b1b2f, 1).fillRoundedRect(LARGEUR / 2 - 92, AILE - 12, 184, 22, 5);
+    this.add
+      .text(LARGEUR / 2, AILE - 1, "LES CONSEILLERS", { fontFamily: "ui-monospace, Menlo, monospace", fontSize: "13px", fontStyle: "bold", color: "#7df9ff" })
       .setOrigin(0.5)
       .setDepth(-9);
 

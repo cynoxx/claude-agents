@@ -63,3 +63,18 @@ describe("renderMarkdown", () => {
     expect(renderMarkdown("> attention")).toBe("<blockquote>attention</blockquote>");
   });
 });
+
+describe("coach à l'écran", () => {
+  it("affiche le travail du jour en court", async () => {
+    const { dureeCourte } = await import("../web/conversation.ts");
+    expect(dureeCourte(0)).toBe("rien encore");
+    expect(dureeCourte(45)).toBe("45 min");
+    expect(dureeCourte(60)).toBe("1 h");
+    expect(dureeCourte(65)).toBe("1 h 05");
+  });
+  it("affiche le temps restant d'un minuteur", async () => {
+    const { restant } = await import("../web/conversation.ts");
+    expect(restant("2026-10-26T14:25:00.000Z", Date.parse("2026-10-26T14:06:28.000Z"))).toBe("18:32");
+    expect(restant("2026-10-26T14:25:00.000Z", Date.parse("2026-10-26T15:00:00.000Z"))).toBe("0:00");
+  });
+});

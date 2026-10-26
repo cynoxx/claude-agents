@@ -153,6 +153,34 @@ main {
 .espace {
   flex: 1;
 }
+.coach {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 8px;
+}
+.coach[hidden] {
+  display: none;
+}
+.puce-coach {
+  font-size: 13px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 2px solid var(--contour);
+  font-variant-numeric: tabular-nums;
+}
+.puce-coach[hidden] {
+  display: none;
+}
+#coach-minuteur[data-type="travail"] {
+  background: #5a2430;
+  font-weight: 600;
+}
+#coach-minuteur[data-type="pause"] {
+  background: #23533a;
+}
 .messages {
   list-style: none;
   margin: 0;

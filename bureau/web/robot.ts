@@ -29,7 +29,7 @@ export class Robot extends Phaser.GameObjects.Container {
     scene: Phaser.Scene,
     x: number,
     y: number,
-    private role: RoleId | "max",
+    private role: RoleId | "max" | string,
     nom: string,
     corridorY: number,
     onClic: () => void,
@@ -54,7 +54,8 @@ export class Robot extends Phaser.GameObjects.Container {
 
     this.add([this.sprite, etiquette, this.icone, this.bulle]);
     this.setSize(48, 60);
-    this.setInteractive(new Phaser.Geom.Rectangle(-24, -54, 48, 64), Phaser.Geom.Rectangle.Contains);
+    // la zone cliquable est relative au coin haut-gauche du conteneur (48×60) : on la recale sur le sprite
+    this.setInteractive(new Phaser.Geom.Rectangle(0, -24, 48, 64), Phaser.Geom.Rectangle.Contains);
     this.input!.cursor = "pointer";
     this.on("pointerdown", onClic);
     this.setDepth(y);

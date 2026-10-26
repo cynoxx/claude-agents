@@ -41,6 +41,7 @@ function connecter(): void {
       ui.rendre(msg.etat);
       conversation.rendre(msg.etat.assistant);
       scene.sync(msg.etat.mission, msg.etat.assistant);
+      scene.syncConseillers(msg.etat.conseillers);
     } else {
       ui.toast(msg.message);
     }

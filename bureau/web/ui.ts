@@ -154,7 +154,7 @@ export class Interface {
     if (v.type === "robot") {
       const liste = c.querySelector(".actions");
       const enBas = !liste || liste.scrollTop + liste.clientHeight >= liste.scrollHeight - 20;
-      c.innerHTML = v.id === "max" ? this.panneauMax(m) : this.panneauRobot(m, v.id);
+      c.innerHTML = v.id === "max" ? this.panneauMax(m) : v.id.startsWith("conseiller:") ? this.panneauConseiller(v.id.slice(11)) : this.panneauRobot(m, v.id);
       const nouvelleListe = c.querySelector(".actions");
       if (nouvelleListe && (nouveau || enBas)) nouvelleListe.scrollTop = nouvelleListe.scrollHeight;
       c.querySelector<HTMLButtonElement>("[data-rapport]")?.addEventListener("click", (e) => this.voirRapport(v.id, (e.currentTarget as HTMLElement).dataset.rapport!));
@@ -196,6 +196,17 @@ export class Interface {
       <p>Max découpe ta mission, choisit l'équipe, puis relit tout et écrit la synthèse finale.</p>
       ${m ? `<h3>Mission</h3><p class="tache">${esc(m.texte)}</p>` : ""}
       <h3>Ce qu'il a fait</h3>${this.listeActions(actions)}`;
+  }
+
+  private panneauConseiller(id: string): string {
+    const c = this.etat.conseillers?.find((x) => x.id === id);
+    if (!c) return "<p>Ce conseiller n'est plus au bureau.</p>";
+    const statut = c.statut === "reflechit" ? "💭 réfléchit" : "🪑 à son bureau";
+    return `<h2><span class="pastille" style="background:${c.couleur}"></span>${c.emoji} ${esc(c.nom)} <span class="puce">${statut}</span></h2>
+      <p><strong>${esc(c.domaine)}</strong> : ${esc(c.description)}.</p>
+      <p class="discret">Pour lui poser une question : « Max, demande au ${esc(c.nom)}… ». Ses notes sont dans Documents/Bureau/conseillers/${esc(c.id)}.md.</p>
+      ${c.question ? `<h3>Dernière question${c.heure ? ` (${date(c.heure)})` : ""}</h3><p class="tache">${esc(c.question)}</p>` : ""}
+      ${c.reponse ? `<h3>Sa réponse</h3><div class="markdown">${renderMarkdown(c.reponse)}</div>` : ""}`;
   }
 
   private panneauRobot(m: MissionVue | null, id: string): string {
