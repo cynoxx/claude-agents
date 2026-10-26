@@ -1,6 +1,6 @@
 // L'assistant : relie l'oreille, le cerveau et la bouche de Max, gère le mot-clé, la veille et les annonces de mission.
 import { EventEmitter } from "node:events";
-import type { AssistantVue, CoachVue, Dispo, EtatBureau, EtatMax, MessageConversation, MissionResume, Phase, VueEcran } from "../../shared/protocol.ts";
+import type { AssistantVue, CoachVue, Creneau, Dispo, EtatBureau, EtatMax, MessageConversation, MissionResume, Phase, VueEcran } from "../../shared/protocol.ts";
 import { extraireResume, texteParle } from "../../shared/parole.ts";
 import { reconnaitreAppel } from "../voix/mot-cle.ts";
 import { Phraseur } from "../voix/phraseur.ts";
@@ -34,6 +34,12 @@ export interface VerrouLike extends EventEmitter {
   readonly verrouille: boolean;
   verrouiller(): void;
 }
+/** L'emploi du temps du jour (événement `creneau` au début de chaque créneau). */
+export interface PlanningLike extends EventEmitter {
+  doitProposer(): boolean;
+  noterPropose(): void;
+  decrire(): string;
+}
 /** Le coach (événements `fin`, `rappel`, `etat`). */
 export interface CoachLike extends EventEmitter {
   vue(): CoachVue;
@@ -64,7 +70,11 @@ export interface OptionsAssistant {
   phraseSiri?: string;
   /** Verrouillé, Max ne se réveille pas ; il se reverrouille en s'endormant. */
   verrou?: VerrouLike;
+  planning?: PlanningLike;
 }
+
+const PROPOSER_PLANNING =
+  "[Bureau] C'est son premier réveil de la journée et il n'a pas encore d'emploi du temps. Propose-lui maintenant, en une ou deux phrases, de construire ensemble son emploi du temps d'aujourd'hui.";
 
 const ACCUEIL = "Salut ! Je t'écoute.";
 const DELAI_REOUVERTURE_MS = 300; // l'oreille reste fermée un instant après sa voix, pour ne pas s'entendre
@@ -234,6 +244,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
       this.parler(texte);
     });
     o.verrou?.on("deverrouille", (prenom: string) => this.reveiller(true, prenom));
+    o.planning?.on("creneau", (c: Creneau) => this.debutCreneau(c));
   }
 
   vue(): AssistantVue {
@@ -265,6 +276,11 @@ export class Assistant extends EventEmitter implements AssistantApi {
       const bonjour = prenom ? base.replace(/^Salut !/, `Salut ${prenom} !`) : base;
       this.noter("max", bonjour);
       this.parler(bonjour);
+      // une fois par jour, au premier réveil : construire l'emploi du temps ensemble
+      if (this.o.planning?.doitProposer()) {
+        this.o.planning.noterPropose();
+        this.envoyer(PROPOSER_PLANNING, { de: "bureau", texte: "🗓 Premier réveil du jour : Max te propose ton emploi du temps" });
+      }
     }
   }
 
@@ -306,6 +322,10 @@ export class Assistant extends EventEmitter implements AssistantApi {
   ecrire(texte: string): void {
     const t = texte.trim();
     if (!t || this.o.verrou?.verrouille) return;
+    if (this.o.planning?.doitProposer()) {
+      this.o.planning.noterPropose();
+      this.informer("C'est votre premier échange de la journée et il n'a pas encore d'emploi du temps : après avoir répondu, propose-lui de construire ensemble son emploi du temps d'aujourd'hui.");
+    }
     if (this.etat === "veille") this.reveiller(false);
     this.envoyer(t, { de: "toi", texte: t });
   }
@@ -366,7 +386,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
         carnet: this.o.carnet(),
         missions: this.o.missions(),
         profil: this.o.profil?.(),
-        contexte: this.o.coach?.contexte(),
+        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire()].filter(Boolean).join("\n"),
         conseillers: this.o.conseillers?.(),
       }),
     );
@@ -461,6 +481,21 @@ export class Assistant extends EventEmitter implements AssistantApi {
         texte: `❌ Mission échouée : ${m.titre}`,
       });
     }
+  }
+
+  /** Début d'un créneau de l'emploi du temps : Max l'annonce (et se réveille pour ça, sauf s'il est verrouillé). */
+  private debutCreneau(c: Creneau): void {
+    if (this.o.verrou?.verrouille) {
+      const phrase = `C'est l'heure : ${c.titre}.`;
+      this.noter("max", phrase);
+      this.parler(phrase);
+      return;
+    }
+    if (this.etat === "veille") this.reveiller(false);
+    this.envoyer(
+      `[Bureau] Début du créneau « ${c.titre} » (${c.debut}–${c.fin}, ${c.type}) de son emploi du temps. Annonce-le en une phrase. Travail ou cours : propose de lancer une session minutée sur ce sujet. Pause ou repas : souhaite-lui une bonne pause. Sommeil : encourage-le à aller dormir.`,
+      { de: "bureau", texte: `🗓 ${c.debut} · ${c.titre}` },
+    );
   }
 
   /** Fin d'une session ou d'une pause : Max se réveille s'il dormait et l'annonce. */

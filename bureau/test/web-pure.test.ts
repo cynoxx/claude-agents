@@ -168,3 +168,22 @@ describe("décor du bureau", () => {
     expect(texteBandeau(m)).toBe("QUÊTE : COMPARER LES MUTUELLES · L'ÉQUIPE TRAVAILLE · ");
   });
 });
+
+describe("écran de Max : emploi du temps et mails", () => {
+  const c = (debut: string, fin: string, titre: string, type: "travail" | "pause" | "repas" = "travail") => ({ debut, fin, titre, type });
+  it("montre le créneau précédent, celui en cours en surbrillance, puis les suivants", async () => {
+    const { creneauxAffiches } = await import("../web/jarvis.ts");
+    const p = { jour: "2026-10-27", calendrier: false, enCours: 2, creneaux: [c("08:00", "09:00", "A"), c("09:00", "10:00", "B"), c("10:00", "10:15", "Pause", "pause"), c("10:15", "12:00", "C")] };
+    expect(creneauxAffiches(p)).toEqual([
+      { heure: "09:00–10:00", texte: "📚 B", enCours: false, passe: true },
+      { heure: "10:00–10:15", texte: "☕ Pause", enCours: true, passe: false },
+      { heure: "10:15–12:00", texte: "📚 C", enCours: false, passe: false },
+    ]);
+    expect(creneauxAffiches({ ...p, enCours: -1 })).toHaveLength(4);
+  });
+  it("compte les mails triés et ceux à traiter", async () => {
+    const { compteMails } = await import("../web/jarvis.ts");
+    const m = { heure: "", resume: "", categories: [{ id: "a_traiter" as const, nom: "", emoji: "", mails: [{ id: 1, de: "", sujet: "", lu: false }] }, { id: "pubs" as const, nom: "", emoji: "", mails: [{ id: 2, de: "", sujet: "", lu: true }, { id: 3, de: "", sujet: "", lu: true }] }] };
+    expect(compteMails(m)).toEqual({ total: 3, aTraiter: 1 });
+  });
+});

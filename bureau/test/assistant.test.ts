@@ -443,6 +443,60 @@ describe("Assistant — coach", () => {
   });
 });
 
+class FauxPlanning extends EventEmitter {
+  propose = false;
+  aUnPlanning = false;
+  doitProposer() {
+    return !this.propose && !this.aUnPlanning;
+  }
+  noterPropose() {
+    this.propose = true;
+  }
+  decrire() {
+    return this.aUnPlanning ? "Emploi du temps : 09:00–11:00 Biochimie (travail)" : "Pas encore d'emploi du temps aujourd'hui.";
+  }
+}
+
+describe("Assistant — emploi du temps", () => {
+  let planning: FauxPlanning;
+  beforeEach(() => {
+    planning = new FauxPlanning();
+    creer({ planning });
+  });
+
+  it("au premier réveil du jour, propose de construire l'emploi du temps (une seule fois)", () => {
+    a.reveiller();
+    expect(cerveau().recus.at(-1)).toContain("premier réveil de la journée");
+    expect(cerveau().consigne).toContain("Pas encore d'emploi du temps aujourd'hui.");
+    expect(a.vue().messages.at(-1)?.texte).toContain("Max te propose ton emploi du temps");
+    a.veille();
+    a.reveiller();
+    expect(cerveau().recus.filter((r) => r.includes("premier réveil"))).toHaveLength(0);
+  });
+
+  it("si on lui écrit en premier, lui glisse de proposer l'emploi du temps avec le message", () => {
+    a.ecrire("Salut");
+    expect(cerveau().recus[0]).toContain("premier échange de la journée");
+    expect(cerveau().recus[0]).toMatch(/Salut$/);
+    a.ecrire("Encore");
+    expect(cerveau().recus[1]).toBe("Encore");
+  });
+
+  it("ne propose rien s'il y a déjà un emploi du temps", () => {
+    planning.aUnPlanning = true;
+    a.reveiller();
+    expect(cerveau().recus).toEqual([]);
+    expect(cerveau().consigne).toContain("09:00–11:00 Biochimie");
+  });
+
+  it("annonce le début d'un créneau (et se réveille pour ça)", () => {
+    planning.emit("creneau", { debut: "09:00", fin: "11:00", titre: "Biochimie", type: "travail" });
+    expect(a.vue().etat).not.toBe("veille");
+    expect(cerveau().recus.at(-1)).toContain("Début du créneau « Biochimie » (09:00–11:00, travail)");
+    expect(a.vue().messages.at(-1)?.texte).toBe("🗓 09:00 · Biochimie");
+  });
+});
+
 class FauxVerrou extends EventEmitter {
   verrouille = true;
   verrouiller() {
@@ -482,6 +536,16 @@ describe("Assistant — verrou par le visage", () => {
     verrou.ouvrir();
     a.veille();
     expect(verrou.verrouille).toBe(true);
+  });
+
+  it("verrouillé, annonce un créneau sans se réveiller", async () => {
+    const planning = new FauxPlanning();
+    creer({ verrou, coach, planning });
+    planning.emit("creneau", { debut: "12:30", fin: "13:30", titre: "Déjeuner", type: "repas" });
+    await jusqua(() => bouche.dites.length === 1 && !bouche.parle);
+    expect(bouche.dites).toEqual(["C'est l'heure : Déjeuner."]);
+    expect(a.vue().etat).toBe("veille");
+    expect(cerveaux).toHaveLength(0);
   });
 
   it("verrouillé, dit un rappel ou la fin d'une session sans se réveiller", async () => {

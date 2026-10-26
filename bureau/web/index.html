@@ -47,7 +47,7 @@
         <aside class="j-cote j-gauche">
           <div class="j-carte j-horloge"><div id="j-heure" class="j-heure">--:--</div><div id="j-date" class="j-date"></div></div>
           <div class="j-carte"><h3>Météo</h3><div id="j-meteo" class="j-meteo">—</div></div>
-          <div class="j-carte"><h3>Aujourd'hui</h3><ol id="j-agenda" class="j-agenda"></ol></div>
+          <div class="j-carte j-defile"><h3 id="j-jour-titre">Aujourd'hui</h3><ol id="j-agenda" class="j-agenda"></ol><p id="j-jour-aide" class="j-petit" hidden></p></div>
         </aside>
         <div class="j-sphere-zone">
           <canvas id="sphere" class="j-sphere"></canvas>
@@ -58,6 +58,11 @@
         <aside class="j-cote j-droite">
           <div class="j-carte"><h3>Objectif</h3><div id="j-echeance" class="j-gros">—</div><div id="j-travail" class="j-petit"></div><div id="j-minuteur" class="j-minuteur" hidden></div></div>
           <button type="button" id="j-mission" class="j-carte j-mission" hidden></button>
+          <div id="j-mails-carte" class="j-carte j-defile" hidden>
+            <h3>Mails</h3>
+            <p id="j-mails-resume" class="j-mails-resume"></p>
+            <div id="j-mails" class="j-mails"></div>
+          </div>
           <div id="j-conseillers" class="j-petit"></div>
         </aside>
       </div>

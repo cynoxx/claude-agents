@@ -283,6 +283,87 @@ serveur.registerTool(
   async ({ ville }) => appeler("GET", `/api/outils/meteo${ville ? `?ville=${encodeURIComponent(ville)}` : ""}`),
 );
 
+// --- l'emploi du temps du jour ---
+
+const creneau = z.object({
+  debut: z.string().describe("HH:MM"),
+  fin: z.string().describe("HH:MM (un créneau du soir peut finir après minuit)"),
+  titre: z.string().min(1),
+  type: z.enum(["travail", "cours", "pause", "repas", "sport", "perso", "sommeil", "autre"]),
+});
+serveur.registerTool(
+  "enregistrer_planning",
+  {
+    description:
+      "Enregistre l'emploi du temps d'aujourd'hui (remplace le précédent) : il s'affiche sur l'écran et chaque créneau est annoncé quand il commence. À faire après son accord sur les créneaux.",
+    inputSchema: { creneaux: z.array(creneau).min(1).max(40) },
+  },
+  async ({ creneaux }) => appeler("POST", "/api/outils/planning", { creneaux }),
+);
+serveur.registerTool("lire_planning", { description: "L'emploi du temps d'aujourd'hui, avec le créneau en cours." }, async () => appeler("GET", "/api/outils/planning"));
+serveur.registerTool(
+  "preparer_planning_calendrier",
+  {
+    description: "Prépare l'ajout de l'emploi du temps du jour au Calendrier (rien n'est ajouté). Demande-lui ensuite confirmation ; n'appelle ajouter_planning_calendrier qu'après son oui.",
+    inputSchema: { calendrier: z.string().optional().describe("Le nom d'un calendrier précis (sinon le premier modifiable)") },
+  },
+  async ({ calendrier }) => appeler("POST", "/api/outils/preparer-planning-calendrier", { calendrier }),
+);
+serveur.registerTool(
+  "ajouter_planning_calendrier",
+  { description: "Ajoute l'emploi du temps préparé au Calendrier, une fois qu'il a dit oui. Refusé s'il n'a pas confirmé." },
+  async () => appeler("POST", "/api/outils/ajouter-planning-calendrier"),
+);
+
+// --- les mails triés ---
+
+serveur.registerTool(
+  "trier_mails",
+  {
+    description: "Lit les derniers mails avec leur numéro, pour que tu les classes. Ensuite appelle afficher_mails avec ton classement.",
+    inputSchema: {
+      nombre: z.number().int().min(1).max(40).default(20),
+      non_lus: z.boolean().default(true).describe("Seulement les non lus (par défaut)"),
+    },
+  },
+  async ({ nombre, non_lus }) => appeler("POST", "/api/outils/trier-mails", { nombre, non_lus }),
+);
+serveur.registerTool(
+  "afficher_mails",
+  {
+    description: "Affiche ton classement des mails sur l'écran de Max, par catégorie, avec un résumé.",
+    inputSchema: {
+      categories: z
+        .object({
+          a_traiter: z.array(z.number().int()).optional().describe("Ce qui demande une action ou une réponse rapide"),
+          etudes: z.array(z.number().int()).optional(),
+          business: z.array(z.number().int()).optional(),
+          perso: z.array(z.number().int()).optional(),
+          pubs: z.array(z.number().int()).optional().describe("Publicités, promotions, newsletters"),
+        })
+        .describe("Les numéros des mails dans chaque catégorie"),
+      resume: z.string().describe("Une ou deux phrases : l'essentiel à retenir"),
+    },
+  },
+  async ({ categories, resume }) => appeler("POST", "/api/outils/afficher-mails", { categories, resume }),
+);
+serveur.registerTool(
+  "preparer_rangement",
+  {
+    description: "Prépare le rangement de mails dans un dossier de Mail (par défaut les pubs du dernier tri, dans « Max - Pubs »). Rien n'est déplacé : demande confirmation, puis ranger_mails après son oui.",
+    inputSchema: {
+      ids: z.array(z.number().int()).optional().describe("Les numéros des mails ; par défaut, la catégorie pubs du dernier tri"),
+      dossier: z.string().optional().describe("Le nom du dossier (par défaut « Max - Pubs »)"),
+    },
+  },
+  async ({ ids, dossier }) => appeler("POST", "/api/outils/preparer-rangement", { ids, dossier }),
+);
+serveur.registerTool(
+  "ranger_mails",
+  { description: "Range les mails préparés, une fois qu'il a dit oui. Refusé s'il n'a pas confirmé." },
+  async () => appeler("POST", "/api/outils/ranger-mails"),
+);
+
 // --- l'écran ---
 
 serveur.registerTool(

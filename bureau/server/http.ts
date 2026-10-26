@@ -11,6 +11,8 @@ import type { Conseillers } from "./max/conseillers.ts";
 import type { InfosJarvis } from "./max/infos-jarvis.ts";
 import type { Mac } from "./max/mac.ts";
 import type { Verrou } from "./max/verrou.ts";
+import type { Planning } from "./max/planning.ts";
+import type { TriMails } from "./max/tri-mails.ts";
 import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
 import { listMissions } from "./storage.ts";
 
@@ -52,6 +54,8 @@ export function createBureauServer(o: {
   mac?: Mac;
   jarvis?: InfosJarvis;
   verrou?: Verrou;
+  planning?: Planning;
+  triMails?: TriMails;
   /** Le dossier des modèles de reconnaissance du visage (face-api), servis à la page. */
   modelesVisage?: string;
 }): http.Server {
@@ -146,7 +150,15 @@ export function createBureauServer(o: {
         ...(a ? { assistant: { etat: "veille", phrase: a.phrase, messages: [], oreille: a.oreille, bouche: a.bouche, cerveau: a.cerveau, vue: "jarvis" } } : {}),
       };
     }
-    return { ...o.manager.snapshot(), assistant: o.assistant?.vue(), conseillers: o.conseillers?.vue(), jarvis: o.jarvis?.vue(), verrou };
+    return {
+      ...o.manager.snapshot(),
+      assistant: o.assistant?.vue(),
+      conseillers: o.conseillers?.vue(),
+      jarvis: o.jarvis?.vue(),
+      verrou,
+      ...(o.planning ? { planning: o.planning.vue() } : {}),
+      ...(o.triMails ? { mails: o.triMails.vue() } : {}),
+    };
   };
   const diffuser = () => {
     const etat = etatComplet();
@@ -157,7 +169,11 @@ export function createBureauServer(o: {
   o.conseillers?.on("etat", diffuser);
   o.jarvis?.on("etat", diffuser);
   o.verrou?.on("etat", diffuser);
+  o.planning?.on("etat", diffuser);
+  o.triMails?.on("etat", diffuser);
   server.on("close", () => {
+    o.planning?.off("etat", diffuser);
+    o.triMails?.off("etat", diffuser);
     o.verrou?.off("etat", diffuser);
     o.jarvis?.off("etat", diffuser);
     o.manager.off("etat", diffuser);

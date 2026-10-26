@@ -14,6 +14,8 @@ import { Conseillers } from "./max/conseillers.ts";
 import { InfosJarvis } from "./max/infos-jarvis.ts";
 import { Mac } from "./max/mac.ts";
 import { Verrou } from "./max/verrou.ts";
+import { Planning } from "./max/planning.ts";
+import { TriMails } from "./max/tri-mails.ts";
 import { Visage } from "./max/visage.ts";
 import { ecrireConfigMcp } from "./max/mcp-config.ts";
 import { MissionManager } from "./mission.ts";
@@ -58,6 +60,9 @@ const mac = new Mac({
 const jarvis = new InfosJarvis(mac);
 // Le verrou par le visage : fermé au démarrage si un visage est enregistré
 const verrou = new Verrou({ visage: new Visage(config.dossierDonnees), actif: config.visage.actif });
+// L'emploi du temps du jour et le tri des mails
+const planning = new Planning({ dossier: config.dossierMissions, dossierDonnees: config.dossierDonnees });
+const triMails = new TriMails();
 const assistant = new Assistant({
   oreille,
   bouche,
@@ -75,6 +80,7 @@ const assistant = new Assistant({
   horodater: true,
   phraseSiri: config.voix.phraseSiri,
   verrou,
+  planning,
 });
 console.log(`${dispoOreille.ok ? "🎙 " : "⚠️ "} ${dispoOreille.detail}`);
 console.log(`${dispoBouche.ok ? "🔊" : "⚠️ "} ${dispoBouche.detail}`);
@@ -90,6 +96,8 @@ const server = createBureauServer({
   mac,
   jarvis,
   verrou,
+  planning,
+  triMails,
   modelesVisage: path.join(racine, "node_modules", "@vladmandic", "face-api", "model"),
 });
 
@@ -131,6 +139,7 @@ const fermer = () => {
   assistant.veille();
   bouche.arreter();
   coach.fermer();
+  planning.fermer();
   jarvis.arreter();
   conseillers.arreterTout();
   manager.arreter();

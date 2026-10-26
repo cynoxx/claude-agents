@@ -846,6 +846,18 @@ main {
 }
 
 /* --- l'écran Jarvis ------------------------------------------------------------------------------ */
+.jarvis,
+.verrou,
+.v-reglages {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.jarvis button,
+.verrou button,
+.v-reglages button,
+.jarvis input,
+.v-reglages input {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 .jarvis {
   --j-cyan: #7df9ff;
   --j-fond: #05070f;
@@ -984,6 +996,58 @@ main {
 }
 .j-agenda .vide {
   color: #7fb8c8;
+}
+.j-agenda .en-cours {
+  color: #05070f;
+  background: var(--j-cyan);
+  padding: 2px 6px;
+  margin: 0 -6px;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(125, 249, 255, 0.5);
+}
+.j-agenda .en-cours span {
+  color: #05070f;
+}
+.j-agenda .passe {
+  opacity: 0.45;
+}
+.j-defile {
+  max-height: 34vh;
+  overflow-y: auto;
+}
+.j-mails-resume {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.j-mails-cat {
+  margin-top: 6px;
+  font-size: 14px;
+}
+.j-mails-cat summary {
+  cursor: pointer;
+}
+.j-mails-cat summary b {
+  font-family: var(--mono);
+  color: var(--j-cyan);
+  margin-left: 4px;
+}
+.j-mails-cat ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0 0 0 4px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: #b9dce6;
+}
+.j-mails-cat li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.j-mails-cat li.non-lu strong {
+  color: #fff;
 }
 .j-mission {
   cursor: pointer;

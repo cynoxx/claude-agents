@@ -12,6 +12,8 @@ import type { Conseillers } from "./max/conseillers.ts";
 import { Confirmations } from "./max/confirmations.ts";
 import type { Mac } from "./max/mac.ts";
 import type { Verrou } from "./max/verrou.ts";
+import type { Planning } from "./max/planning.ts";
+import type { TriMails } from "./max/tri-mails.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
 import { listMissions } from "./storage.ts";
@@ -61,6 +63,8 @@ export function routesMax(o: {
   conseillers?: Conseillers;
   mac?: Mac;
   verrou?: Verrou;
+  planning?: Planning;
+  triMails?: TriMails;
 }) {
   const root = path.resolve(o.config.dossierMissions);
   const confirmations = new Confirmations();
@@ -287,6 +291,69 @@ export function routesMax(o: {
         }
         return repondre(res, 200, r);
       }
+      // l'emploi du temps du jour
+      case "POST /api/outils/planning":
+        if (!o.planning) return repondre(res, 503, { ok: false, texte: "L'emploi du temps n'est pas disponible." });
+        return repondre(res, 200, o.planning.enregistrer(corps.creneaux));
+      case "GET /api/outils/planning":
+        if (!o.planning) return repondre(res, 503, { ok: false, texte: "L'emploi du temps n'est pas disponible." });
+        return repondre(res, 200, { ok: true, texte: o.planning.decrire() });
+      case "POST /api/outils/preparer-planning-calendrier": {
+        const planning = o.planning;
+        const mac = o.mac;
+        if (!planning || !mac) return repondre(res, 503, { ok: false, texte: "Le Calendrier n'est pas disponible." });
+        const creneaux = planning.creneauxDates();
+        if (!creneaux.length) return repondre(res, 200, { ok: false, texte: "Il n'y a pas encore d'emploi du temps aujourd'hui." });
+        if (planning.vue()?.calendrier) return repondre(res, 200, { ok: false, texte: "Cet emploi du temps est déjà dans le Calendrier." });
+        const calendrier = texte("calendrier") || undefined;
+        confirmations.preparer("planning", `${creneaux.length} créneaux${calendrier ? ` dans le calendrier ${calendrier}` : ""}`, async () => {
+          let ajoutes = 0;
+          for (const c of creneaux) if ((await mac.creerRdv({ ...c, calendrier })).ok) ajoutes++;
+          if (ajoutes) planning.marquerCalendrier();
+          return ajoutes === creneaux.length
+            ? { ok: true, texte: `Les ${ajoutes} créneaux sont dans ton Calendrier.` }
+            : { ok: ajoutes > 0, texte: `${ajoutes} créneau(x) sur ${creneaux.length} ajouté(s) au Calendrier.` };
+        }, { ouiAvant: true });
+        return repondre(res, 200, {
+          ok: true,
+          texte: `Prêt à ajouter ${creneaux.length} créneaux au Calendrier. Rien n'est encore ajouté. S'il vient de te dire oui pour l'ajouter, appelle ajouter_planning_calendrier tout de suite ; sinon demande-lui d'abord.`,
+        });
+      }
+      case "POST /api/outils/ajouter-planning-calendrier":
+        return repondre(res, 200, await confirmations.confirmer("planning", o.assistant?.dernierMessageUtilisateur?.() ?? null));
+      // les mails triés
+      case "POST /api/outils/trier-mails": {
+        if (!o.mac || !o.triMails) return repondre(res, 503, { ok: false, texte: "Les mails ne sont pas disponibles." });
+        const l = await o.mac.listerMails(nombre("nombre") ?? 20, corps.non_lus !== false);
+        if (!l.ok) return repondre(res, 200, { ok: false, texte: l.texte });
+        o.triMails.retenir(l.mails);
+        return repondre(res, 200, {
+          ok: true,
+          texte: l.mails.length
+            ? `${l.texte}\n\nClasse chaque mail par son numéro dans a_traiter, etudes, business, perso ou pubs, puis appelle afficher_mails.`
+            : l.texte,
+        });
+      }
+      case "POST /api/outils/afficher-mails": {
+        if (!o.triMails) return repondre(res, 503, { ok: false, texte: "Les mails ne sont pas disponibles." });
+        const cats = corps.categories && typeof corps.categories === "object" ? (corps.categories as Record<string, unknown>) : {};
+        return repondre(res, 200, o.triMails.afficher(cats, texte("resume")));
+      }
+      case "POST /api/outils/preparer-rangement": {
+        const tri = o.triMails;
+        const mac = o.mac;
+        if (!mac || !tri) return repondre(res, 503, { ok: false, texte: "Les mails ne sont pas disponibles." });
+        const ids = Array.isArray(corps.ids) && corps.ids.length ? tri.connus(corps.ids) : tri.ids("pubs");
+        if (!ids.length) return repondre(res, 200, { ok: false, texte: "Aucun mail à ranger (trie d'abord les mails)." });
+        const dossier = texte("dossier") || "Max - Pubs";
+        confirmations.preparer("rangement", `${ids.length} mail(s) dans « ${dossier} »`, () => mac.rangerMails(ids, dossier), { ouiAvant: true });
+        return repondre(res, 200, {
+          ok: true,
+          texte: `Prêt à ranger ${ids.length} mail(s) dans le dossier « ${dossier} » de Mail. Rien n'est encore déplacé. S'il vient de te dire oui pour les ranger, appelle ranger_mails tout de suite ; sinon demande-lui d'abord.`,
+        });
+      }
+      case "POST /api/outils/ranger-mails":
+        return repondre(res, 200, await confirmations.confirmer("rangement", o.assistant?.dernierMessageUtilisateur?.() ?? null));
       case "POST /api/outils/vue": {
         const vue = texte("vue");
         if (vue !== "jarvis" && vue !== "bureau") return repondre(res, 200, { ok: false, texte: "Écran inconnu : jarvis ou bureau." });

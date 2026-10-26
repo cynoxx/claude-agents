@@ -18,6 +18,8 @@ import { Coach, lireIdees, lireJournal, lireProfil } from "../server/max/coach.t
 import { CONSEILLERS_DEFAUT, Conseillers } from "../server/max/conseillers.ts";
 import { Mac, type Executer } from "../server/max/mac.ts";
 import { Verrou } from "../server/max/verrou.ts";
+import { Planning } from "../server/max/planning.ts";
+import { TriMails } from "../server/max/tri-mails.ts";
 import { Visage } from "../server/max/visage.ts";
 import type { AssistantVue, MissionVue, ServerMessage } from "../shared/protocol.ts";
 
@@ -129,6 +131,8 @@ describe("routes et WebSocket de Max", () => {
   let coach: Coach;
   let conseillers: Conseillers;
   let gestes: { bin: string; args: string[] }[];
+  let planning: Planning;
+  let triMails: TriMails;
   let server: ReturnType<typeof createBureauServer>;
   let base: string;
 
@@ -148,10 +152,15 @@ describe("routes et WebSocket de Max", () => {
       const script = args.join("\n");
       if (script.includes('tell application "Contacts"')) return { code: 0, stdout: "Maman\t+33 6 12 34 56 78\t_$!<Mobile>!$_\n", stderr: "" };
       if (bin === "icalBuddy") return { code: 0, stdout: "Anatomie\t2026-10-27 at 08:30\n", stderr: "" };
+      if (script.includes("my propre(sender of m)"))
+        return { code: 0, stdout: "101\tScolarité <scol@univ.fr>\tPlanning des partiels\tlundi\tfalse\tBonjour\n102\tShein <promo@shein.com>\t-70 %\tlundi\tfalse\tPromo\n", stderr: "" };
+      if (script.includes("move m to boite")) return { code: 0, stdout: String(args.length - args.lastIndexOf("-e") - 3), stderr: "" };
       return { code: 0, stdout: "", stderr: "" };
     };
     const mac = new Mac({ actif: true, executer, dossierCaptures: tmp(), maintenant: () => new Date("2026-10-27T07:00:00") });
-    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac });
+    planning = new Planning({ dossier: root, dossierDonnees: donnees });
+    triMails = new TriMails();
+    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac, planning, triMails });
     await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -159,6 +168,7 @@ describe("routes et WebSocket de Max", () => {
     process.env = { ...envAvant };
     await manager.attendreFin();
     coach.fermer();
+    planning.fermer();
     conseillers.arreterTout();
     await new Promise((r) => server.close(r));
   });
@@ -222,6 +232,8 @@ describe("routes et WebSocket de Max", () => {
           "ouvrir_app", "fermer_app", "ouvrir_site", "chercher_youtube", "regler_volume", "regler_luminosite", "capture_ecran", "verrouiller_ecran",
           "musique", "chercher_contact", "preparer_message", "envoyer_message", "lire_mails", "agenda", "preparer_rdv", "creer_rdv", "meteo",
           "aller_au_bureau", "retour_jarvis",
+          "enregistrer_planning", "lire_planning", "preparer_planning_calendrier", "ajouter_planning_calendrier",
+          "trier_mails", "afficher_mails", "preparer_rangement", "ranger_mails",
         ].sort(),
       );
       expect((await texte("etat_bureau")).texte).toBe("Aucune mission en cours.");
@@ -339,6 +351,60 @@ describe("routes et WebSocket de Max", () => {
       expect((await texte("aller_au_bureau")).texte).toBe("Direction le bureau.");
       expect((await texte("retour_jarvis")).texte).toBe("Retour à l'écran de Max.");
       expect(assistant.appels.filter((a) => a.startsWith("vue:"))).toEqual(["vue:bureau", "vue:jarvis"]);
+    } finally {
+      await client.close();
+    }
+  }, 30_000);
+
+  it("Max construit l'emploi du temps, trie les mails, et n'écrit dans Calendrier ou Mail qu'après un oui (vrai client MCP)", async () => {
+    const transport = new StdioClientTransport({
+      command: path.join(RACINE, "node_modules", ".bin", "tsx"),
+      args: [path.join(RACINE, "server", "max", "outils-mcp.ts")],
+      env: { ...(process.env as Record<string, string>), BUREAU_URL: base, BUREAU_JETON_FICHIER: path.join(donnees, "jeton") },
+      stderr: "ignore",
+    });
+    const client = new Client({ name: "test", version: "1.0.0" });
+    await client.connect(transport);
+    const texte = async (name: string, args: Record<string, unknown> = {}) => {
+      const r = (await client.callTool({ name, arguments: args })) as { content: { type: string; text: string }[]; isError?: boolean };
+      return { texte: r.content.map((c) => c.text).join("\n"), erreur: !!r.isError };
+    };
+    const ecrituresCalendrier = () => gestes.filter((g) => g.args.join("\n").includes("make new event")).length;
+    try {
+      // l'emploi du temps
+      expect((await texte("lire_planning")).texte).toContain("Pas encore d'emploi du temps");
+      const creneaux = [
+        { debut: "09:00", fin: "11:00", titre: "Biochimie", type: "travail" },
+        { debut: "12:30", fin: "13:30", titre: "Déjeuner", type: "repas" },
+      ];
+      expect((await texte("enregistrer_planning", { creneaux })).texte).toContain("Emploi du temps enregistré (2 créneaux)");
+      expect((await texte("lire_planning")).texte).toContain("09:00–11:00 Biochimie (travail)");
+      expect((await texte("enregistrer_planning", { creneaux: [{ debut: "11:00", fin: "10:00", titre: "x", type: "travail" }] })).erreur).toBe(true);
+      assistant.dernier = { texte: "fais-moi mon emploi du temps", heure: Date.now() - 1000 };
+      expect((await texte("preparer_planning_calendrier")).texte).toContain("Rien n'est encore ajouté");
+      expect((await texte("ajouter_planning_calendrier")).erreur).toBe(true);
+      expect(ecrituresCalendrier()).toBe(0);
+      assistant.dernier = { texte: "oui", heure: Date.now() + 10 };
+      expect((await texte("ajouter_planning_calendrier")).texte).toBe("Les 2 créneaux sont dans ton Calendrier.");
+      expect(ecrituresCalendrier()).toBe(2);
+      expect(planning.vue()?.calendrier).toBe(true);
+      expect((await texte("preparer_planning_calendrier")).texte).toContain("déjà dans le Calendrier");
+
+      // les mails
+      expect((await texte("afficher_mails", { categories: {}, resume: "" })).erreur).toBe(true);
+      const tri = await texte("trier_mails", { nombre: 10 });
+      expect(tri.texte).toContain("[101] Scolarité <scol@univ.fr> — Planning des partiels");
+      expect(tri.texte).toContain("afficher_mails");
+      expect((await texte("afficher_mails", { categories: { a_traiter: [101], pubs: [102] }, resume: "Un mail de la fac." })).texte).toContain("2 mails classés");
+      expect(triMails.vue()?.categories.map((c) => c.id)).toEqual(["a_traiter", "pubs"]);
+      assistant.dernier = { texte: "trie mes mails", heure: Date.now() - 1000 };
+      expect((await texte("preparer_rangement", {})).texte).toContain("Prêt à ranger 1 mail(s) dans le dossier « Max - Pubs »");
+      expect((await texte("ranger_mails")).erreur).toBe(true);
+      expect(gestes.some((g) => g.args.join("\n").includes("move m to boite"))).toBe(false);
+      // « oui, range les pubs » dit juste avant la préparation suffit pour ranger ses propres mails
+      assistant.dernier = { texte: "oui range les pubs", heure: Date.now() - 1000 };
+      expect((await texte("preparer_rangement", {})).texte).toContain("Prêt à ranger");
+      expect((await texte("ranger_mails")).texte).toBe("1 mail rangé dans « Max - Pubs ».");
     } finally {
       await client.close();
     }

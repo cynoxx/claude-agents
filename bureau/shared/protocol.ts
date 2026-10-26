@@ -134,6 +134,34 @@ export interface VerrouVue {
   demande: number;
 }
 
+export type TypeCreneau = "travail" | "cours" | "pause" | "repas" | "sport" | "perso" | "sommeil" | "autre";
+
+/** Un créneau de l'emploi du temps du jour (heures « HH:MM »). */
+export interface Creneau {
+  debut: string;
+  fin: string;
+  titre: string;
+  type: TypeCreneau;
+}
+
+export interface PlanningVue {
+  jour: string;
+  creneaux: Creneau[];
+  /** Indice du créneau en cours, ou -1. */
+  enCours: number;
+  /** Déjà ajouté au Calendrier. */
+  calendrier: boolean;
+}
+
+export type CategorieMails = "a_traiter" | "etudes" | "business" | "perso" | "pubs";
+
+/** Les mails triés par Max, affichés sur son écran. */
+export interface MailsVue {
+  heure: string; // ISO
+  resume: string;
+  categories: { id: CategorieMails; nom: string; emoji: string; mails: { id: number; de: string; sujet: string; lu: boolean }[] }[];
+}
+
 export interface EtatBureau {
   claude: { ok: boolean; version?: string; erreur?: string };
   mission: MissionVue | null;
@@ -141,6 +169,8 @@ export interface EtatBureau {
   conseillers?: ConseillerVue[];
   jarvis?: JarvisVue;
   verrou?: VerrouVue;
+  planning?: PlanningVue | null;
+  mails?: MailsVue | null;
 }
 
 export interface EtatFichier {

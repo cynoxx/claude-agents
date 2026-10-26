@@ -27,6 +27,14 @@ export interface Contact {
   valeur: string;
   type: string;
 }
+export interface MailBref {
+  id: number;
+  de: string;
+  sujet: string;
+  date: string;
+  lu: boolean;
+  extrait: string;
+}
 export interface Evenement {
   heure: string; // « 08:30 », vide pour toute la journée
   titre: string;
@@ -81,6 +89,22 @@ export function lireAgendaIcal(sortie: string, jour: string): Evenement[] {
     out.push({ heure: h ? `${pad(Number(h[1]))}:${h[2]}` : "", titre: titre.trim() });
   }
   return out.sort((a, b) => a.heure.localeCompare(b.heure));
+}
+
+/** Sortie de la liste des mails (« id\tde\tsujet\tdate\tlu\textrait » par ligne) → mails. */
+export function lireMails(sortie: string): MailBref[] {
+  return sortie
+    .split("\n")
+    .map((l) => l.split("\t"))
+    .filter((p) => p.length >= 6 && /^\d+$/.test(p[0].trim()))
+    .map(([id, de, sujet, date, lu, ...reste]) => ({
+      id: Number(id),
+      de: de.trim(),
+      sujet: sujet.trim() || "(sans sujet)",
+      date: date.trim(),
+      lu: lu.trim() === "true",
+      extrait: reste.join(" ").replace(/\s+/g, " ").trim(),
+    }));
 }
 
 const decrireEvenements = (ev: Evenement[]) => ev.map((e) => `${e.heure || "Toute la journée"} ${e.titre}`).join("\n");
@@ -197,6 +221,67 @@ const S_MAILS = [
   "end repeat",
   "end tell",
   "return out",
+  "end run",
+];
+// le texte d'un mail sans tabulations ni retours à la ligne (une ligne par mail dans la sortie)
+const S_PROPRE = [
+  "on propre(t)",
+  "set AppleScript's text item delimiters to {tab, return, linefeed}",
+  "set morceaux to text items of (t as text)",
+  'set AppleScript\'s text item delimiters to " "',
+  "set r to morceaux as text",
+  'set AppleScript\'s text item delimiters to ""',
+  "return r",
+  "end propre",
+];
+const S_LISTER_MAILS = [
+  ...S_PROPRE,
+  "on run argv",
+  "set n to (item 1 of argv) as integer",
+  'set seulNonLus to (item 2 of argv) is "1"',
+  'set out to ""',
+  "set k to 0",
+  'tell application "Mail"',
+  "repeat with m in (messages of inbox)",
+  "if (not seulNonLus) or (read status of m is false) then",
+  "set c to content of m",
+  "if length of c > 300 then set c to text 1 thru 300 of c",
+  "set out to out & (id of m) & tab & my propre(sender of m) & tab & my propre(subject of m) & tab & ((date received of m) as string) & tab & (read status of m) & tab & my propre(c) & linefeed",
+  "set k to k + 1",
+  "if k >= n then exit repeat",
+  "end if",
+  "end repeat",
+  "end tell",
+  "return out",
+  "end run",
+];
+// range des mails (par leur id) dans un dossier du même compte, créé au besoin ; sinon dans un dossier « Sur mon Mac »
+const S_RANGER = [
+  "on run argv",
+  "set nomDossier to item 1 of argv",
+  "set ranges to 0",
+  'tell application "Mail"',
+  "repeat with i from 2 to count of argv",
+  "try",
+  "set m to first message of inbox whose id is ((item i of argv) as integer)",
+  "set c to account of mailbox of m",
+  "try",
+  "set boite to mailbox nomDossier of c",
+  "on error",
+  "try",
+  "tell c to make new mailbox with properties {name:nomDossier}",
+  "set boite to mailbox nomDossier of c",
+  "on error",
+  "if not (exists mailbox nomDossier) then make new mailbox with properties {name:nomDossier}",
+  "set boite to mailbox nomDossier",
+  "end try",
+  "end try",
+  "move m to boite",
+  "set ranges to ranges + 1",
+  "end try",
+  "end repeat",
+  "end tell",
+  "return ranges as string",
   "end run",
 ];
 const S_DATE = [
@@ -416,6 +501,33 @@ export class Mac {
     const r = await this.osa(S_MAILS, [String(n), seulementNonLus ? "1" : "0"], 90_000);
     if (r.code !== 0) return { ok: false, texte: expliquerErreur(r.stderr) };
     return { ok: true, texte: r.stdout.trim() || (seulementNonLus ? "Aucun mail non lu dans la boîte de réception." : "Aucun mail dans la boîte de réception.") };
+  }
+
+  /** Les derniers mails avec leur identifiant (pour les trier), une ligne par mail. */
+  async listerMails(nombre = 20, seulementNonLus = true): Promise<Reponse & { mails: MailBref[] }> {
+    if (this.horsMac()) return { ...this.horsMac()!, mails: [] };
+    const n = Math.min(Math.max(Math.round(nombre) || 20, 1), 40);
+    const r = await this.osa(S_LISTER_MAILS, [String(n), seulementNonLus ? "1" : "0"], 120_000);
+    if (r.code !== 0) return { ok: false, texte: expliquerErreur(r.stderr), mails: [] };
+    const mails = lireMails(r.stdout);
+    return {
+      ok: true,
+      texte: mails.length ? mails.map((m) => `[${m.id}] ${m.de} — ${m.sujet} (${m.date})${m.lu ? "" : " · non lu"}\n   ${m.extrait.slice(0, 200)}`).join("\n") : "Aucun mail à trier.",
+      mails,
+    };
+  }
+
+  /** Range ces mails dans un dossier de Mail (créé au besoin). */
+  async rangerMails(ids: number[], dossier: string): Promise<Reponse> {
+    if (this.horsMac()) return this.horsMac()!;
+    const nom = dossier.trim();
+    if (!NOM_APP.test(nom)) return { ok: false, texte: "Ce nom de dossier ne me semble pas valide." };
+    const valides = ids.filter((i) => Number.isInteger(i) && i > 0);
+    if (!valides.length) return { ok: false, texte: "Aucun mail à ranger." };
+    const r = await this.osa(S_RANGER, [nom, ...valides.map(String)], 120_000);
+    if (r.code !== 0) return { ok: false, texte: expliquerErreur(r.stderr) };
+    const n = Number(r.stdout.trim()) || 0;
+    return { ok: n > 0, texte: n ? `${n} mail${n > 1 ? "s" : ""} rangé${n > 1 ? "s" : ""} dans « ${nom} ».` : "Je n'ai pas réussi à ranger ces mails." };
   }
 
   /** « aujourdhui », « demain », « apres-demain » ou AAAA-MM-JJ → le jour, ou null. */

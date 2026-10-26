@@ -86,7 +86,7 @@ npm run arreter
 
 ## Parler à Max
 
-Commence ta phrase par **« Max »** : il ne réagit qu'à ça, pour ne pas te répondre quand tu parles à quelqu'un d'autre.
+Commence ta phrase par **« Max »** (ou « Dis Max », « Hé Max ») : il ne réagit qu'à ça, pour ne pas te répondre quand tu parles à quelqu'un d'autre.
 
 - « Max, compare cinq mutuelles pour un jeune actif à Paris et fais-moi un tableau. » → il lance une mission et te le dit.
 - « Max, où en est l'équipe ? » → il regarde et te raconte.
@@ -132,7 +132,7 @@ Ce que Max sait faire sur ton Mac :
 | « Max, fais une capture d'écran » · « verrouille l'écran » | capture sur le Bureau du Mac · écran verrouillé |
 | « Max, mets du lo-fi » · « pause » · « suivant » · « c'est quoi ce morceau ? » | pilote Spotify (ou Musique) |
 | « Max, envoie à Maman que je rentre à 20 h » | prépare l'iMessage, te le lit et demande « Je l'envoie ? » |
-| « Max, j'ai des nouveaux mails ? » | résume tes derniers mails non lus |
+| « Max, trie mes mails » · « j'ai des nouveaux mails ? » | lit tes derniers mails, les classe (🔴 à traiter, 🎓 études, 💼 business, 👤 perso, 📰 pubs) sur son écran et te dit l'essentiel ; propose de ranger les pubs dans un dossier « Max - Pubs » de Mail |
 | « Max, j'ai quoi aujourd'hui ? » · « et demain ? » | lit ton agenda |
 | « Max, ajoute dentiste mercredi à 17 h 30 » | prépare le rendez-vous et demande « Je l'ajoute ? » |
 | « Max, quel temps il fait ? » | la météo |
@@ -160,6 +160,18 @@ Max lit tes mails dans l'app **Mail** et ton agenda dans **Calendrier**. Pour y 
 3. Ouvre l'app Mail une fois, le temps qu'elle télécharge tes mails.
 
 Pour les rendez-vous, Max utilise le premier calendrier modifiable ; pour en imposer un : « ajoute-le dans mon calendrier Google ».
+
+### Ton emploi du temps du jour
+
+**Une fois par jour, au premier réveil**, Max te propose de construire ensemble ton emploi du temps. Il regarde ton agenda, te demande ce que tu veux absolument faire, puis propose une journée réaliste : des blocs de travail sur ta priorité, des pauses, les repas, un peu de sport, et une heure de coucher qui garde tes 7 heures de sommeil. Quand tu es d'accord :
+
+- l'emploi du temps s'affiche sur l'écran de Max, **le créneau en cours en surbrillance** ;
+- **au début de chaque créneau**, Max te prévient (« C'est l'heure de l'anatomie, on lance une session ? ») ;
+- il te propose de **l'ajouter à ton Calendrier** (donc à Google Agenda s'il y est ajouté), seulement après ton oui.
+
+Tu peux aussi le demander à tout moment : « Max, on fait mon emploi du temps », « Max, décale le sport à 19 h ». Les emplois du temps sont gardés dans `~/Documents/Bureau/emplois-du-temps/`.
+
+**Le oui, en résumé** : pour un message ou un rendez-vous, Max lit d'abord ce qu'il va faire et attend ton oui. Pour ranger tes pubs ou mettre ton emploi du temps dans ton Calendrier (sans risque pour personne), « oui, range-les » suffit.
 
 ## Max te reconnaît (comme Face ID)
 
@@ -262,6 +274,7 @@ Essaie : **« Dis Siri, Max au rapport »**. Le Bureau démarre (une dizaine de 
 ├── carnet.md            ce que Max a retenu de toi
 ├── travail.jsonl        tes sessions de travail
 ├── idees.md             les idées au parking
+├── emplois-du-temps/    un emploi du temps par jour (2026-10-27.json…)
 ├── conseillers/         les notes de chaque conseiller (etudes.md, sante.md…)
 └── 2026-10-25 14h32 - compare-5-mutuelles-pour-un-jeune/
     ├── RESULTAT.md      ← la synthèse finale de Max
@@ -321,6 +334,7 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 | La voix de Max est robotique | Installe la voix neuronale : `npm run voix`, puis relance le Bureau. `npm run setup` dit quelle voix est utilisée. |
 | `npm run voix` dit qu'il faut Python | `brew install python`, puis relance `npm run voix`. |
 | Max parle trop vite ou trop lentement | `"voix": { "vitessePiper": 0.9 }` (plus posé) ou `1.1` (plus rapide) dans `bureau.config.json`. |
+| « Dis Max, … » ne marche pas | Mets à jour (`git pull`) : Whisper écrit souvent « Dimax » ou « D'y max », Max les comprend maintenant. Sinon, dis simplement « Max, … ». |
 | Max ne t'entend pas | Vérifie l'autorisation du micro (Réglages Système > Confidentialité et sécurité > Micro). `npm run micros` montre le micro utilisé ; impose-en un autre avec `"voix": { "micro": ":1" }`. |
 | Max réagit à la télé | Il ne répond qu'aux phrases qui commencent par « Max » : baisse un peu le son, ou mets-le en veille. |
 | Max met du temps à répondre | Opus réfléchit quelques secondes. Pour plus de vitesse : `"modeles": { "conversation": "sonnet" }`. |

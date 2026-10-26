@@ -48,6 +48,19 @@ describe("Confirmations", () => {
     expect(c.enAttente("rdv")).toBeNull();
   });
 
+  it("pour un geste sans risque, accepte le oui dit juste avant la préparation (pas pour un message)", async () => {
+    let t = 10_000;
+    const c = new Confirmations(() => t);
+    const ouiJusteAvant = { texte: "oui range les pubs", heure: 9_000 };
+    c.preparer("rangement", "2 mails", action("rangement"), { ouiAvant: true });
+    expect(await c.confirmer("rangement", ouiJusteAvant)).toEqual({ ok: true, texte: "rangement fait." });
+    c.preparer("message", "à Maman", action("envoi-sans-oui"));
+    expect(await c.confirmer("message", { texte: "oui lis mes mails", heure: 9_000 })).toMatchObject({ ok: false });
+    t = 500_000;
+    c.preparer("rangement", "2 mails", action("rangement-tardif"), { ouiAvant: true });
+    expect(await c.confirmer("rangement", ouiJusteAvant)).toMatchObject({ ok: false });
+  });
+
   it("annule ce qui attend", async () => {
     const c = new Confirmations(() => 0);
     c.preparer("message", "x", action("x"));

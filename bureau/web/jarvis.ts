@@ -1,6 +1,6 @@
 // L'écran Jarvis : la sphère de Max au centre, ce qu'il dit, et autour l'heure, la météo, l'agenda du jour,
 // le travail du jour, la mission en cours. « Max, emmène-moi au bureau » zoome dans la sphère jusqu'au bureau.
-import type { AssistantVue, ClientMessage, EtatBureau, EtatMax, VueEcran } from "../shared/protocol.ts";
+import type { AssistantVue, ClientMessage, EtatBureau, EtatMax, MailsVue, PlanningVue, VueEcran } from "../shared/protocol.ts";
 import { dureeCourte, restant } from "./conversation.ts";
 import { Sphere } from "./sphere.ts";
 
@@ -40,6 +40,27 @@ export function prochainsRdv(agenda: { heure: string; titre: string }[], mainten
     const [h, m] = e.heure.split(":").map(Number);
     return h * 60 + m >= minutes - 60;
   });
+}
+
+const ICONES_CRENEAU: Record<string, string> = { travail: "📚", cours: "🎓", pause: "☕", repas: "🍽", sport: "🏃", perso: "🙂", sommeil: "🌙", autre: "•" };
+
+/** Les créneaux à montrer : le créneau en cours et les suivants (et le précédent, pour se situer). */
+export function creneauxAffiches(p: PlanningVue, max = 7): { texte: string; heure: string; enCours: boolean; passe: boolean }[] {
+  const debut = p.enCours >= 0 ? Math.max(0, p.enCours - 1) : 0;
+  return p.creneaux.slice(debut, debut + max).map((c, i) => ({
+    heure: `${c.debut}–${c.fin}`,
+    texte: `${ICONES_CRENEAU[c.type] ?? "•"} ${c.titre}`,
+    enCours: debut + i === p.enCours,
+    passe: p.enCours >= 0 && debut + i < p.enCours,
+  }));
+}
+
+/** Combien de mails dans le dernier tri, et le nombre à traiter. */
+export function compteMails(m: MailsVue): { total: number; aTraiter: number } {
+  return {
+    total: m.categories.reduce((t, c) => t + c.mails.length, 0),
+    aTraiter: m.categories.find((c) => c.id === "a_traiter")?.mails.length ?? 0,
+  };
 }
 
 const echapper = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -86,13 +107,42 @@ export class Jarvis {
     // panneaux
     const j = etat.jarvis;
     $("j-meteo").textContent = j?.meteo ?? "—";
+    // aujourd'hui : l'emploi du temps s'il existe, sinon l'agenda
     const agenda = $("j-agenda");
-    if (!j?.agenda) agenda.innerHTML = `<li class="vide">Agenda indisponible</li>`;
-    else {
-      const rdv = prochainsRdv(j.agenda, new Date()).slice(0, 5);
-      agenda.innerHTML = rdv.length
-        ? rdv.map((r) => `<li><span>${echapper(r.heure || "Journée")}</span> ${echapper(r.titre)}</li>`).join("")
-        : `<li class="vide">Rien d'autre aujourd'hui</li>`;
+    const aide = $("j-jour-aide");
+    const p = etat.planning;
+    $("j-jour-titre").textContent = p ? "Ton emploi du temps" : "Aujourd'hui";
+    aide.hidden = !!p;
+    if (p) {
+      agenda.innerHTML = creneauxAffiches(p)
+        .map((c) => `<li class="${c.enCours ? "en-cours" : c.passe ? "passe" : ""}"><span>${echapper(c.heure)}</span> ${echapper(c.texte)}</li>`)
+        .join("");
+    } else {
+      aide.textContent = "Pas encore d'emploi du temps : dis « Max, on fait mon emploi du temps ».";
+      if (!j?.agenda) agenda.innerHTML = `<li class="vide">Agenda indisponible</li>`;
+      else {
+        const rdv = prochainsRdv(j.agenda, new Date()).slice(0, 5);
+        agenda.innerHTML = rdv.length
+          ? rdv.map((r) => `<li><span>${echapper(r.heure || "Journée")}</span> ${echapper(r.titre)}</li>`).join("")
+          : `<li class="vide">Rien dans l'agenda</li>`;
+      }
+    }
+
+    // les mails triés par Max
+    const mails = etat.mails;
+    $("j-mails-carte").hidden = !mails;
+    if (mails) {
+      const n = compteMails(mails);
+      $("j-mails-resume").textContent = mails.resume || `${n.total} mails triés`;
+      $("j-mails").innerHTML = mails.categories
+        .map(
+          (c) =>
+            `<details class="j-mails-cat"${c.id === "a_traiter" ? " open" : ""}><summary>${c.emoji} ${echapper(c.nom)} <b>${c.mails.length}</b></summary><ul>${c.mails
+              .slice(0, 8)
+              .map((m) => `<li class="${m.lu ? "" : "non-lu"}"><strong>${echapper(m.de)}</strong> — ${echapper(m.sujet)}</li>`)
+              .join("")}</ul></details>`,
+        )
+        .join("");
     }
     const c = a?.coach;
     $("j-echeance").textContent = c?.echeance ? `${c.echeance.jours === 0 ? "Aujourd'hui" : `J-${c.echeance.jours}`} · ${c.echeance.nom}` : "Aucune échéance";

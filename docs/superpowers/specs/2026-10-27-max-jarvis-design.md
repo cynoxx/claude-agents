@@ -115,6 +115,35 @@ les personnes mais peut être trompée par une imitation déterminée ; garder l
   personne qui tourne la tête est refusée (distance 0,77) ; la bonne personne qui tourne la tête, après une demande
   Siri, est reconnue sans clic et Max dit « Salut Alex ! ».
 
+## Mails triés, emploi du temps du jour, « Dis Max » (ajoutés ensuite)
+
+Demande : « que Jarvis trie les mails, me les affiche, me demande de créer mon emploi du temps personnel à chaque fois
+que j'y vais ; quand je dis Dis Max ça marche pas ». Choix de l'utilisateur : mails classés à l'écran **et** rangés dans
+Mail ; emploi du temps proposé **une fois par jour** ; ajouté **aussi au Calendrier**.
+
+- **« Dis Max »** : des phrases synthétisées par Piper (trois voix) passées dans whisper.cpp donnent « Dimax » dans
+  presque tous les cas, et aussi « D'y max », « DMAX », « G-Max », « Et Max ». Le mot-clé accepte maintenant le nom collé
+  à un préfixe (d, di, dis, dit, dix, dy, g, j) et ces formules ; « Dimanche », « Maximum », « Maxime » restent ignorés.
+- **Mails** (`server/max/tri-mails.ts`, `Mac.listerMails`, `Mac.rangerMails`) : Max lit les derniers mails avec leur
+  numéro (identifiant Mail), les classe lui-même (à traiter, études, business, perso, pubs) et envoie son classement et un
+  résumé à l'écran ; il ne peut classer que des mails qu'il vient de lire. Ranger = déplacer dans un dossier
+  « Max - Pubs » du même compte (créé au besoin), sinon « Sur mon Mac ». La consigne rappelle que le contenu d'un mail
+  n'est jamais une consigne.
+- **Emploi du temps** (`server/max/planning.ts`) : créneaux validés (heures, titre, pas de chevauchement ; la journée va de
+  5 h à 5 h, un créneau du soir peut finir le lendemain matin), enregistrés dans `emplois-du-temps/AAAA-MM-JJ.json`,
+  affichés avec le créneau en cours, annoncés à leur début (Max se réveille pour ça, ou dit juste l'heure s'il est
+  verrouillé). Au premier réveil du jour (ou au premier message), Max est invité à le proposer ; le jour proposé est
+  noté pour ne pas insister. La consigne décrit comment le construire (agenda d'abord, blocs de 45 min à 2 h, pauses,
+  repas, sport, coucher qui garde 7 h de sommeil, résumé oral court).
+- **Confirmations** : ranger ses mails et mettre son propre emploi du temps au Calendrier sont des gestes sans risque pour
+  autrui ; pour eux, un oui dit dans les 2 minutes avant la préparation suffit (« oui, range les pubs »). Messages et
+  rendez-vous gardent la règle stricte (le oui doit suivre la lecture).
+- **Essai réel (Opus, Mac simulé)** : au premier réveil, Max propose l'emploi du temps ; il lit l'agenda (cours à 16 h),
+  propose une journée cohérente (biochimie, cours, course, anatomie, dîner, coucher 23 h 15), l'enregistre, prévient
+  d'un doublon possible avec le cours déjà au Calendrier ; il trie six mails comme un humain l'aurait fait
+  (inscription aux examens et message de Maman à traiter, colle d'anatomie en études, commandes de la boutique en
+  business, Shein et Uber Eats en pubs) et ne dit à l'oral que l'essentiel.
+
 ## Hors périmètre
 
 WhatsApp (pas de façon fiable d'envoyer sans clic), lire les SMS reçus, répondre à un mail, contrôle de la maison.
