@@ -2508,8 +2508,20 @@ body.ultime-secousse .jarvis {
 }
 /* l'écran passe au rouge sang : le fond, et les panneaux (le cyan devient rouge, les canevas gardent leurs couleurs) */
 body[data-obscur="oui"] .jarvis {
-  background: radial-gradient(ellipse at 50% 40%, #2a0306 0%, #0a0002 68%);
+  background: radial-gradient(ellipse at 50% 42%, #1a0204 0%, #040001 62%, #000 100%);
   color: #ffe0dc;
+}
+/* le décor s'enfonce dans l'ombre, et les bords du QG sont engloutis par le noir */
+body[data-obscur="oui"] #j-fond {
+  filter: brightness(0.62) contrast(1.15);
+}
+body[data-obscur="oui"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.82) 100%);
 }
 body[data-obscur="oui"] .jarvis .qg-barre > :not(.qg-obscur),
 body[data-obscur="oui"] .jarvis .j-carte,

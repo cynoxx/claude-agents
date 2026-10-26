@@ -53,6 +53,6 @@ describe("Max Ultime", () => {
   });
 
   it("les anneaux l'annoncent", () => {
-    expect(etiquettesAnneaux({ assistant: { etat: "ecoute", obscur: 1 } } as unknown as EtatBureau)[0]).toBe("MAX ULTIME · OBSCUR");
+    expect(etiquettesAnneaux({ assistant: { etat: "ecoute", obscur: 1 } } as unknown as EtatBureau)[0]).toBe("MAX ULTIME · TÉNÈBRES");
   });
 });

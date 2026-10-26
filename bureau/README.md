@@ -118,7 +118,7 @@ Tout s'organise en **trois niveaux** :
 
 Pour les grosses sessions : **« Max, mode obscur »** (ou « mode ultime », « mode concentration »), ou le bouton **◆ Mode obscur** dans la barre.
 
-- **La transformation** : l'écran glitche, un orage noir et pourpre envahit tout, des éclairs rouges frappent avec le tonnerre, « **MAX ULTIME** » s'écrase à l'écran, puis le QG réapparaît en rouge sang.
+- **La transformation** (7 secondes) : la lumière vacille et tout tombe dans le noir. Un orage de nuages sombres monte, des braises s'élèvent dans les ténèbres, des éclairs rouges de plus en plus violents frappent (avec le tonnerre et un grondement grave), deux yeux rouges s'ouvrent dans l'obscurité, puis « **MAX ULTIME** » s'écrase à l'écran. Le QG réapparaît ensuite en rouge sang, bords engloutis par l'ombre.
 - **Max Ultime** : ses lignes passent au rouge, ses yeux s'allument en deux fentes, un rictus en coin. Sa voix devient plus lente et plus froide (avec la voix ElevenLabs). Et surtout il change de caractère : **arrogant**, phrases courtes, il te défie (« Tu veux réussir le concours, ou regarder ton téléphone ? ») et refuse sèchement tout ce qui n'est pas ton travail. L'arrogance est un jeu : s'il sent que ça ne va pas, il redevient le Max bienveillant.
 - **La concentration** : une session de **50 minutes** sur les études démarre, avec un chrono géant sous Max. Les tuiles des pôles et la fenêtre des mails disparaissent ; derrière les montagnes, l'orage gronde de temps en temps.
 - **En sortir** : « Max, mode normal », ou **◇ Quitter le mode obscur**. La session, elle, continue jusqu'au bout.

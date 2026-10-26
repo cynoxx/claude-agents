@@ -71,7 +71,7 @@ export function compteMails(m: MailsVue): { total: number; aTraiter: number } {
 
 /** Les petits textes des anneaux de données autour de Max : son état, l'échéance, la séance du jour, les études. */
 export function etiquettesAnneaux(e: EtatBureau): string[] {
-  const t: string[] = [e.assistant?.obscur ? "MAX ULTIME · OBSCUR" : `SYS · ${STATUTS[e.assistant?.etat ?? "veille"].split(" —")[0]}`];
+  const t: string[] = [e.assistant?.obscur ? "MAX ULTIME · TÉNÈBRES" : `SYS · ${STATUTS[e.assistant?.etat ?? "veille"].split(" —")[0]}`];
   const ech = e.assistant?.coach?.echeance;
   if (ech) t.push(`${ech.nom.slice(0, 18)} · ${ech.jours === 0 ? "JOUR J" : `J-${ech.jours}`}`);
   const s = e.sport ? SEANCES.find((x) => x.id === (e.sport!.faite ?? e.sport!.prevue)) : null;
