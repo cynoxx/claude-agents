@@ -1,6 +1,6 @@
 # Max vocal — parler directement avec Max (façon Jarvis)
 
-**Statut : construit** (voir `bureau/README.md`, sections « Parler à Max » et « Dis Siri, réveille Max »). L'utilisateur a validé la partie 1 et délégué le reste (« fais jusqu'au résultat final »).
+**Statut : construit** (voir `bureau/README.md`, sections « Parler à Max » et « Dis Siri, Max au rapport »). L'utilisateur a validé la partie 1 et délégué le reste (« fais jusqu'au résultat final »).
 Les parties 2 et 3 ci-dessous sont des décisions de l'implémenteur, notées pour relecture.
 
 Remplace la dictée par bouton (🎤) et la voix du navigateur ajoutées le 25/10 : elles ne permettaient ni la
@@ -14,7 +14,7 @@ conversation ni l'ouverture mains libres.
 | Transcription | Whisper en local (whisper.cpp) : la voix ne quitte pas le Mac |
 | Cerveau en conversation | Opus (modifiable dans `bureau.config.json`) |
 | Mémoire | un carnet : Max note ce qu'il apprend sur l'utilisateur et ses missions |
-| Démarrage | à la demande : « Dis Siri, réveille Max » (raccourci de l'app Raccourcis) ; pas de démarrage automatique au login |
+| Démarrage | à la demande : « Dis Siri, Max au rapport » (raccourci de l'app Raccourcis) ; pas de démarrage automatique au login. D'abord nommé « Réveille Max », renommé parce que Siri comprend « réveille » comme une alarme |
 | Mac | supposé à puce Apple (modèle Whisper choisi en conséquence ; modifiable) |
 
 ## Partie 1 — Architecture (validée)
@@ -23,7 +23,7 @@ Les navigateurs bloquent le son et le traitement du micro tant qu'on n'a pas cli
 l'oreille de Max tournent donc **dans le serveur, sur le Mac** ; la page ne sert qu'à voir et à écrire.
 
 ```
-« Dis Siri, réveille Max » → scripts/reveiller-max.sh → démarre le serveur s'il ne tourne pas,
+« Dis Siri, Max au rapport » → scripts/reveiller-max.sh → démarre le serveur s'il ne tourne pas,
                              réveille Max, ouvre la page
 🎙 Oreille   ffmpeg (micro) → détecteur de parole → WAV → whisper-cli → texte
              → filtre « Max, … » / fenêtre de suite de 10 s → Cerveau
@@ -94,7 +94,7 @@ par `npm run modele`.
 
 **Démarrage Siri.** `scripts/reveiller-max.sh` (complète le PATH Homebrew, construit la page si besoin,
 démarre le serveur en arrière-plan avec un journal dans `~/Library/Logs/Bureau.log`, attend qu'il réponde,
-réveille Max, ouvre la page). Le raccourci « Réveille Max » ne fait qu'exécuter ce script ; le README donne
+réveille Max, ouvre la page). Le raccourci « Max au rapport » ne fait qu'exécuter ce script ; le README donne
 le pas-à-pas (l'app Raccourcis ne peut pas être remplie par un script).
 
 **Tests.** Unitaires pour tout ce qui est pur (détecteur de parole, WAV, mot-clé, hallucinations, découpe en

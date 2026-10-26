@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CONFIG_FILE, DEFAULT_CONFIG, loadConfig } from "./config.ts";
+import { FICHIER_PROFIL } from "./max/coach.ts";
 import { checkClaude } from "./claude-check.ts";
 import { Bouche } from "./voix/bouche.ts";
 import { preparerOreille } from "./voix/diagnostic.ts";
@@ -13,8 +14,10 @@ const fichier = path.join(racine, CONFIG_FILE);
 if (fs.existsSync(fichier)) {
   console.log(`✔ ${CONFIG_FILE} existe déjà, je n'y touche pas.`);
 } else {
+  // les conseillers restent ceux par défaut (et suivent les mises à jour) tant qu'on n'en écrit pas soi-même
+  const { conseillers: _parDefaut, ...base } = DEFAULT_CONFIG;
   const modele = {
-    ...DEFAULT_CONFIG,
+    ...base,
     projets: [
       { nom: "Cynox Fitness", chemin: "~/Code/Cynox-Fitness" },
       { nom: "Lifforge", chemin: "~/Code/lifforge" },
@@ -28,6 +31,16 @@ if (fs.existsSync(fichier)) {
 const config = loadConfig(racine);
 let toutVaBien = true;
 
+const profil = path.join(config.dossierMissions, FICHIER_PROFIL);
+if (fs.existsSync(profil)) {
+  console.log(`✔ ${profil} existe déjà, je n'y touche pas.`);
+} else {
+  fs.mkdirSync(config.dossierMissions, { recursive: true });
+  fs.copyFileSync(path.join(racine, "modeles", "moi.md"), profil);
+  console.log(`✔ ${profil} créé.`);
+  console.log("  → Remplis-le : c'est ce que Max et ses conseillers savent de toi (priorité, objectifs, rythme, échéances).");
+}
+
 const claude = await checkClaude(process.env.CLAUDE_BIN ?? "claude");
 if (claude.ok) console.log(`✔ Claude Code est prêt (${claude.version}).`);
 else {
@@ -40,7 +53,9 @@ console.log(`${oreille.ok ? "✔ Oreille de Max :" : "✘ Oreille de Max :"} ${o
 const bouche = await new Bouche({ bin: config.voix.say, voix: config.voix.voixMac, debit: config.voix.debit }).preparer();
 console.log(`${bouche.ok ? "✔ Voix de Max :" : "✘ Voix de Max :"} ${bouche.detail}`);
 
-console.log(`\nPour « Dis Siri, réveille Max », le raccourci doit exécuter :\n  /bin/bash "${path.join(racine, "scripts", "reveiller-max.sh")}"\n(pas-à-pas dans le README, section « Dis Siri, réveille Max »).`);
+console.log(
+  `\nPour « Dis Siri, ${config.voix.phraseSiri} », le raccourci nommé « ${config.voix.phraseSiri} » doit exécuter :\n  /bin/bash "${path.join(racine, "scripts", "reveiller-max.sh")}"\n(pas-à-pas dans le README, section « Dis Siri, Max au rapport »).`,
+);
 
 if (toutVaBien) console.log(`\nTout est prêt${oreille.ok ? "" : " (Max t'entendra quand l'oreille sera réglée ; en attendant tu peux lui écrire)"} ! Lance le Bureau avec : npm start`);
 else process.exitCode = 1;

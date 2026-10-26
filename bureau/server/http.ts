@@ -178,6 +178,7 @@ export function createBureauServer(o: {
           }
           const rc = msg.type === "session" ? o.coach.demarrerSession(String(msg.sujet ?? ""), Number(msg.minutes ?? 25)) : o.coach.arreterSession();
           r = rc.ok ? { ok: true } : { ok: false, erreur: rc.texte };
+          if (rc.ok) o.assistant?.informer?.(`Depuis la page : ${rc.texte}`);
           break;
         }
         default:

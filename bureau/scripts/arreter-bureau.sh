@@ -1,5 +1,5 @@
 #!/bin/bash
-# Arrête le Bureau qui tourne en arrière-plan (démarré par « réveille Max »).
+# Arrête le Bureau qui tourne en arrière-plan (démarré par « Dis Siri, Max au rapport »).
 set -u
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.volta/bin:$HOME/.local/bin:$PATH"
 if ! command -v node > /dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi

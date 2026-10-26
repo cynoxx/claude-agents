@@ -43,6 +43,9 @@ class FauxAssistant extends EventEmitter implements AssistantApi {
   ecrire(texte: string) {
     this.appels.push(`ecrire:${texte}`);
   }
+  informer(texte: string) {
+    this.appels.push(`informer:${texte}`);
+  }
 }
 
 describe("jeton", () => {
@@ -274,6 +277,7 @@ describe("routes et WebSocket de Max", () => {
     ws.send(JSON.stringify({ type: "fin-session" }));
     for (let i = 0; i < 100 && coach.vue().minuteur; i++) await new Promise((r) => setTimeout(r, 10));
     expect(coach.vue().minuteur).toBeNull();
+    expect(assistant.appels.filter((x) => x.startsWith("informer:"))).toHaveLength(2);
     const dernier = messages.filter((m) => m.type === "etat").at(-1);
     expect(dernier?.type === "etat" && dernier.etat.conseillers?.map((c) => c.id)).toEqual(["etudes", "sante", "business", "apps", "vie"]);
     ws.close();

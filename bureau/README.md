@@ -2,9 +2,9 @@
 
 Une équipe d'agents Claude Code qui travaille sous tes yeux, dans un bureau en pixel art.
 
-Tu parles à **Max**, le chef, comme à Jarvis : « Max, compare les mutuelles pour moi ». Il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
+Tu parles à **Max**, le chef, comme à Jarvis : « Max, compare les mutuelles pour moi ». Il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et il a cinq **conseillers**, un par domaine de ta vie, assis à leur bureau : 🩺 Prof (études), 💪 Coach (santé), 💼 Associé (business), 📱 Dev (apps), 🏠 Majordome (vie perso). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
 
-> Le guide complet : [le Bureau](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md) et [Max vocal](../docs/superpowers/specs/2026-10-26-max-vocal-design.md).
+> Le guide complet : [le Bureau](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md), [Max vocal](../docs/superpowers/specs/2026-10-26-max-vocal-design.md) et [Max coach et les conseillers](../docs/superpowers/specs/2026-10-26-max-coach-conseillers-design.md).
 
 ## Installation (une seule fois)
 
@@ -49,15 +49,17 @@ npm run setup
 | `voix.voixMac` | la voix de Max (une voix de `say -v ?`) ; `null` = la meilleure voix française installée |
 | `voix.debit` | la vitesse à laquelle Max parle (mots par minute) |
 | `voix.veilleMinutes` | Max se met en veille après ce temps sans échange |
+| `voix.phraseSiri` | le nom de ton raccourci Siri (« Max au rapport »), que Max te rappelle quand il s'endort |
+| `conseillers` | (facultatif) ta propre liste de conseillers, à la place des cinq par défaut ; voir « Les conseillers » |
 
 ## Lancer le Bureau
 
 Deux façons :
 
-- **« Dis Siri, réveille Max »**, après avoir créé le raccourci une fois (voir plus bas). Le Bureau démarre en arrière-plan et la page s'ouvre.
+- **« Dis Siri, Max au rapport »**, après avoir créé le raccourci une fois (voir plus bas). Le Bureau démarre en arrière-plan et la page s'ouvre.
 - **À la main** : `cd claude-agents/bureau` puis `npm start`. Ton navigateur s'ouvre sur **http://localhost:4747**. Garde la fenêtre du Terminal ouverte ; `Ctrl+C` ferme le Bureau.
 
-Dans les deux cas, Max se réveille tout seul et te dit « Salut ! Je t'écoute. ». Pour éteindre un Bureau démarré par Siri : `npm run arreter`.
+Dans les deux cas, Max se réveille tout seul et te dit « Salut ! Je t'écoute. » (ou combien tu as déjà travaillé aujourd'hui). Pour éteindre un Bureau démarré par Siri : `npm run arreter`.
 
 ## Parler à Max
 
@@ -75,7 +77,7 @@ Sous le bureau, le **panneau de conversation** montre tout ce que vous vous dite
 
 | Voyant | Signification |
 |---|---|
-| 😴 Max dort | micro coupé ; « Dis Siri, réveille Max » ou le bouton 👂 le réveille |
+| 😴 Max dort | micro coupé ; « Dis Siri, Max au rapport » ou le bouton 👂 le réveille |
 | 👂 Max écoute | dis « Max, … » |
 | 💭 Max réfléchit | il prépare sa réponse (Opus met quelques secondes) |
 | 🗣 Max parle | le micro est coupé pendant qu'il parle, pour qu'il ne s'entende pas lui-même ; 🤫 le fait taire |
@@ -88,7 +90,61 @@ Quand une mission se termine, Max te le dit tout seul et te résume le résultat
 
 **Le bureau pixel art** fonctionne comme avant. Clique sur un robot (ou sur Max) pour voir sa tâche, tout ce qu'il a fait et son rapport. Les icônes au-dessus des robots : ☕ attend son tour, ✅ a fini, 💤 quota atteint (**▶️ Reprendre** plus tard), ❗ problème (clique dessus). Boutons du haut : **📄 Résultat**, **⏹ Arrêter**, **▶️ Reprendre**, **📜 Historique**, **📁 Dossier**. Tu peux aussi lancer une mission **sans passer par Max**, dans « Lancer une mission directement » en bas de la page.
 
-## « Dis Siri, réveille Max »
+## Max, ton coach
+
+Max sait où tu en es : il lit ton fichier **`moi.md`** (voir plus bas), connaît la date, tes échéances et le temps que tu as travaillé.
+
+- « Max, je me mets au travail. » → il te propose une petite première étape et lance une **session de 25 minutes**. Tu peux aussi dire « une session de 50 minutes sur l'anatomie ».
+- À la fin, **il se réveille tout seul** (même s'il dormait), te félicite, te demande ce que tu as fait et te propose une pause de 5 minutes. À la fin de la pause, il te propose la suite.
+- « Max, j'arrête. » → il note le temps réellement fait.
+- « Max, combien j'ai travaillé cette semaine ? » → aujourd'hui, hier, les 7 derniers jours, ta série de jours d'affilée.
+- « Max, mon examen est le 14 décembre. » → il l'ajoute à tes échéances et fait le compte à rebours.
+- « Max, j'ai une idée pour ma boutique… » pendant une session → il te propose de la mettre **au parking** (`idees.md`) pour y revenir après, au lieu de t'y lancer maintenant.
+- « Max, rappelle-moi d'aller me coucher à 23 h. » → à 23 h, il te le dit à voix haute (si le Bureau est ouvert).
+- « Max, bonjour ! » → le nombre de jours avant ta prochaine échéance, ton travail d'hier, et la première session de la journée.
+
+Dans le panneau de conversation : le minuteur en cours (⏱), ton travail du jour (📚) et ta prochaine échéance (📅 J-49). Le bouton **⏱ Session 25 min** lance une session sans parler, **⏹ Stop** l'arrête.
+
+La nuit jusqu'à 5 h du matin compte dans la journée de la veille. Le journal de tes sessions est dans `~/Documents/Bureau/travail.jsonl`.
+
+### Ton fichier `moi.md`
+
+C'est ce que Max et ses conseillers savent de toi : qui tu es, ta priorité du moment, tes objectifs, ton rythme, ce qui t'aide et ce qui te bloque. Il est dans `~/Documents/Bureau/moi.md` (`npm run setup` en crée un modèle à remplir). Écris-le comme tu parlerais à un ami, et modifie-le quand ta vie change : Max le relit à chaque réveil.
+
+Les échéances se notent dans une section `## Échéances`, une par ligne :
+
+```markdown
+## Échéances
+- 2026-12-14 : Examen PASS
+```
+
+## Les conseillers
+
+En bas du bureau, l'**aile des conseillers** : un robot par domaine de ta vie, chacun à son bureau, avec son propre carnet.
+
+| Conseiller | Domaine |
+|---|---|
+| 🩺 Prof | études : méthode, planning jusqu'aux examens, explications de cours, interrogations |
+| 💪 Coach | santé : sommeil, rythme, énergie, alimentation, sport, stress et moral |
+| 💼 Associé | business : projets, boutique, réseaux sociaux, vidéos, marketing |
+| 📱 Dev | apps et code |
+| 🏠 Majordome | vie perso : administratif, argent, logement, relations, quotidien |
+
+Demande à Max : « Max, demande au Prof comment réviser la biochimie en sept semaines. » Max transmet la question, le Prof réfléchit à son bureau (sa bulle montre ce qu'il fait, recherche web comprise), puis Max te résume sa réponse. Autres idées : « Max, demande au Prof de m'interroger sur la cellule », « Max, demande au Coach comment me recoucher plus tôt ».
+
+Clique sur un conseiller pour lire sa dernière question et sa réponse complète. Chaque conseiller connaît ton `moi.md` et garde ses propres notes dans `~/Documents/Bureau/conseillers/<id>.md` (il y ajoute ce qu'il apprend ; tu peux les modifier). Un conseiller utilise le modèle des robots (`modeles.robots`) et répond en une minute environ.
+
+Pour changer les conseillers, ajoute une liste `conseillers` dans `bureau.config.json`. Un conseiller qui reprend l'`id` d'un conseiller par défaut garde ce que tu ne changes pas :
+
+```json
+"conseillers": [
+  { "id": "etudes", "nom": "Docteur" },
+  { "id": "sante" },
+  { "id": "musique", "nom": "Maestro", "emoji": "🎸", "domaine": "Musique", "description": "guitare et composition" }
+]
+```
+
+## « Dis Siri, Max au rapport »
 
 À faire une seule fois, dans l'app **Raccourcis** du Mac :
 
@@ -98,21 +154,26 @@ Quand une mission se termine, Max te le dit tout seul et te résume le résultat
    ```bash
    /bin/bash ~/claude-agents/bureau/scripts/reveiller-max.sh
    ```
-4. Nomme le raccourci **« Réveille Max »** (le nom en haut de la fenêtre). C'est la phrase que Siri reconnaîtra.
+4. Nomme le raccourci **« Max au rapport »** (le nom en haut de la fenêtre). C'est la phrase que Siri reconnaîtra.
 5. La première fois, Raccourcis peut demander d'autoriser les scripts : **Raccourcis > Réglages > Avancé > « Autoriser l'exécution des scripts »**.
 
-Essaie : **« Dis Siri, réveille Max »**. Le Bureau démarre (une dizaine de secondes la première fois), la page s'ouvre et Max te salue. Si le Bureau tourne déjà, Siri réveille simplement Max.
+Essaie : **« Dis Siri, Max au rapport »**. Le Bureau démarre (une dizaine de secondes la première fois), la page s'ouvre et Max te salue. Si le Bureau tourne déjà, Siri réveille simplement Max.
 
 - « Dis Siri » doit être activé : **Réglages Système > Siri**.
 - La première fois, le Mac demande l'**autorisation du micro** pour Raccourcis (ou pour le Terminal si tu as fait `npm start`) : accepte. Si tu as refusé, active-la dans **Réglages Système > Confidentialité et sécurité > Micro**.
-- Évite de nommer le raccourci « Bureau » : Siri ouvrirait le Bureau du Finder.
-- Tu peux aussi glisser le raccourci dans le Dock pour le lancer en un clic.
+- Choisis un nom **sans verbe que Siri connaît déjà** : « réveille » lui fait programmer une alarme, « appelle » passe un appel, « allume » vise les lumières, « ouvre » ou « lance » une app, et « Bureau » ouvre le Bureau du Finder. « Max au rapport » n'entre en conflit avec rien.
+- Sans la voix : dans le raccourci, **ⓘ > Ajouter un raccourci clavier** (par exemple `⌃ ⌥ M`), ou **Fichier > Ajouter au Dock**.
 - Le journal du Bureau démarré par Siri est dans `~/Library/Logs/Bureau.log`.
 
 ## Où sont les fichiers
 
 ```
 ~/Documents/Bureau/
+├── moi.md               ← qui tu es, ta priorité, tes échéances (écrit par toi)
+├── carnet.md            ce que Max a retenu de toi
+├── travail.jsonl        tes sessions de travail
+├── idees.md             les idées au parking
+├── conseillers/         les notes de chaque conseiller (etudes.md, sante.md…)
 └── 2026-10-25 14h32 - compare-5-mutuelles-pour-un-jeune/
     ├── RESULTAT.md      ← la synthèse finale de Max
     ├── MISSION.md       ta demande
@@ -169,7 +230,10 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 | Max ne t'entend pas | Vérifie l'autorisation du micro (Réglages Système > Confidentialité et sécurité > Micro). `npm run micros` montre le micro utilisé ; impose-en un autre avec `"voix": { "micro": ":1" }`. |
 | Max réagit à la télé | Il ne répond qu'aux phrases qui commencent par « Max » : baisse un peu le son, ou mets-le en veille. |
 | Max met du temps à répondre | Opus réfléchit quelques secondes. Pour plus de vitesse : `"modeles": { "conversation": "sonnet" }`. |
-| Siri ouvre le Bureau du Finder | Renomme le raccourci « Réveille Max » (pas « Bureau »). |
+| Siri demande « à quelle heure programmer l'alarme ? » | Le mot « réveille » déclenche l'alarme : renomme le raccourci « Max au rapport ». |
+| Siri ouvre le Bureau du Finder | Renomme le raccourci « Max au rapport » (pas « Bureau »). |
+| Un rappel n'a pas sonné | Les rappels ne sonnent que si le Bureau est ouvert. Un rappel manqué de plus d'une heure est abandonné. |
+| Un conseiller affiche ❗ | Il n'a pas pu répondre (quota, réseau). Clique dessus pour voir, puis redemande à Max. |
 | Siri lance le raccourci mais rien ne s'ouvre | Regarde `~/Library/Logs/Bureau.log`, et vérifie que le chemin du script est le bon. |
 | « Le port 4747 est déjà utilisé » | Le Bureau tourne déjà (peut-être démarré par Siri) : `npm run arreter`, ou change `port` dans `bureau.config.json`. |
 | Le Codeur ne démarre pas (❗) | Vérifie le `chemin` du projet dans `bureau.config.json` : ce doit être un dépôt Git. |

@@ -21,6 +21,8 @@ export interface AssistantApi extends EventEmitter {
   veilleApresParole(): void;
   taire(): void;
   ecrire(texte: string): void;
+  /** Une information pour Max, qu'il recevra avec le prochain message (ex. une session arrêtée depuis la page). */
+  informer?(texte: string): void;
 }
 
 const MAX_RESULTAT = 8000;

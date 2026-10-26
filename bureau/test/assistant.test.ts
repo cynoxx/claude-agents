@@ -412,6 +412,14 @@ describe("Assistant — coach", () => {
     expect(a.vue().messages.at(-1)?.texte).toContain("« Dis Siri, Max au rapport »");
   });
 
+  it("transmet avec le message suivant ce qui s'est passé depuis la page", () => {
+    a.informer("Depuis la page : Session arrêtée : 18 minutes sur « Anatomie ».");
+    a.ecrire("Je reprends");
+    expect(cerveau().recus).toEqual(["[Bureau, pour info] Depuis la page : Session arrêtée : 18 minutes sur « Anatomie ».\nJe reprends"]);
+    a.ecrire("Et après ?");
+    expect(cerveau().recus.at(-1)).toBe("Et après ?");
+  });
+
   it("ajoute l'heure devant les messages de l'utilisateur quand on le lui demande", () => {
     creer({ horodater: true });
     a.ecrire("Bonjour");

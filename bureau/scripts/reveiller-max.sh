@@ -1,5 +1,5 @@
 #!/bin/bash
-# « Dis Siri, réveille Max » : démarre le Bureau s'il ne tourne pas, réveille Max et ouvre la page.
+# « Dis Siri, Max au rapport » : démarre le Bureau s'il ne tourne pas, réveille Max et ouvre la page.
 # Le raccourci de l'app Raccourcis exécute simplement ce script.
 set -u
 

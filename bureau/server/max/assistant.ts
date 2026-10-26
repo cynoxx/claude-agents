@@ -139,6 +139,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private minuterieVeille?: NodeJS.Timeout;
   private oreilleArretVolontaire = false;
   private phases = new Map<string, Phase>();
+  private infos: string[] = [];
 
   constructor(private o: OptionsAssistant) {
     super();
@@ -257,6 +258,11 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.envoyer(t, { de: "toi", texte: t });
   }
 
+  informer(texte: string): void {
+    this.infos.push(texte);
+    if (this.infos.length > 10) this.infos.shift();
+  }
+
   // --- interne -----------------------------------------------------------------
 
   private entendre(texte: string): void {
@@ -275,11 +281,13 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.noter(affichage.de, affichage.texte);
     this.assurerCerveau();
     const d = new Date();
-    const message = this.o.horodater && affichage.de === "toi" ? `[${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}] ${texte}` : texte;
+    let message = this.o.horodater && affichage.de === "toi" ? `[${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}] ${texte}` : texte;
+    if (this.infos.length) message = `${this.infos.map((i) => `[Bureau, pour info] ${i}`).join("\n")}\n${message}`;
     if (!this.cerveau!.envoyer(message)) {
       this.noter("bureau", "⚠️ Max ne peut pas répondre pour l'instant.");
       return;
     }
+    this.infos = [];
     this.tours++;
     this.relancerMinuterie();
     if (this.etat !== "parle") this.etat = "reflechit";
