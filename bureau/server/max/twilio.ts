@@ -8,8 +8,10 @@ import crypto from "node:crypto";
 export interface IdentifiantsTwilio {
   /** Account SID (AC…). */
   compte: string;
-  /** Auth Token. */
+  /** Auth Token, ou le secret d'une clé API si `cle` est donnée. */
   jeton: string;
+  /** Une clé API (SK…) à la place de l'Auth Token : révocable sans toucher au compte. */
+  cle?: string;
   /** Ton numéro Twilio, celui qui appelle (format +1…, +33…). */
   numero: string;
 }
@@ -50,7 +52,7 @@ export class Twilio {
   }
 
   private get entetes(): Record<string, string> {
-    return { authorization: `Basic ${Buffer.from(`${this.id.compte}:${this.id.jeton}`).toString("base64")}` };
+    return { authorization: `Basic ${Buffer.from(`${this.id.cle || this.id.compte}:${this.id.jeton}`).toString("base64")}` };
   }
 
   private async requete<T>(methode: "GET" | "POST", url: string, champs?: Record<string, string | string[]> | FormData): Promise<T> {

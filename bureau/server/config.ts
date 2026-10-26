@@ -67,7 +67,7 @@ export interface ReveilConfig {
   essais: number;
   /** La voix Twilio de secours (si la voix de Max n'a pas pu être préparée). */
   voixTwilio: string;
-  twilio: { compte: string; jeton: string; numero: string };
+  twilio: { compte: string; jeton: string; numero: string; cle: string };
 }
 
 export interface MacConfig {
@@ -111,7 +111,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   tempsParJour: { business: 60 },
   objectifsParJour: { etudes: 360 },
   musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true },
-  reveil: { telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "" } },
+  reveil: { telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "", cle: "" } },
 };
 
 export function expandHome(p: string): string {

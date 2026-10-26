@@ -165,6 +165,8 @@ Le matin, Max **t'appelle sur ton téléphone** : tu décroches, et tu entends s
 
 Avec un compte d'essai Twilio (gratuit), l'appel commence par un message en anglais de Twilio, et il faut appuyer sur une touche. Ajouter du crédit (20 $ suffisent pour des mois) l'enlève.
 
+**Une clé API à la place de l'Auth Token (plus sûr)** : dans Twilio, « API keys & auth tokens » > **Create API key**, type **Standard**. Twilio te montre un `SK…` et son secret (une seule fois : copie-le tout de suite). Dans `bureau.config.json`, mets `"cle": "SK…"` et, dans `"jeton"`, le **secret** de la clé (pas l'Auth Token). Si la clé fuit, tu la révoques sans toucher à ton compte.
+
 `bureau.config.json` reste sur ton Mac : il n'est jamais envoyé sur GitHub. Le message du matin est déposé chez Twilio (sur une adresse impossible à deviner) le temps de l'appel.
 
 ### Les réglages des pôles

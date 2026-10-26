@@ -177,6 +177,17 @@ describe("Twilio", () => {
     expect(await t.etat("CA123")).toEqual({ statut: "completed", duree: 31, reponduPar: "human" });
   });
 
+  it("s'identifie avec une clé API (SK…) et son secret quand on en donne une", async () => {
+    let auth = "";
+    const recuperer: Recuperer = async (_url, init) => {
+      auth = init.headers.authorization;
+      return { ok: true, status: 200, json: async () => ({ sid: "CA1" }) };
+    };
+    const t = new Twilio({ compte: "AC1", cle: "SK9", jeton: "secret", numero: "+1" }, { dossierDonnees: tmp(), recuperer });
+    await t.appeler("+33", "<Response/>");
+    expect(auth).toBe(`Basic ${Buffer.from("SK9:secret").toString("base64")}`);
+  });
+
   it("dépose le message audio (service créé une fois) et renvoie son adresse", async () => {
     const d = tmp();
     const mp3 = path.join(d, "reveil.mp3");
