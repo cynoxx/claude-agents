@@ -20,8 +20,9 @@ import { Mac, type Executer } from "../server/max/mac.ts";
 import { Verrou } from "../server/max/verrou.ts";
 import { Planning } from "../server/max/planning.ts";
 import { TriMails } from "../server/max/tri-mails.ts";
+import { Sport } from "../server/max/sport.ts";
 import { Visage } from "../server/max/visage.ts";
-import type { AssistantVue, MissionVue, ServerMessage } from "../shared/protocol.ts";
+import type { AssistantVue, EtatBureau, MissionVue, ServerMessage } from "../shared/protocol.ts";
 
 const FAKE = path.join(__dirname, "fake-claude.mjs");
 const RACINE = path.resolve(__dirname, "..");
@@ -54,6 +55,9 @@ class FauxAssistant extends EventEmitter implements AssistantApi {
   dernier: { texte: string; heure: number } | null = null;
   dernierMessageUtilisateur() {
     return this.dernier;
+  }
+  ouvrirPole(pole: string | null, focus?: string | null) {
+    this.appels.push(`pole:${pole}${focus ? `:${focus}` : ""}`);
   }
   allerA(vue: string) {
     this.appels.push(`vue:${vue}`);
@@ -133,6 +137,7 @@ describe("routes et WebSocket de Max", () => {
   let gestes: { bin: string; args: string[] }[];
   let planning: Planning;
   let triMails: TriMails;
+  let sport: Sport;
   let server: ReturnType<typeof createBureauServer>;
   let base: string;
 
@@ -144,7 +149,7 @@ describe("routes et WebSocket de Max", () => {
     const config = { ...DEFAULT_CONFIG, dossierMissions: root, dossierDonnees: donnees };
     assistant = new FauxAssistant();
     manager = new MissionManager(config, FAKE);
-    coach = new Coach({ dossier: root, dossierDonnees: donnees });
+    coach = new Coach({ dossier: root, dossierDonnees: donnees, limites: { business: 60 } });
     conseillers = new Conseillers({ defs: CONSEILLERS_DEFAUT, bin: FAKE, modele: "sonnet", dossier: root, timeoutMs: 10_000, profil: () => "", contexte: () => "" });
     gestes = [];
     const executer: Executer = async (bin, args) => {
@@ -160,7 +165,8 @@ describe("routes et WebSocket de Max", () => {
     const mac = new Mac({ actif: true, executer, dossierCaptures: tmp(), maintenant: () => new Date("2026-10-27T07:00:00") });
     planning = new Planning({ dossier: root, dossierDonnees: donnees });
     triMails = new TriMails();
-    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac, planning, triMails });
+    sport = new Sport({ dossier: root });
+    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac, planning, triMails, sport });
     await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -234,6 +240,7 @@ describe("routes et WebSocket de Max", () => {
           "aller_au_bureau", "retour_jarvis",
           "enregistrer_planning", "lire_planning", "preparer_planning_calendrier", "ajouter_planning_calendrier",
           "trier_mails", "afficher_mails", "preparer_rangement", "ranger_mails",
+          "ouvrir_pole", "noter_seance", "lire_sport", "changer_semaine_sport",
         ].sort(),
       );
       expect((await texte("etat_bureau")).texte).toBe("Aucune mission en cours.");
@@ -405,10 +412,53 @@ describe("routes et WebSocket de Max", () => {
       assistant.dernier = { texte: "oui range les pubs", heure: Date.now() - 1000 };
       expect((await texte("preparer_rangement", {})).texte).toContain("Prêt à ranger");
       expect((await texte("ranger_mails")).texte).toBe("1 mail rangé dans « Max - Pubs ».");
+
+      // les pôles et le sport
+      expect((await texte("ouvrir_pole", { pole: "sante", focus: "corps" })).texte).toContain("Son corps en 3D est affiché en grand");
+      expect((await texte("ouvrir_pole", { pole: "l'Associé" })).texte).toContain("Fiche Business");
+      expect((await texte("ouvrir_pole", { pole: "cuisine" })).erreur).toBe(true);
+      expect((await texte("ouvrir_pole", { pole: "accueil" })).texte).toBe("Retour à l'accueil.");
+      expect(assistant.appels.filter((a) => a.startsWith("pole:"))).toEqual(["pole:sante:corps", "pole:business", "pole:null"]);
+      expect((await texte("noter_seance", { seance: "jambes", note: "squat 80 kg" })).texte).toContain("Séance Jambes notée aujourd'hui");
+      expect(sport.vue().faite).toBe("jambes");
+      expect((await texte("noter_seance", { seance: "yoga" })).erreur).toBe(true);
+      expect((await texte("changer_semaine_sport", { changements: [{ jour: "dimanche", seance: "jambes" }] })).texte).toContain("dimanche : Jambes");
+      expect((await texte("lire_sport")).texte).toContain("Quadriceps ×1");
+      expect((await texte("demarrer_session", { sujet: "Boutique", minutes: 90, pole: "business" })).texte).toContain("Il reste 1 heure avant la limite du pôle business");
+      expect(coach.temps().get("business")?.limite).toBe(60);
+      expect((await texte("arreter_session")).erreur).toBe(false);
+      expect((await texte("demarrer_session", { sujet: "x", pole: "astrologie" })).erreur).toBe(true);
     } finally {
       await client.close();
     }
   }, 30_000);
+
+  it("ouvre les fiches des pôles, note les séances et envoie le sport et le temps par pôle à la page", async () => {
+    const ws = new WebSocket(base.replace("http", "ws") + "/ws");
+    const etats: EtatBureau[] = [];
+    ws.on("message", (d) => {
+      const m = JSON.parse(String(d)) as ServerMessage;
+      if (m.type === "etat") etats.push(m.etat);
+    });
+    await new Promise((r) => ws.on("open", r));
+    ws.send(JSON.stringify({ type: "pole", pole: "sante", focus: "corps" }));
+    ws.send(JSON.stringify({ type: "pole", pole: "cuisine" }));
+    ws.send(JSON.stringify({ type: "seance", seance: "pec_dos" }));
+    ws.send(JSON.stringify({ type: "semaine-sport", jour: 6, seance: "jambes" }));
+    ws.send(JSON.stringify({ type: "session", sujet: "Asclepium", minutes: 20, pole: "business" }));
+    for (let i = 0; i < 100 && !coach.vue().minuteur; i++) await new Promise((r) => setTimeout(r, 10));
+    expect(assistant.appels.filter((a) => a.startsWith("pole:"))).toEqual(["pole:sante:corps"]);
+    expect(sport.vue().faite).toBe("pec_dos");
+    expect(sport.semaine()[6]).toBe("jambes");
+    expect(coach.vue().minuteur?.pole).toBe("business");
+    expect(assistant.appels.some((a) => a.startsWith("informer:Depuis la page : Séance Pec-Dos notée"))).toBe(true);
+    await new Promise((r) => setTimeout(r, 50));
+    const dernier = etats.at(-1)!;
+    expect(dernier.sport?.faite).toBe("pec_dos");
+    expect(dernier.poles?.map((p) => p.id)).toEqual(["etudes", "sante", "business", "apps", "vie"]);
+    expect(dernier.poles?.find((p) => p.id === "business")?.limite).toBe(60);
+    ws.close();
+  });
 
   it("change d'écran depuis la page, et revient sur Jarvis au réveil par Siri", async () => {
     const ws = new WebSocket(base.replace("http", "ws") + "/ws");

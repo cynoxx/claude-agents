@@ -14,6 +14,7 @@ export class Hud {
 
   rendre(c: CoachVue | undefined): void {
     $("hud-joueur").hidden = !c;
+    document.querySelector<HTMLElement>("[data-hud-joueur]")!.hidden = !c;
     if (!c) return;
     const n = niveau(c.total);
     $("hud-niveau").textContent = String(n.niveau);
@@ -35,6 +36,18 @@ export class Hud {
       bloc.classList.add("monte");
     }
     this.niveauAffiche = n.niveau;
+    // la même chose dans la barre du QG (écran de Max)
+    const qg = (cle: string) => document.querySelector<HTMLElement>(`[data-hud="${cle}"]`)!;
+    document.querySelector<HTMLElement>("[data-hud-joueur]")!.hidden = false;
+    qg("niveau").textContent = String(n.niveau);
+    qg("xp").style.width = `${pourcent}%`;
+    qg("xp").parentElement!.setAttribute("aria-valuenow", String(pourcent));
+    qg("xp").parentElement!.title = `${n.xp} / ${n.prochain} XP (1 minute de travail = 1 XP)`;
+    qg("serie").textContent = $("hud-serie").textContent;
+    qg("serie").dataset.chaud = $("hud-serie").dataset.chaud;
+    qg("echeance").hidden = e.hidden;
+    qg("echeance").textContent = e.textContent;
+    qg("echeance").title = e.title;
   }
 
   /** « — ZONE — LE BUREAU » au milieu de l'écran, comme à l'entrée d'un niveau. */

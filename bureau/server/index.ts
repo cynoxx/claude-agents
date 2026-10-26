@@ -16,6 +16,8 @@ import { Mac } from "./max/mac.ts";
 import { Verrou } from "./max/verrou.ts";
 import { Planning } from "./max/planning.ts";
 import { TriMails } from "./max/tri-mails.ts";
+import { TrieurAuto } from "./max/trieur.ts";
+import { Sport } from "./max/sport.ts";
 import { Visage } from "./max/visage.ts";
 import { ecrireConfigMcp } from "./max/mcp-config.ts";
 import { MissionManager } from "./mission.ts";
@@ -39,7 +41,7 @@ const mcpConfig = ecrireConfigMcp({ racine, port: config.port, dossierDonnees: c
 const bouche = creerBouche(config);
 const [{ oreille, dispo: dispoOreille }, dispoBouche] = await Promise.all([preparerOreille(config), bouche.preparer()]);
 // Le coach (minuteur, journal de travail, rappels) et les conseillers (un par domaine de la vie)
-const coach = new Coach({ dossier: config.dossierMissions, dossierDonnees: config.dossierDonnees });
+const coach = new Coach({ dossier: config.dossierMissions, dossierDonnees: config.dossierDonnees, limites: config.tempsParJour });
 const profil = () => lireProfil(config.dossierMissions);
 const conseillers = new Conseillers({
   defs: config.conseillers,
@@ -63,6 +65,17 @@ const verrou = new Verrou({ visage: new Visage(config.dossierDonnees), actif: co
 // L'emploi du temps du jour et le tri des mails
 const planning = new Planning({ dossier: config.dossierMissions, dossierDonnees: config.dossierDonnees });
 const triMails = new TriMails();
+// le tri automatique à l'arrivée (un claude sans outils, en JSON) et le sport
+const trieur = new TrieurAuto({
+  lister: (n) => mac.listerMails(n, true),
+  tri: triMails,
+  bin,
+  modele: config.modeles.robots,
+  dossier: config.dossierMissions,
+  timeoutMs: 3 * 60_000,
+  profil,
+});
+const sport = new Sport({ dossier: config.dossierMissions });
 const assistant = new Assistant({
   oreille,
   bouche,
@@ -81,7 +94,13 @@ const assistant = new Assistant({
   phraseSiri: config.voix.phraseSiri,
   verrou,
   planning,
+  sport,
 });
+// il arrive (réveil avec accueil) : ses mails sont triés pendant que Max le salue
+assistant.on("arrivee", () => {
+  if (process.platform === "darwin") void trieur.lancer();
+});
+trieur.on("trie", (resume: string) => assistant.informer(`Ses mails non lus ont été triés automatiquement et s'affichent dans une fenêtre sur ton écran. Résumé : ${resume}`));
 console.log(`${dispoOreille.ok ? "🎙 " : "⚠️ "} ${dispoOreille.detail}`);
 console.log(`${dispoBouche.ok ? "🔊" : "⚠️ "} ${dispoBouche.detail}`);
 
@@ -98,7 +117,10 @@ const server = createBureauServer({
   verrou,
   planning,
   triMails,
+  trieur,
+  sport,
   modelesVisage: path.join(racine, "node_modules", "@vladmandic", "face-api", "model"),
+  mediapipe: { wasm: path.join(racine, "node_modules", "@mediapipe", "tasks-vision", "wasm"), dossierModele: path.join(config.dossierDonnees, "modeles") },
 });
 
 const claudePret = checkClaude(bin).then((etat) => {

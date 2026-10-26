@@ -28,9 +28,9 @@ export class TriMails extends EventEmitter {
   }
 
   /** Affiche le classement fait par Max : { catégorie: [ids] } et un résumé d'une ou deux phrases. */
-  afficher(categories: Partial<Record<string, unknown>>, resume: string): Reponse {
+  afficher(categories: Partial<Record<string, unknown>>, resume: string, o: { auto?: boolean } = {}): Reponse {
     if (!this.lus.size) return { ok: false, texte: "Lis d'abord les mails avec trier_mails." };
-    const vue: MailsVue = { heure: new Date().toISOString(), resume: resume.replace(/\s+/g, " ").trim().slice(0, 300), categories: [] };
+    const vue: MailsVue = { heure: new Date().toISOString(), resume: resume.replace(/\s+/g, " ").trim().slice(0, 300), categories: [], ...(o.auto ? { auto: true } : {}) };
     const places = new Set<number>();
     for (const [cle, def] of Object.entries(CATEGORIES) as [CategorieMails, { nom: string; emoji: string }][]) {
       const ids = Array.isArray(categories[cle]) ? (categories[cle] as unknown[]).map(Number) : [];
@@ -48,6 +48,19 @@ export class TriMails extends EventEmitter {
     this.emit("etat");
     const total = vue.categories.reduce((t, c) => t + c.mails.length, 0);
     return { ok: true, texte: `${total} mail${total > 1 ? "s" : ""} classé${total > 1 ? "s" : ""} et affiché${total > 1 ? "s" : ""} à l'écran.${oublies ? ` ${oublies} n'ont pas été classés.` : ""}` };
+  }
+
+  /** Plus rien à montrer (aucun mail non lu). */
+  vider(resume: string): void {
+    this.classement = { heure: new Date().toISOString(), resume, categories: [] };
+    this.emit("etat");
+  }
+
+  /** Remontre le dernier classement (la fenêtre des mails se rouvre sur l'écran). */
+  remontrer(): void {
+    if (!this.classement) return;
+    this.classement = { ...this.classement, heure: new Date().toISOString(), auto: true };
+    this.emit("etat");
   }
 
   /** Les identifiants d'une catégorie du dernier classement (pour ranger les pubs, par exemple). */

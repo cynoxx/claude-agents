@@ -159,7 +159,7 @@ describe("Coach — minuteur de travail", () => {
     expect(r.texte).toContain("25 minutes");
     expect(c.vue().minuteur).toMatchObject({ type: "travail", sujet: "Anatomie", fin: local("2026-10-26", "14:25").toISOString() });
     vi.advanceTimersByTime(25 * 60_000);
-    expect(fins).toEqual([{ type: "travail", sujet: "Anatomie", minutes: 25, aujourdhui: 25 }]);
+    expect(fins).toEqual([{ type: "travail", sujet: "Anatomie", pole: "etudes", minutes: 25, aujourdhui: 25 }]);
     expect(lireJournal(d)).toMatchObject([{ sujet: "Anatomie", minutes: 25 }]);
     expect(c.vue().minuteur).toBeNull();
     expect(c.vue()).toMatchObject({ aujourdhui: 25, total: 25, serie: 1 });
@@ -291,10 +291,63 @@ describe("Coach — contexte pour Max", () => {
     expect(t).toContain("lundi 26 octobre 2026");
     expect(t).toContain("14 h 32");
     expect(t).toContain("Examen PASS : le 14 décembre 2026, dans 49 jours");
-    expect(t).toContain("Session de travail en cours : « Anatomie », fin à 14 h 57");
+    expect(t).toContain("Session de travail en cours (pôle etudes) : « Anatomie », fin à 14 h 57");
     expect(t).toContain("Idées au parking : 1");
     expect(c.vue().echeance).toEqual({ nom: "Examen PASS", jours: 49 });
     c.fermer();
     vi.useRealTimers();
+  });
+});
+
+describe("Coach — temps par pôle et limite", () => {
+  let d: string;
+  let c: Coach;
+  beforeEach(() => {
+    vi.useFakeTimers({ now: local("2026-10-26", "14:00") });
+    d = tmp();
+    c = new Coach({ dossier: d, dossierDonnees: tmp(), limites: { business: 60 } });
+  });
+  afterEach(() => {
+    c.fermer();
+    vi.useRealTimers();
+  });
+
+  it("compte le temps par pôle (les anciennes sessions sans pôle vont aux études), session en cours comprise", () => {
+    fs.writeFileSync(path.join(d, "travail.jsonl"), [session("2026-10-26", 40), { ...session("2026-10-25", 30), pole: "business" }].map((s) => JSON.stringify(s)).join("\n") + "\n");
+    c.demarrerSession("Asclepium", 25, "business");
+    vi.advanceTimersByTime(10 * 60_000);
+    const t = c.temps();
+    expect(t.get("etudes")).toEqual({ aujourdhui: 40, semaine: 40, jours: [0, 0, 0, 0, 0, 0, 40], limite: null });
+    expect(t.get("business")).toEqual({ aujourdhui: 10, semaine: 40, jours: [0, 0, 0, 0, 0, 30, 10], limite: 60 });
+    vi.advanceTimersByTime(15 * 60_000);
+    expect(lireJournal(d).at(-1)).toMatchObject({ sujet: "Asclepium", pole: "business", minutes: 25 });
+    expect(c.contexte()).toContain("business 25 minutes (limite 1 heure)");
+  });
+
+  it("prévient quand une session fait atteindre la limite du jour", () => {
+    fs.writeFileSync(path.join(d, "travail.jsonl"), JSON.stringify({ ...session("2026-10-26", 45, "09:00"), pole: "business" }) + "\n");
+    const limites: unknown[] = [];
+    c.on("limite", (l) => limites.push(l));
+    expect(c.demarrerSession("Boutique", 30, "business").texte).toContain("Il reste 15 minutes");
+    vi.advanceTimersByTime(14 * 60_000);
+    expect(limites).toEqual([]);
+    vi.advanceTimersByTime(60_000);
+    expect(limites).toEqual([{ pole: "business", limite: 60, sujet: "Boutique" }]);
+  });
+
+  it("dit franchement quand la limite est déjà atteinte, sans bloquer", () => {
+    fs.writeFileSync(path.join(d, "travail.jsonl"), JSON.stringify({ ...session("2026-10-26", 70, "09:00"), pole: "business" }) + "\n");
+    const r = c.demarrerSession("Instagram", 20, "business");
+    expect(r.ok).toBe(true);
+    expect(r.texte).toContain("limite du pôle business déjà atteinte");
+    expect(c.demarrerSession("x", 20, "business").ok).toBe(false); // une session à la fois
+  });
+
+  it("n'a pas de limite pour les études", () => {
+    const limites: unknown[] = [];
+    c.on("limite", (l) => limites.push(l));
+    expect(c.demarrerSession("Biochimie", 180).texte).not.toContain("limite");
+    vi.advanceTimersByTime(180 * 60_000);
+    expect(limites).toEqual([]);
   });
 });

@@ -2,7 +2,7 @@
 
 Une équipe d'agents Claude Code qui travaille sous tes yeux, dans un bureau en pixel art.
 
-Tu parles à **Max**, le chef, comme à Jarvis. Il vit sur un **écran façon Jarvis** (une sphère lumineuse qui réagit quand il écoute, réfléchit et parle) et **pilote ton Mac** : apps, sites, musique, volume, iMessage, mails, agenda, météo. Il te reconnaît à la **caméra**, comme Face ID, et ne se réveille que pour toi. « Max, emmène-moi au bureau » te fait plonger dans le bureau pixel art. Quand tu lui dis « Max, compare les mutuelles pour moi », il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et il a cinq **conseillers**, un par domaine de ta vie, assis à leur bureau : 🩺 Prof (études), 💪 Coach (santé), 💼 Associé (business), 📱 Dev (apps), 🏠 Majordome (vie perso). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
+Tu parles à **Max**, le chef, comme à Jarvis. Il vit sur un **écran façon Jarvis** (une sphère lumineuse qui réagit quand il écoute, réfléchit et parle) et **pilote ton Mac** : apps, sites, musique, volume, iMessage, mails, agenda, météo. Il te reconnaît à la **caméra**, comme Face ID, et ne se réveille que pour toi. « Max, emmène-moi au bureau » te fait plonger dans le bureau pixel art. Quand tu lui dis « Max, compare les mutuelles pour moi », il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et ta vie est rangée en cinq **pôles**, chacun avec son agent et sa fiche sur l'écran de Max : 🩺 Études (le Prof), 💪 Sport & santé (le Coach, avec ton corps en 3D), 💼 Business (l'Associé), 📱 Apps & quêtes (le Dev), 🏠 Vie & mails (le Majordome). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
 
 > Le guide complet : [le Bureau](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md), [Max vocal](../docs/superpowers/specs/2026-10-26-max-vocal-design.md) et [Max coach et les conseillers](../docs/superpowers/specs/2026-10-26-max-coach-conseillers-design.md) et [Max façon Jarvis](../docs/superpowers/specs/2026-10-27-max-jarvis-design.md).
 
@@ -84,6 +84,57 @@ npm run arreter
 
 `npm run voix` n'est à faire qu'une fois (il installe la nouvelle voix de Max). `npm install` ajoute ce qui est nouveau (par exemple la reconnaissance du visage) ; `npm run arreter` éteint l'ancien Bureau. Ensuite, « Dis Siri, Max au rapport » relance la nouvelle version.
 
+## Mode d'emploi : le QG de Max
+
+Tout s'organise en **trois niveaux** :
+
+1. **L'accueil** (l'écran de Max, à la sphère) : c'est là que tu arrives. En haut, ta barre de joueur (niveau, XP, série 🔥, J-49) et le minuteur en cours. À gauche, l'heure, la météo et **ton emploi du temps** du jour. Au centre, Max. À droite, **« Maintenant »** (le créneau en cours, ta progression vers tes 6 h d'études), tes mails et la quête en cours. En bas, **les cinq tuiles de tes pôles**.
+2. **La fiche d'un pôle** : clique sur une tuile (ou dis « Max, ouvre ma fiche sport »). Elle s'ouvre sur place, sans aller au bureau. **← Accueil** (ou Échap) pour revenir.
+3. **Le bureau** (pixel art) : là où l'équipe de robots fait les **quêtes**, les vrais travaux que tu lui confies (recherche, rédaction, code). « Max, emmène-moi au bureau », ou le bouton **🏢 Le bureau**.
+
+**Les deux sortes d'agents.** Les **agents des pôles** (Prof, Coach, Associé, Dev, Majordome) sont tes conseillers : chacun connaît son domaine, garde ses notes et répond à tes questions. Ils sont assis dans l'aile « Tes pôles » du bureau. Les **robots** (Chercheur, Codeur, Designer, Rédacteur, Analyste) sont l'équipe d'exécution : Max les lance sur une quête et ils produisent un résultat. Tu ne parles qu'à Max : il passe la question au bon agent, ou lance les robots.
+
+| Pôle | Son agent | Sur sa fiche |
+|---|---|---|
+| 🩺 Études | le Prof | ton objectif (J-49), ta série, tes révisions prévues aujourd'hui, ton temps d'études (objectif 6 h par jour) sur 7 jours |
+| 💪 Sport & santé | le Coach | **ton corps en 3D**, la séance du jour, ta semaine de séances, les muscles travaillés |
+| 💼 Business | l'Associé | ton temps business face à **la limite d'1 h par jour**, tes idées au parking |
+| 📱 Apps & quêtes | le Dev | la quête de l'équipe de robots, le bouton pour aller les voir |
+| 🏠 Vie & mails | le Majordome | tes mails triés, ton agenda |
+
+Chaque fiche a aussi **« Ce que <agent> retient »** (ses notes), sa dernière réponse, un bouton **⏱ Session 25 min** (comptée dans ce pôle) et un champ pour lui poser une question.
+
+**Une journée type.**
+- Tu dis « Dis Siri, Max au rapport » et tu regardes la caméra. Max te salue, et **tes mails non lus sont triés tout seuls** : une petite fenêtre s'ouvre avec 🔴 à traiter, 🎓 études, 💼 business, 👤 perso, 📰 pubs (bouton **📰 Ranger les pubs**).
+- Au premier réveil du jour, Max te propose **ton emploi du temps**, avec ta séance de sport du jour dedans.
+- « Max, on y va » : une session de travail démarre sur le pôle Études. Tout le temps est compté **par pôle**.
+- Tu bosses sur Asclepium : la session compte dans **Business** ; à 1 h dans la journée, Max te le dit franchement (sans rien bloquer : c'est toi qui décides).
+- Après le sport : « Max, j'ai fait ma séance jambes, squat à 80 kilos ». C'est noté, et ton corps 3D s'allume sur les cuisses et les mollets.
+
+### Ton corps en 3D et tes séances
+
+**« Max, montre-moi mon corps »** : la fiche Sport s'ouvre avec ton corps en grand, façon hologramme. Chaque muscle est coloré selon ce que tu as travaillé ces **14 derniers jours** : éteint s'il n'a rien fait, puis cyan, jaune, orange, rouge (4 fois ou plus). Touche un muscle pour savoir combien de fois tu l'as travaillé et quand.
+
+**Le tourner** :
+- **avec la main** : la caméra s'allume (petite vignette en bas à droite). **Pince le pouce et l'index**, comme pour attraper le corps, puis bouge la main : il tourne avec elle. Approche ta main pincée de la caméra pour zoomer, éloigne-la pour dézoomer. Relâche pour le lâcher. Le bouton **✋ Couper la caméra** l'arrête ; elle s'éteint aussi quand tu quittes la fiche. L'image reste dans la page, rien n'est envoyé.
+- **à la souris** (ou au doigt sur un écran tactile) : glisse pour tourner, molette pour zoomer.
+- sans rien faire, il tourne doucement tout seul.
+
+**Tes séances** : 1. Pec-Dos, 2. Biceps-Triceps-Épaules, 3. Jambes, et le **repos**, qui compte autant. Elles sont fixées par jour de la semaine ; par défaut lundi Pec-Dos, mardi Biceps-Triceps-Épaules, mercredi Jambes, jeudi repos, vendredi Pec-Dos, samedi Biceps-Triceps-Épaules, dimanche repos. Pour changer un jour, **clique dessus** dans « Ta semaine » (il passe à la séance suivante), ou dis « Max, mets les jambes le dimanche ». Pour noter une séance : bouton **✅ Séance faite**, ou « Max, j'ai fait ma séance », ou « Autre… » si tu as fait une autre séance que prévu. Dans « Ta semaine » : ✓ faite, ✗ manquée, • aujourd'hui.
+
+Les séances sont gardées dans `~/Documents/Bureau/sport/seances.jsonl`, ta semaine type dans `sport/semaine.json`.
+
+### Les réglages des pôles
+
+Dans `bureau.config.json` :
+
+```json
+"tempsParJour": { "business": 60 },
+"objectifsParJour": { "etudes": 360 }
+```
+
+`tempsParJour` est la limite en minutes par jour (0 = pas de limite) ; `objectifsParJour` est la barre à remplir (6 h d'études).
+
 ## Parler à Max
 
 Commence ta phrase par **« Max »** (ou « Dis Max », « Hé Max ») : il ne réagit qu'à ça, pour ne pas te répondre quand tu parles à quelqu'un d'autre.
@@ -132,6 +183,7 @@ Ce que Max sait faire sur ton Mac :
 | « Max, fais une capture d'écran » · « verrouille l'écran » | capture sur le Bureau du Mac · écran verrouillé |
 | « Max, mets du lo-fi » · « pause » · « suivant » · « c'est quoi ce morceau ? » | pilote Spotify (ou Musique) |
 | « Max, envoie à Maman que je rentre à 20 h » | prépare l'iMessage, te le lit et demande « Je l'envoie ? » |
+| (rien : à ton arrivée) | trie tes mails non lus tout seul et ouvre une petite fenêtre avec le classement |
 | « Max, trie mes mails » · « j'ai des nouveaux mails ? » | lit tes derniers mails, les classe (🔴 à traiter, 🎓 études, 💼 business, 👤 perso, 📰 pubs) sur son écran et te dit l'essentiel ; propose de ranger les pubs dans un dossier « Max - Pubs » de Mail |
 | « Max, j'ai quoi aujourd'hui ? » · « et demain ? » | lit ton agenda |
 | « Max, ajoute dentiste mercredi à 17 h 30 » | prépare le rendez-vous et demande « Je l'ajoute ? » |
@@ -219,17 +271,17 @@ Les échéances se notent dans une section `## Échéances`, une par ligne :
 - 2026-12-14 : Examen PASS
 ```
 
-## Les conseillers
+## Les agents des pôles
 
-En bas du bureau, l'**aile des conseillers** : un robot par domaine de ta vie, chacun à son bureau, avec son propre carnet.
+En bas du bureau, l'**aile « Tes pôles »** : l'agent de chaque pôle, assis à son bureau, avec son propre carnet. Ce sont les mêmes que sur les tuiles de l'écran de Max.
 
-| Conseiller | Domaine |
+| Agent | Pôle |
 |---|---|
-| 🩺 Prof | études : méthode, planning jusqu'aux examens, explications de cours, interrogations |
-| 💪 Coach | santé : sommeil, rythme, énergie, alimentation, sport, stress et moral |
-| 💼 Associé | business : projets, boutique, réseaux sociaux, vidéos, marketing |
-| 📱 Dev | apps et code |
-| 🏠 Majordome | vie perso : administratif, argent, logement, relations, quotidien |
+| 🩺 Prof | Études : méthode, planning jusqu'aux examens, explications de cours, interrogations |
+| 💪 Coach | Sport & santé : séances, sommeil, rythme, énergie, alimentation, stress et moral |
+| 💼 Associé | Business : projets, boutique, réseaux sociaux, vidéos, marketing |
+| 📱 Dev | Apps & quêtes : apps et code, et les quêtes de l'équipe de robots |
+| 🏠 Majordome | Vie & mails : mails, administratif, argent, logement, relations, quotidien |
 
 Demande à Max : « Max, demande au Prof comment réviser la biochimie en sept semaines. » Max transmet la question, le Prof réfléchit à son bureau (sa bulle montre ce qu'il fait, recherche web comprise), puis Max te résume sa réponse. Autres idées : « Max, demande au Prof de m'interroger sur la cellule », « Max, demande au Coach comment me recoucher plus tôt ».
 
@@ -274,6 +326,7 @@ Essaie : **« Dis Siri, Max au rapport »**. Le Bureau démarre (une dizaine de 
 ├── carnet.md            ce que Max a retenu de toi
 ├── travail.jsonl        tes sessions de travail
 ├── idees.md             les idées au parking
+├── sport/               tes séances (seances.jsonl) et ta semaine type (semaine.json)
 ├── emplois-du-temps/    un emploi du temps par jour (2026-10-27.json…)
 ├── conseillers/         les notes de chaque conseiller (etudes.md, sante.md…)
 └── 2026-10-25 14h32 - compare-5-mutuelles-pour-un-jeune/
@@ -335,6 +388,8 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 | `npm run voix` dit qu'il faut Python | `brew install python`, puis relance `npm run voix`. |
 | Max parle trop vite ou trop lentement | `"voix": { "vitessePiper": 0.9 }` (plus posé) ou `1.1` (plus rapide) dans `bureau.config.json`. |
 | « Dis Max, … » ne marche pas | Mets à jour (`git pull`) : Whisper écrit souvent « Dimax » ou « D'y max », Max les comprend maintenant. Sinon, dis simplement « Max, … ». |
+| Le corps 3D ne tourne pas avec la main | La première fois, le Bureau télécharge le modèle de la main (8 Mo) : il faut internet. Autorise la caméra pour localhost. Mets ta main bien en vue, paume vers la caméra, et pince franchement le pouce et l'index. Sinon, la souris marche toujours. |
+| La fenêtre des mails ne s'ouvre pas à mon arrivée | Elle s'ouvre quand il y a des mails non lus (et au plus une fois toutes les 10 minutes). Le bouton **🔄 Retrier** de la fiche Vie & mails le refait. Vérifie aussi que Mail a l'autorisation (voir « Les autorisations du Mac »). |
 | Max ne t'entend pas | Vérifie l'autorisation du micro (Réglages Système > Confidentialité et sécurité > Micro). `npm run micros` montre le micro utilisé ; impose-en un autre avec `"voix": { "micro": ":1" }`. |
 | Max réagit à la télé | Il ne répond qu'aux phrases qui commencent par « Max » : baisse un peu le son, ou mets-le en veille. |
 | Max met du temps à répondre | Opus réfléchit quelques secondes. Pour plus de vitesse : `"modeles": { "conversation": "sonnet" }`. |

@@ -39,8 +39,8 @@ Pour une interrogation, donne des questions courtes numérotées, puis les répo
     nom: "Coach",
     emoji: "💪",
     couleur: "#3fbfa8",
-    domaine: "Santé",
-    description: "sommeil, rythme, énergie, alimentation, sport, stress et moral",
+    domaine: "Sport & santé",
+    description: "séances de sport (Pec-Dos, Biceps-Triceps-Épaules, Jambes, repos), sommeil, rythme, énergie, alimentation, stress et moral",
     consigne: `Tes conseils s'appuient sur des sources sérieuses (sommeil, chronobiologie, activité physique). Tu proposes des changements progressifs : avancer le coucher d'un quart d'heure à la fois, lever à heure fixe, lumière du jour le matin, écrans coupés avant de dormir.
 Tu n'es pas médecin : pour un symptôme ou un mal-être qui dure, tu orientes vers un professionnel (médecin traitant, service de santé de l'université, Santé Psy Étudiant pour des séances gratuites avec un psychologue). En cas d'idées noires : le 3114, jour et nuit.`,
   },
@@ -59,8 +59,8 @@ Tu raisonnes en résultats (ventes, abonnés, temps passé) et tu donnes des act
     nom: "Dev",
     emoji: "📱",
     couleur: "#6c8cff",
-    domaine: "Apps",
-    description: "applications et code : fonctionnalités, technique, choix d'outils",
+    domaine: "Apps & quêtes",
+    description: "applications et code : fonctionnalités, technique, choix d'outils ; les quêtes confiées à l'équipe de robots",
     consigne: `Tu réponds en développeur pragmatique : la solution la plus simple qui marche d'abord. Pour un vrai travail de code dans un projet, recommande à Max de lancer une mission avec le Codeur.`,
   },
   {
@@ -68,8 +68,8 @@ Tu raisonnes en résultats (ventes, abonnés, temps passé) et tu donnes des act
     nom: "Majordome",
     emoji: "🏠",
     couleur: "#b07cc6",
-    domaine: "Vie perso",
-    description: "administratif, argent, logement, relations, organisation du quotidien",
+    domaine: "Vie & mails",
+    description: "mails, administratif, argent, logement, relations, organisation du quotidien",
     consigne: `Tu es pratique et bienveillant : démarches pas à pas, budget simple, organisation du quotidien. Sur les relations, tu écoutes et tu aides à y voir clair sans juger ni décider à la place de l'utilisateur.`,
   },
 ];
@@ -215,6 +215,11 @@ export class Conseillers extends EventEmitter {
     } catch (e) {
       return { ok: false, texte: (e as Error).message };
     }
+  }
+
+  /** Les dernières notes du carnet d'un conseiller (pour sa fiche à l'écran). */
+  notes(id: string, n = 5): string[] {
+    return lireCarnet(path.join(this.o.dossier, DOSSIER_NOTES), `${id}.md`).slice(-n);
   }
 
   arreterTout(): void {

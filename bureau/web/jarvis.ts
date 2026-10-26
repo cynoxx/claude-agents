@@ -2,6 +2,7 @@
 // le travail du jour, la mission en cours. « Max, emmène-moi au bureau » zoome dans la sphère jusqu'au bureau.
 import type { AssistantVue, ClientMessage, EtatBureau, EtatMax, MailsVue, PlanningVue, VueEcran } from "../shared/protocol.ts";
 import { dureeCourte, restant } from "./conversation.ts";
+import { duree } from "./poles-pur.ts";
 import { Sphere } from "./sphere.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -128,25 +129,15 @@ export class Jarvis {
       }
     }
 
-    // les mails triés par Max
-    const mails = etat.mails;
-    $("j-mails-carte").hidden = !mails;
-    if (mails) {
-      const n = compteMails(mails);
-      $("j-mails-resume").textContent = mails.resume || `${n.total} mails triés`;
-      $("j-mails").innerHTML = mails.categories
-        .map(
-          (c) =>
-            `<details class="j-mails-cat"${c.id === "a_traiter" ? " open" : ""}><summary>${c.emoji} ${echapper(c.nom)} <b>${c.mails.length}</b></summary><ul>${c.mails
-              .slice(0, 8)
-              .map((m) => `<li class="${m.lu ? "" : "non-lu"}"><strong>${echapper(m.de)}</strong> — ${echapper(m.sujet)}</li>`)
-              .join("")}</ul></details>`,
-        )
-        .join("");
-    }
+    // « Maintenant » : la session en cours, sinon le créneau en cours, et l'objectif d'études du jour
     const c = a?.coach;
-    $("j-echeance").textContent = c?.echeance ? `${c.echeance.jours === 0 ? "Aujourd'hui" : `J-${c.echeance.jours}`} · ${c.echeance.nom}` : "Aucune échéance";
-    $("j-travail").textContent = c ? `Travail aujourd'hui : ${dureeCourte(c.aujourdhui)}` : "";
+    const enCours = p && p.enCours >= 0 ? p.creneaux[p.enCours] : null;
+    $("j-maintenant").textContent = enCours ? `${ICONES_CRENEAU[enCours.type] ?? "•"} ${enCours.titre} · jusqu'à ${enCours.fin}` : "Rien de prévu en ce moment";
+    const etudes = etat.poles?.find((x) => x.id === "etudes");
+    const jauge = $("j-objectif");
+    jauge.hidden = !etudes?.objectif;
+    if (etudes?.objectif) (jauge.firstElementChild as HTMLElement).style.width = `${Math.min(100, Math.round((etudes.aujourdhui / etudes.objectif) * 100))}%`;
+    $("j-travail").textContent = etudes?.objectif ? `Études : ${duree(etudes.aujourdhui)} / ${duree(etudes.objectif)}` : c ? `Travail aujourd'hui : ${dureeCourte(c.aujourdhui)}` : "";
     this.minuteur();
 
     const m = etat.mission;
@@ -162,6 +153,7 @@ export class Jarvis {
     const el = $("j-minuteur");
     el.hidden = !m;
     if (m) el.textContent = m.type === "travail" ? `⏱ ${m.sujet} · ${restant(m.fin)}` : `☕ Pause · ${restant(m.fin)}`;
+    el.dataset.type = m?.type ?? "";
   }
 
   private horloge(): void {

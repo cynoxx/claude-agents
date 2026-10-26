@@ -1,5 +1,7 @@
 // Types partagés entre le serveur et la page du bureau.
 
+import type { MuscleId, SeanceId } from "./sport.ts";
+
 export type RoleId = "chercheur" | "codeur" | "designer" | "redacteur" | "analyste";
 
 export type Phase =
@@ -83,8 +85,12 @@ export interface AssistantVue {
   bouche: Dispo;
   cerveau: Dispo;
   coach?: CoachVue;
-  /** L'écran affiché : Jarvis (la sphère) ou le bureau pixel art. */
+  /** L'écran affiché (avec la fiche du pôle ouverte, s'il y en a une) : Jarvis (la sphère) ou le bureau pixel art. */
   vue?: VueEcran;
+  /** La fiche de pôle ouverte sur l'écran de Max (« sante »…), ou null. */
+  pole?: string | null;
+  /** Ce que la fiche doit montrer en premier (« corps » pour la fiche Sport). */
+  focus?: string | null;
 }
 
 export type VueEcran = "jarvis" | "bureau";
@@ -97,7 +103,7 @@ export interface JarvisVue {
 
 /** Le coach : minuteur en cours, travail du jour, prochaine échéance. */
 export interface CoachVue {
-  minuteur: { type: "travail" | "pause"; sujet: string; fin: string } | null;
+  minuteur: { type: "travail" | "pause"; sujet: string; fin: string; pole?: string } | null;
   /** Minutes de travail notées aujourd'hui. */
   aujourdhui: number;
   /** Minutes de travail notées depuis le début (l'XP du joueur). */
@@ -159,7 +165,37 @@ export type CategorieMails = "a_traiter" | "etudes" | "business" | "perso" | "pu
 export interface MailsVue {
   heure: string; // ISO
   resume: string;
+  /** Trié automatiquement à l'arrivée : la page ouvre la fenêtre des mails. */
+  auto?: boolean;
   categories: { id: CategorieMails; nom: string; emoji: string; mails: { id: number; de: string; sujet: string; lu: boolean }[] }[];
+}
+
+/** Le sport : la semaine type (jours fixes), la séance du jour et les muscles travaillés ces 14 derniers jours. */
+export interface SportVue {
+  /** Séance prévue chaque jour, lundi d'abord. */
+  semaine: SeanceId[];
+  jour: string; // AAAA-MM-JJ
+  prevue: SeanceId;
+  faite: SeanceId | null;
+  /** Cette semaine, du lundi au dimanche. */
+  cetteSemaine: { jour: string; prevue: SeanceId; faite: SeanceId | null }[];
+  muscles: { id: MuscleId; fois: number; derniere: string | null; intensite: number }[];
+  /** Séances faites ces 30 derniers jours (repos non compris). */
+  seances30: number;
+}
+
+/** Le temps passé sur un pôle (minutes de sessions), et la limite du jour s'il y en a une. */
+export interface TempsPole {
+  id: string;
+  aujourdhui: number;
+  semaine: number;
+  /** Minutes des 7 derniers jours, du plus ancien à aujourd'hui. */
+  jours: number[];
+  limite: number | null;
+  /** Objectif du jour en minutes (6 h d'études), ou null. */
+  objectif: number | null;
+  /** Les dernières notes du carnet de l'agent du pôle. */
+  notes: string[];
 }
 
 export interface EtatBureau {
@@ -171,6 +207,10 @@ export interface EtatBureau {
   verrou?: VerrouVue;
   planning?: PlanningVue | null;
   mails?: MailsVue | null;
+  sport?: SportVue;
+  poles?: TempsPole[];
+  /** Les dernières idées mises au parking. */
+  idees?: string[];
 }
 
 export interface EtatFichier {
@@ -196,7 +236,11 @@ export type ClientMessage =
   | { type: "reveil" }
   | { type: "veille" }
   | { type: "taire" }
-  | { type: "session"; minutes?: number; sujet?: string }
+  | { type: "session"; minutes?: number; sujet?: string; pole?: string }
+  | { type: "pole"; pole: string | null; focus?: string | null }
+  | { type: "seance"; seance: string; jour?: string }
+  | { type: "semaine-sport"; jour: number; seance: string }
+  | { type: "trier-mails" }
   | { type: "fin-session" }
   | { type: "vue"; vue: VueEcran }
   | { type: "visage-verifier"; descripteur: number[]; vivant: boolean }

@@ -79,6 +79,16 @@ if (systeme.includes("le conseiller «")) {
   process.exit(0);
 }
 
+// Tri automatique des mails : « promo » dans la ligne → pubs, sinon à traiter (ou FAKE_TRI, JSON).
+if (args.includes("--json-schema") && prompt.startsWith("TRI DES MAILS")) {
+  const tri = process.env.FAKE_TRI ? JSON.parse(process.env.FAKE_TRI) : { categories: { a_traiter: [], etudes: [], business: [], perso: [], pubs: [] }, resume: "Un mail important à traiter." };
+  if (!process.env.FAKE_TRI) {
+    for (const m of prompt.matchAll(/^\[(\d+)\] (.*)$/gm)) (/promo/i.test(m[2]) ? tri.categories.pubs : tri.categories.a_traiter).push(Number(m[1]));
+  }
+  emit({ type: "result", subtype: "success", is_error: false, result: JSON.stringify(tri), structured_output: tri });
+  process.exit(0);
+}
+
 if (args.includes("--json-schema")) {
   const robots1 = [{ role: "chercheur", tache: "Chercher les infos" }];
   if (process.env.FAKE_PROJET) robots1.push({ role: "codeur", tache: "Coder la fonctionnalité" });

@@ -5,6 +5,7 @@ import { Conversation } from "./conversation.ts";
 import { Jarvis } from "./jarvis.ts";
 import { EcranVerrou } from "./verrou.ts";
 import { Hud } from "./hud.ts";
+import { QG, brancherAutreSeance } from "./poles.ts";
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/pixelify-sans/700.css";
 import "@fontsource/press-start-2p/400.css";
@@ -25,6 +26,8 @@ const conversation = new Conversation(envoyer);
 const jarvis = new Jarvis(envoyer);
 const verrou = new EcranVerrou(envoyer);
 const hud = new Hud();
+const qg = new QG(envoyer);
+brancherAutreSeance(envoyer);
 
 // les polices pixel sont chargées avant le jeu, pour que les textes du bureau les utilisent
 Promise.all(['16px "Pixelify Sans"', '8px "Press Start 2P"'].map((f) => document.fonts.load(f).catch(() => []))).finally(() => new Phaser.Game({
@@ -52,6 +55,7 @@ function connecter(): void {
       ui.rendre(msg.etat);
       hud.rendre(msg.etat.assistant?.coach);
       jarvis.rendre(msg.etat);
+      qg.rendre(msg.etat);
       conversation.rendre(msg.etat.assistant);
       scene.sync(msg.etat.mission, msg.etat.assistant);
       scene.syncConseillers(msg.etat.conseillers);

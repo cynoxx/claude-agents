@@ -48,6 +48,10 @@ export interface BureauConfig {
   mac: MacConfig;
   /** La reconnaissance du visage : active dès qu'un visage est enregistré (false = jamais de verrou). */
   visage: { actif: boolean };
+  /** Minutes par jour au plus, par pôle (0 = pas de limite) : Max prévient quand une session les dépasse. */
+  tempsParJour: Record<string, number>;
+  /** Objectif de minutes par jour, par pôle (affiché comme une barre à remplir). */
+  objectifsParJour: Record<string, number>;
 }
 
 export interface MacConfig {
@@ -88,6 +92,8 @@ export const DEFAULT_CONFIG: BureauConfig = {
   conseillers: CONSEILLERS_DEFAUT,
   mac: { ville: null, musique: "auto", dossierCaptures: null },
   visage: { actif: true },
+  tempsParJour: { business: 60 },
+  objectifsParJour: { etudes: 360 },
 };
 
 export function expandHome(p: string): string {
@@ -132,6 +138,8 @@ export function loadConfig(dir: string): BureauConfig {
     voix: { ...DEFAULT_CONFIG.voix, ...user.voix },
     mac: { ...DEFAULT_CONFIG.mac, ...user.mac },
     visage: { ...DEFAULT_CONFIG.visage, ...user.visage },
+    tempsParJour: { ...DEFAULT_CONFIG.tempsParJour, ...user.tempsParJour },
+    objectifsParJour: { ...DEFAULT_CONFIG.objectifsParJour, ...user.objectifsParJour },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };
   if (c.mac.dossierCaptures) c.mac.dossierCaptures = expandHome(c.mac.dossierCaptures);

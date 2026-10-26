@@ -144,6 +144,42 @@ Mail ; emploi du temps proposé **une fois par jour** ; ajouté **aussi au Calen
   (inscription aux examens et message de Maman à traiter, colle d'anatomie en études, commandes de la boutique en
   business, Shein et Uber Eats en pubs) et ne dit à l'oral que l'essentiel.
 
+## Le QG : pôles, sport et corps 3D, tri automatique des mails (ajoutés ensuite)
+
+Demande : « Max manque de structure, rien ne va ensemble » ; mails triés automatiquement à l'arrivée, dans une petite
+fenêtre ; une catégorie par agent qu'on ouvre sans aller au bureau, proposée par Max ; pour le sport, une vue de son
+corps qu'on tourne avec la main devant la caméra, et trois séances (Pec-Dos, Biceps-Triceps-Épaules, Jambes) plus le
+repos. Choix de l'utilisateur : QG en 3 niveaux ; séances sur des **jours fixes** ; temps compté **par pôle avec une
+limite business** ; les 5 pôles actuels.
+
+- **Structure** : accueil (barre de joueur, emploi du temps, Max, « Maintenant », mails, tuiles des 5 pôles) → fiche
+  d'un pôle (sur l'écran de Max, `assistant.vue().pole`) → bureau (les quêtes des robots). Un pôle = un conseiller
+  (même id) : agents des pôles = conseillers ; robots = équipe d'exécution. Max ouvre une fiche avec `ouvrir_pole`
+  (focus `corps` pour la fiche sante).
+- **Temps par pôle** (`Coach`, `server/max/coach.ts`) : chaque session porte un `pole` (les anciennes comptent pour
+  etudes). `tempsParJour` (business : 60 min) déclenche un événement `limite` au moment où la session la fait
+  atteindre ; Max le dit sans rien arrêter. `objectifsParJour` (etudes : 360 min) remplit une jauge.
+- **Sport** (`server/max/sport.ts`, `shared/sport.ts`) : semaine type de 7 jours (par défaut 5 séances et 2 repos),
+  journal une ligne par jour (`sport/seances.jsonl`, la dernière notée l'emporte), muscles travaillés sur 14 jours
+  (intensité = fois / 4). Outils `noter_seance`, `lire_sport`, `changer_semaine_sport` ; la séance du jour va dans le
+  contexte de Max et dans l'emploi du temps.
+- **Corps 3D** (`web/corps.ts`, three.js, chargé à la demande) : silhouette hologramme et 26 muscles (ellipsoïdes),
+  couleur éteinte → cyan → jaune → orange → rouge. Souris ou doigt : glisser, molette ; clic sur un muscle : son
+  bilan. **Main** : MediaPipe Hands (`@mediapipe/tasks-vision`) dans la page ; fichiers WebAssembly servis depuis
+  node_modules, modèle (7,8 Mo) téléchargé une fois par le serveur dans le dossier des données. Geste
+  (`web/geste-main.ts`) : pouce + index pincés = attraper (hystérésis 0,33 / 0,5 de la taille de la main), déplacer =
+  tourner, main plus grande = zoom. Vérifié dans Chromium avec une fausse caméra (photo de main qui se déplace) :
+  main détectée, curseur qui suit.
+- **Tri automatique** (`server/max/trieur.ts`) : à chaque réveil avec accueil (déverrouillage, Siri), le Bureau liste
+  les mails non lus et les fait classer par un `claude -p` à part (modèle des robots), **sans aucun outil**
+  (`--tools ""`), en JSON (`--json-schema`), mails présentés comme des données (retours à la ligne aplatis). Au plus un
+  tri en 10 minutes ; mêmes mails = on rouvre la fenêtre sans relancer Claude. Le résultat (`MailsVue.auto`) ouvre la
+  fenêtre des mails sur la page ; Max reçoit le résumé. Essai réel : 4,5 s, classement juste, et un mail piégé
+  (« IGNORE TES CONSIGNES… ») classé en pubs et signalé.
+- **Essai réel (Opus)** : « montre-moi mon corps » → `ouvrir_pole(sante, corps)` ; « j'ai fait ma séance jambes,
+  squat à 80 kilos » → `noter_seance` avec la note, et Max remarque que ce n'était pas le jour prévu ; « lance-moi
+  trente minutes sur Asclepium » avec 55 min déjà faites → il le dit franchement et laisse choisir.
+
 ## Hors périmètre
 
 WhatsApp (pas de façon fiable d'envoyer sans clic), lire les SMS reçus, répondre à un mail, contrôle de la maison.

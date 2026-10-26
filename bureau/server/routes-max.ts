@@ -8,12 +8,13 @@ import type { BureauConfig } from "./config.ts";
 import { jetonValide } from "./jeton.ts";
 import { memoriser, oublier } from "./max/carnet.ts";
 import { ajouterEcheance, decrireBilan, lireIdees, noterIdee, type Coach } from "./max/coach.ts";
-import type { Conseillers } from "./max/conseillers.ts";
+import { trouverConseiller, type Conseillers } from "./max/conseillers.ts";
 import { Confirmations } from "./max/confirmations.ts";
 import type { Mac } from "./max/mac.ts";
 import type { Verrou } from "./max/verrou.ts";
 import type { Planning } from "./max/planning.ts";
 import type { TriMails } from "./max/tri-mails.ts";
+import type { Sport } from "./max/sport.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
 import { listMissions } from "./storage.ts";
@@ -32,6 +33,8 @@ export interface AssistantApi extends EventEmitter {
   dernierMessageUtilisateur?(): { texte: string; heure: number } | null;
   /** Change l'écran affiché : Jarvis ou le bureau. */
   allerA?(vue: VueEcran): void;
+  /** Ouvre la fiche d'un pôle sur l'écran de Max (null : retour à l'accueil). */
+  ouvrirPole?(pole: string | null, focus?: string | null): void;
 }
 
 const MAX_RESULTAT = 8000;
@@ -65,6 +68,7 @@ export function routesMax(o: {
   verrou?: Verrou;
   planning?: Planning;
   triMails?: TriMails;
+  sport?: Sport;
 }) {
   const root = path.resolve(o.config.dossierMissions);
   const confirmations = new Confirmations();
@@ -95,6 +99,8 @@ export function routesMax(o: {
     const m = o.manager;
     const coach = o.coach;
     const conseillers = o.conseillers;
+    /** Le pôle désigné (id, nom de l'agent ou domaine) ; vide = les études. */
+    const pole = (t: string) => (t ? (conseillers ? trouverConseiller(conseillers.defs, t)?.id : t) : "etudes");
     const sansCoach = () => repondre(res, 503, { ok: false, texte: "Le coach n'est pas disponible." });
     const essayer = (f: () => string) => {
       try {
@@ -152,9 +158,12 @@ export function routesMax(o: {
         o.assistant?.veilleApresParole();
         return repondre(res, 200, { ok: true, texte: "Max se met en veille après sa phrase." });
       // coach
-      case "POST /api/outils/session":
+      case "POST /api/outils/session": {
         if (!coach) return sansCoach();
-        return repondre(res, 200, coach.demarrerSession(texte("sujet"), nombre("minutes") ?? 25));
+        const p = pole(texte("pole"));
+        if (!p) return repondre(res, 200, { ok: false, texte: `Pôle inconnu. Les pôles : ${conseillers?.defs.map((d) => d.id).join(", ")}.` });
+        return repondre(res, 200, coach.demarrerSession(texte("sujet"), nombre("minutes") ?? 25, p));
+      }
       case "POST /api/outils/pause":
         if (!coach) return sansCoach();
         return repondre(res, 200, coach.demarrerPause(nombre("minutes") ?? 5));
@@ -354,6 +363,37 @@ export function routesMax(o: {
       }
       case "POST /api/outils/ranger-mails":
         return repondre(res, 200, await confirmations.confirmer("rangement", o.assistant?.dernierMessageUtilisateur?.() ?? null));
+      // les pôles et le sport
+      case "POST /api/outils/pole": {
+        const t = texte("pole");
+        if (!t || /^(accueil|aucun|fermer)$/i.test(t)) {
+          o.assistant?.ouvrirPole?.(null);
+          return repondre(res, 200, { ok: true, texte: "Retour à l'accueil." });
+        }
+        const d = conseillers && trouverConseiller(conseillers.defs, t);
+        if (!d) return repondre(res, 200, { ok: false, texte: `Pôle inconnu. Les pôles : ${conseillers?.defs.map((x) => `${x.id} (${x.domaine})`).join(", ")}.` });
+        o.assistant?.allerA?.("jarvis");
+        const corps = texte("focus") === "corps" && d.id === "sante";
+        o.assistant?.ouvrirPole?.(d.id, corps ? "corps" : null);
+        return repondre(res, 200, {
+          ok: true,
+          texte: corps
+            ? "Son corps en 3D est affiché en grand sur l'écran, muscles colorés selon ses 14 derniers jours ; la caméra s'allume pour suivre sa main."
+            : `Fiche ${d.domaine} (${d.nom}) ouverte sur l'écran.`,
+        });
+      }
+      case "POST /api/outils/seance":
+        if (!o.sport) return repondre(res, 503, { ok: false, texte: "Le suivi du sport n'est pas disponible." });
+        return repondre(res, 200, o.sport.noter(texte("seance"), { jour: texte("jour") || undefined, note: texte("note") || undefined }));
+      case "GET /api/outils/sport":
+        if (!o.sport) return repondre(res, 503, { ok: false, texte: "Le suivi du sport n'est pas disponible." });
+        return repondre(res, 200, { ok: true, texte: o.sport.decrire() });
+      case "POST /api/outils/semaine-sport": {
+        if (!o.sport) return repondre(res, 503, { ok: false, texte: "Le suivi du sport n'est pas disponible." });
+        const ch = Array.isArray(corps.changements) ? (corps.changements as { jour: string; seance: string }[]) : [];
+        if (!ch.length) return repondre(res, 200, { ok: false, texte: "Aucun changement donné." });
+        return repondre(res, 200, o.sport.changerSemaine(ch.slice(0, 7)));
+      }
       case "POST /api/outils/vue": {
         const vue = texte("vue");
         if (vue !== "jarvis" && vue !== "bureau") return repondre(res, 200, { ok: false, texte: "Écran inconnu : jarvis ou bureau." });

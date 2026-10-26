@@ -889,12 +889,7 @@ main {
   border: 1px solid rgba(125, 249, 255, 0.45);
   box-shadow: 0 0 12px rgba(125, 249, 255, 0.15);
   color: #dff9ff;
-}
-.j-haut {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  border-radius: 8px;
 }
 .j-nom {
   font-family: var(--mono);
@@ -1065,7 +1060,7 @@ main {
   min-width: 0;
 }
 .j-sphere {
-  width: min(52vh, 100%);
+  width: min(42vh, 100%);
   aspect-ratio: 1;
 }
 .j-toi {
@@ -1278,5 +1273,576 @@ body[data-verrou="oui"] {
 @media (prefers-reduced-motion: reduce) {
   .v-cadre[data-actif="oui"] {
     animation: none;
+  }
+}
+
+/* --- le QG : barre du haut, tuiles des pôles, fiche d'un pôle, fenêtre des mails ------------------------- */
+.qg-barre {
+  display: flex;
+  align-items: center;
+  gap: 10px 14px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(125, 249, 255, 0.15);
+}
+.qg-joueur {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.qg-niv strong {
+  color: var(--or);
+  font-size: 16px;
+}
+.qg-xp {
+  display: inline-block;
+  width: 90px;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(125, 249, 255, 0.12);
+  overflow: hidden;
+}
+.qg-xp i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #ffd23f, #ff8a2b);
+  transition: width 0.6s;
+}
+.qg-pastille {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 249, 255, 0.3);
+  color: #cdefff;
+  white-space: nowrap;
+}
+.qg-pastille[data-chaud="oui"] {
+  border-color: #ff8a2b;
+  color: #ffc28a;
+}
+.qg-minuteur {
+  border-color: #ff8fa3;
+  color: #ffd0d8;
+  font-weight: 700;
+}
+.qg-minuteur[data-type="pause"] {
+  border-color: var(--vert);
+  color: #bdf5cc;
+}
+.qg-corps {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.qg-corps > .j-centre {
+  flex: 1;
+}
+.qg-jauge {
+  display: block;
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(125, 249, 255, 0.12);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.qg-jauge i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: var(--pole, var(--j-cyan));
+  box-shadow: 0 0 10px var(--pole, var(--j-cyan));
+  transition: width 0.6s;
+}
+.qg-jauge.rouge i {
+  background: #ff5d5d;
+  box-shadow: 0 0 10px #ff5d5d;
+}
+.qg-mails-carte {
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.qg-mails-carte .j-mails-resume {
+  display: block;
+}
+
+/* les tuiles des pôles */
+.qg-poles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.jarvis .qg-tuile {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "emoji nom" "emoji agent" "ligne ligne" "jauge jauge";
+  align-items: center;
+  gap: 0 10px;
+  padding: 10px 12px 12px;
+  text-align: left;
+  border-radius: 12px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pole) 18%, transparent), rgba(5, 7, 15, 0.6));
+  border: 1px solid color-mix(in srgb, var(--pole) 55%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--pole) 18%, transparent);
+  color: #eafcff;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.jarvis .qg-tuile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--pole) 45%, transparent);
+}
+.jarvis .qg-tuile.active {
+  border-width: 2px;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--pole) 60%, transparent);
+}
+.qg-tuile.alerte::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff5d5d;
+  box-shadow: 0 0 8px #ff5d5d;
+  animation: qg-clignote 1.4s infinite;
+}
+@keyframes qg-clignote {
+  50% {
+    opacity: 0.25;
+  }
+}
+.qt-emoji {
+  grid-area: emoji;
+  font-size: 26px;
+}
+.qt-nom {
+  grid-area: nom;
+  font-weight: 700;
+  font-size: 15px;
+}
+.qt-agent {
+  grid-area: agent;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--pole) 70%, #fff);
+}
+.qt-ligne {
+  grid-area: ligne;
+  margin-top: 6px;
+  font-size: 13px;
+  font-family: var(--mono);
+  color: #cdefff;
+}
+.qg-tuile .qt-jauge {
+  grid-area: jauge;
+  display: block;
+  height: 5px;
+  margin-top: 6px;
+  border-radius: 99px;
+  background: rgba(125, 249, 255, 0.12);
+  overflow: hidden;
+}
+.qt-jauge i {
+  display: block;
+  height: 100%;
+  background: var(--pole);
+}
+.qg-tuile.alerte .qt-jauge i {
+  background: #ff5d5d;
+}
+.qt-pense {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--or);
+  margin-top: 4px;
+}
+
+/* la fiche d'un pôle */
+.qg-fiche {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  padding: 4px 2px 8px;
+  animation: qf-entre 0.25s ease-out;
+}
+@keyframes qf-entre {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.qf-tete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--pole) 25%, transparent), transparent 70%);
+  border: 1px solid color-mix(in srgb, var(--pole) 50%, transparent);
+}
+.qf-emoji {
+  font-size: 36px;
+}
+.qf-titre h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.qf-titre p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #b9dce6;
+}
+.qf-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.qf-grille.qf-sport {
+  grid-template-columns: minmax(280px, 1.1fr) minmax(260px, 1fr) minmax(240px, 0.9fr);
+}
+.qf-colonne {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qf-colonne:empty {
+  display: none;
+}
+.qg-fiche .j-carte h3 small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.qf-liste {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.qf-reponse {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.45;
+  max-height: 30vh;
+  overflow: auto;
+  margin: 0;
+}
+.qf-boutons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.qf-boutons select {
+  font: inherit;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+  border: 1px solid rgba(125, 249, 255, 0.4);
+}
+.jarvis .qf-fait {
+  background: color-mix(in srgb, var(--vert) 30%, transparent);
+  border-color: var(--vert);
+  font-weight: 700;
+}
+.qf-temps-ligne strong {
+  font-size: 22px;
+  font-family: var(--mono);
+}
+.qf-rouge {
+  color: #ff8a8a !important;
+}
+.qf-barres {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  height: 70px;
+  margin-top: 10px;
+  align-items: end;
+}
+.qf-barres span {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  gap: 3px;
+}
+.qf-barres i {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--pole, var(--j-cyan));
+  opacity: 0.85;
+}
+.qf-barres span:last-child i {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--pole, var(--j-cyan));
+}
+.qf-barres small {
+  font-size: 10px;
+  color: #7fb8c8;
+  text-transform: uppercase;
+}
+.qf-question {
+  display: flex;
+  gap: 8px;
+}
+.qf-question input {
+  flex: 1;
+  font: inherit;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pole) 60%, transparent);
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+}
+
+/* le sport : la semaine, les muscles, le corps 3D */
+.qf-semaine {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.jarvis .qf-jour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+.qf-jour small {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #9fd8e6;
+}
+.qf-jour em {
+  font-style: normal;
+  font-size: 12px;
+  min-height: 1em;
+}
+.jarvis .qf-jour.faite {
+  border-color: var(--vert);
+  background: color-mix(in srgb, var(--vert) 22%, transparent);
+}
+.jarvis .qf-jour.manquee {
+  border-color: #ff6b6b;
+  opacity: 0.75;
+}
+.jarvis .qf-jour.aujourdhui {
+  border-width: 2px;
+  border-color: var(--or);
+  box-shadow: 0 0 12px rgba(255, 205, 60, 0.4);
+}
+.jarvis .qf-jour.repos {
+  opacity: 0.7;
+}
+.qf-muscles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.qf-muscles li {
+  display: grid;
+  grid-template-columns: 88px 1fr 92px;
+  align-items: center;
+  gap: 8px;
+}
+.qf-muscles .qg-jauge {
+  margin: 0;
+}
+.qf-muscles .qg-jauge i {
+  background: linear-gradient(90deg, #2bd4ff, #ffd23f, #ff8a2b);
+}
+.qf-muscles small {
+  color: #9fd8e6;
+  text-align: right;
+}
+.qf-corps {
+  display: flex;
+  flex-direction: column;
+}
+.qf-corps-scene {
+  position: relative;
+  height: max(300px, calc(100vh - 420px));
+  min-height: 300px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 60%, rgba(43, 212, 255, 0.12), transparent 70%);
+}
+.qf-corps-scene canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  cursor: grab;
+}
+.qf-corps-scene canvas:active {
+  cursor: grabbing;
+}
+.qf-legende {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9fd8e6;
+}
+.qf-legende span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qf-legende i {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  border-radius: 4px;
+}
+.qf-legende .qf-eteint {
+  background: #22385c;
+}
+.qf-degrade i {
+  width: 90px;
+  background: linear-gradient(90deg, #2bd4ff, #ffd23f, #ff8a2b, #ff4d4d);
+}
+.qf-corps-pied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #b9dce6;
+}
+.qf-video {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 110px;
+  border-radius: 8px;
+  border: 1px solid rgba(125, 249, 255, 0.5);
+  transform: scaleX(-1);
+  opacity: 0.85;
+}
+.qf-curseur {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  border: 2px solid var(--j-cyan);
+  box-shadow: 0 0 12px var(--j-cyan);
+  pointer-events: none;
+  transition: transform 0.1s;
+}
+.qf-curseur[data-etat="pince"] {
+  transform: scale(0.6);
+  background: var(--or);
+  border-color: var(--or);
+  box-shadow: 0 0 16px var(--or);
+}
+/* « montre-moi mon corps » : le corps prend toute la largeur */
+.qf-focus-corps .qf-grille.qf-sport {
+  grid-template-columns: minmax(300px, 2fr) minmax(260px, 1fr);
+}
+.qf-focus-corps .qf-grille.qf-sport > .qf-colonne:last-child {
+  display: none;
+}
+.qf-focus-corps .qf-corps-scene {
+  height: min(66vh, 680px);
+}
+
+/* la fenêtre des mails */
+.mails-fenetre {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(2, 4, 10, 0.6);
+  backdrop-filter: blur(3px);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.mails-boite {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: #07101d;
+  color: #eafcff;
+  border: 1px solid rgba(125, 249, 255, 0.5);
+  box-shadow: 0 0 40px rgba(125, 249, 255, 0.25);
+  animation: qf-entre 0.25s ease-out;
+}
+.mails-boite h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+.mf-resume {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #cdefff;
+}
+.mf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.mails-boite button {
+  font-family: inherit;
+  background: rgba(125, 249, 255, 0.08);
+  border: 1px solid rgba(125, 249, 255, 0.45);
+  box-shadow: none;
+  color: #dff9ff;
+  border-radius: 8px;
+}
+.mails-boite .j-mails-cat ul {
+  white-space: normal;
+}
+@media (max-width: 760px) {
+  .qg-corps,
+  .qg-corps > .j-centre,
+  .qg-fiche {
+    flex: none;
+    overflow: visible;
+  }
+  .qg-poles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .qf-grille.qf-sport,
+  .qf-focus-corps .qf-grille.qf-sport {
+    grid-template-columns: 1fr;
+  }
+  .qf-corps-scene {
+    height: 60vh;
+  }
+  .qg-xp {
+    width: 60px;
   }
 }

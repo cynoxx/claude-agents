@@ -435,6 +435,39 @@ describe("Assistant — coach", () => {
     expect(a.dernierMessageUtilisateur()).toMatchObject({ texte: "oui vas-y" });
   });
 
+  it("prévient quand une session fait atteindre la limite d'un pôle, sans rien arrêter", () => {
+    coach.emit("limite", { pole: "business", limite: 60, sujet: "Boutique" });
+    expect(cerveau().recus.at(-1)).toContain("Limite du pôle business atteinte : 1 heure aujourd'hui (session « Boutique » en cours)");
+    expect(cerveau().recus.at(-1)).toContain("Ne l'arrête pas toi-même");
+    expect(a.vue().messages.at(-1)?.texte).toBe("⏳ Limite business atteinte (1 heure)");
+  });
+
+  it("annonce son arrivée (pour trier les mails) au réveil avec accueil seulement", () => {
+    let arrivees = 0;
+    a.on("arrivee", () => arrivees++);
+    a.ecrire("salut"); // réveil sans accueil
+    expect(arrivees).toBe(0);
+    a.veille();
+    a.reveiller();
+    expect(arrivees).toBe(1);
+  });
+
+  it("ouvre la fiche d'un pôle (sur l'écran de Max) et la ferme en allant au bureau", () => {
+    a.allerA("bureau");
+    a.ouvrirPole("sante", "corps");
+    expect(a.vue()).toMatchObject({ vue: "jarvis", pole: "sante", focus: "corps" });
+    a.ouvrirPole("business");
+    expect(a.vue()).toMatchObject({ pole: "business", focus: null });
+    a.allerA("bureau");
+    expect(a.vue()).toMatchObject({ vue: "bureau", pole: null });
+  });
+
+  it("met le sport dans le contexte du jour", () => {
+    creer({ coach, sport: { decrire: () => "Sport — séance du jour (lundi) : Pec-Dos" } });
+    a.reveiller();
+    expect(cerveau().consigne).toContain("Sport — séance du jour (lundi) : Pec-Dos");
+  });
+
   it("ajoute l'heure devant les messages de l'utilisateur quand on le lui demande", () => {
     creer({ horodater: true });
     a.ecrire("Bonjour");

@@ -87,9 +87,10 @@ serveur.registerTool(
     inputSchema: {
       sujet: z.string().describe("Ce qu'il va travailler, en quelques mots (ex. « Anatomie, chapitre 3 »)"),
       minutes: z.number().int().min(1).max(180).default(25).describe("Durée en minutes (25 par défaut)"),
+      pole: z.string().default("etudes").describe("Le pôle de ce travail : etudes, business, apps, vie, sante (le temps est compté par pôle ; business a une limite par jour)"),
     },
   },
-  async ({ sujet, minutes }) => appeler("POST", "/api/outils/session", { sujet, minutes }),
+  async ({ sujet, minutes, pole }) => appeler("POST", "/api/outils/session", { sujet, minutes, pole }),
 );
 serveur.registerTool(
   "demarrer_pause",
@@ -372,5 +373,45 @@ serveur.registerTool(
   async () => appeler("POST", "/api/outils/vue", { vue: "bureau" }),
 );
 serveur.registerTool("retour_jarvis", { description: "Revient à l'écran principal de Max (la sphère)." }, async () => appeler("POST", "/api/outils/vue", { vue: "jarvis" }));
+
+// les pôles et le sport
+serveur.registerTool(
+  "ouvrir_pole",
+  {
+    description:
+      "Ouvre sur ton écran la fiche d'un pôle (études, sport et santé, business, apps, vie), sans aller au bureau. focus « corps » sur la fiche sante montre son corps en 3D (« montre-moi mon corps »). pole « accueil » ferme la fiche.",
+    inputSchema: {
+      pole: z.string().describe("etudes, sante, business, apps, vie, ou accueil"),
+      focus: z.enum(["corps"]).optional().describe("Pour la fiche sante : afficher le corps en grand"),
+    },
+  },
+  async ({ pole, focus }) => appeler("POST", "/api/outils/pole", { pole, focus }),
+);
+serveur.registerTool(
+  "noter_seance",
+  {
+    description: "Note la séance de sport faite (une par jour ; la dernière notée l'emporte) : pec_dos, bras_epaules (biceps-triceps-épaules), jambes ou repos.",
+    inputSchema: {
+      seance: z.string().describe("pec_dos, bras_epaules, jambes ou repos"),
+      jour: z.string().optional().describe("AAAA-MM-JJ si ce n'est pas aujourd'hui"),
+      note: z.string().optional().describe("Ce qu'il a fait (exercices, charges), en quelques mots"),
+    },
+  },
+  async ({ seance, jour, note }) => appeler("POST", "/api/outils/seance", { seance, jour, note }),
+);
+serveur.registerTool("lire_sport", { description: "La séance du jour et de demain, la semaine type et les muscles travaillés ces 14 derniers jours." }, async () => appeler("GET", "/api/outils/sport"));
+serveur.registerTool(
+  "changer_semaine_sport",
+  {
+    description: "Change les jours fixes de sa semaine type de sport (ex. jeudi : jambes).",
+    inputSchema: {
+      changements: z
+        .array(z.object({ jour: z.enum(["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]), seance: z.enum(["pec_dos", "bras_epaules", "jambes", "repos"]) }))
+        .min(1)
+        .max(7),
+    },
+  },
+  async ({ changements }) => appeler("POST", "/api/outils/semaine-sport", { changements }),
+);
 
 await serveur.connect(new StdioServerTransport());

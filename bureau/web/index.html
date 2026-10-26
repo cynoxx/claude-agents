@@ -35,42 +35,82 @@
       </div>
     </div>
     <section id="jarvis" class="jarvis" aria-label="Max">
-      <div class="j-haut">
+      <header class="qg-barre">
         <div class="j-nom">MAX</div>
         <div id="j-statut" class="j-statut" data-etat="veille">En veille</div>
+        <div class="qg-joueur" data-hud-joueur hidden>
+          <span class="qg-niv">NIV <strong data-hud="niveau">1</strong></span>
+          <span class="qg-xp" role="progressbar" aria-label="Expérience" aria-valuemin="0" aria-valuemax="100"><i data-hud="xp"></i></span>
+          <span class="qg-pastille" data-hud="serie" title="Jours d'affilée avec au moins une session">🔥 0 j</span>
+          <span class="qg-pastille" data-hud="echeance" hidden></span>
+        </div>
+        <span id="j-minuteur" class="qg-pastille qg-minuteur" hidden></span>
         <span class="espace"></span>
         <button type="button" id="j-visage" hidden>🔐 Visage</button>
         <button type="button" id="j-reveil">👂 Réveiller</button>
-        <button type="button" id="j-bureau">🏢 Le bureau</button>
-      </div>
-      <div class="j-centre">
-        <aside class="j-cote j-gauche">
-          <div class="j-carte j-horloge"><div id="j-heure" class="j-heure">--:--</div><div id="j-date" class="j-date"></div></div>
-          <div class="j-carte"><h3>Météo</h3><div id="j-meteo" class="j-meteo">—</div></div>
-          <div class="j-carte j-defile"><h3 id="j-jour-titre">Aujourd'hui</h3><ol id="j-agenda" class="j-agenda"></ol><p id="j-jour-aide" class="j-petit" hidden></p></div>
-        </aside>
-        <div class="j-sphere-zone">
-          <canvas id="sphere" class="j-sphere"></canvas>
-          <p id="j-toi" class="j-toi"></p>
-          <p id="j-dit" class="j-dit" aria-live="polite"></p>
-          <p id="j-soucis" class="j-soucis"></p>
-        </div>
-        <aside class="j-cote j-droite">
-          <div class="j-carte"><h3>Objectif</h3><div id="j-echeance" class="j-gros">—</div><div id="j-travail" class="j-petit"></div><div id="j-minuteur" class="j-minuteur" hidden></div></div>
-          <button type="button" id="j-mission" class="j-carte j-mission" hidden></button>
-          <div id="j-mails-carte" class="j-carte j-defile" hidden>
-            <h3>Mails</h3>
-            <p id="j-mails-resume" class="j-mails-resume"></p>
-            <div id="j-mails" class="j-mails"></div>
+        <button type="button" id="j-bureau" title="Le bureau : l'équipe de robots et ses quêtes">🏢 Le bureau</button>
+      </header>
+
+      <div class="qg-corps">
+        <div id="qg-accueil" class="j-centre">
+          <aside class="j-cote j-gauche">
+            <div class="j-carte j-horloge">
+              <div id="j-heure" class="j-heure">--:--</div>
+              <div id="j-date" class="j-date"></div>
+              <div id="j-meteo" class="j-meteo">—</div>
+            </div>
+            <div class="j-carte j-defile">
+              <h3 id="j-jour-titre">Aujourd'hui</h3>
+              <ol id="j-agenda" class="j-agenda"></ol>
+              <p id="j-jour-aide" class="j-petit" hidden></p>
+            </div>
+          </aside>
+          <div class="j-sphere-zone">
+            <canvas id="sphere" class="j-sphere"></canvas>
+            <p id="j-toi" class="j-toi"></p>
+            <p id="j-dit" class="j-dit" aria-live="polite"></p>
+            <p id="j-soucis" class="j-soucis"></p>
           </div>
-          <div id="j-conseillers" class="j-petit"></div>
-        </aside>
+          <aside class="j-cote j-droite">
+            <div class="j-carte">
+              <h3>Maintenant</h3>
+              <div id="j-maintenant" class="j-gros">—</div>
+              <div id="j-objectif" class="qg-jauge" hidden><i></i></div>
+              <div id="j-travail" class="j-petit"></div>
+            </div>
+            <button type="button" id="j-mails-carte" class="j-carte qg-mails-carte" hidden>
+              <h3>Mails</h3>
+              <span id="j-mails-resume" class="j-mails-resume"></span>
+              <span id="j-mails-compte" class="j-petit"></span>
+            </button>
+            <button type="button" id="j-mission" class="j-carte j-mission" hidden></button>
+            <div id="j-conseillers" class="j-petit"></div>
+          </aside>
+        </div>
+        <section id="qg-fiche" class="qg-fiche" aria-live="polite" hidden></section>
       </div>
+
+      <nav id="qg-poles" class="qg-poles" aria-label="Tes pôles"></nav>
+
       <form id="j-form" class="j-form">
         <input id="j-texte" autocomplete="off" placeholder="Parle à Max (« Max, … ») ou écris-lui ici" />
         <button type="submit">Envoyer</button>
       </form>
     </section>
+
+    <div id="mails-fenetre" class="mails-fenetre" role="dialog" aria-label="Tes mails" hidden>
+      <div class="mails-boite">
+        <button type="button" id="mf-fermer" class="v-fermer" aria-label="Fermer">×</button>
+        <h2>📬 Tes mails</h2>
+        <p id="mf-resume" class="mf-resume"></p>
+        <div id="mf-categories" class="j-mails"></div>
+        <div class="mf-actions">
+          <button type="button" id="mf-ranger" hidden>📰 Ranger les pubs</button>
+          <button type="button" id="mf-retrier">🔄 Retrier</button>
+          <button type="button" id="mf-ok">OK</button>
+        </div>
+      </div>
+    </div>
 
     <header class="hud">
       <div class="hud-logo" aria-label="Le Bureau"><span class="hud-logo-haut">LE</span><span class="hud-logo-bas">BUREAU</span></div>

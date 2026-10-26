@@ -144,7 +144,7 @@ export class OfficeScene extends Phaser.Scene {
     g.fillStyle(0x05040c, 1).fillRect(LARGEUR / 2 - 104, AILE - 16, 208, 28);
     g.fillStyle(0x1b1b2f, 1).fillRect(LARGEUR / 2 - 100, AILE - 12, 200, 20);
     this.add
-      .text(LARGEUR / 2, AILE - 2, "LES CONSEILLERS", { fontFamily: '"Press Start 2P", monospace', fontSize: "9px", color: "#7df9ff" })
+      .text(LARGEUR / 2, AILE - 2, "TES PÔLES", { fontFamily: '"Press Start 2P", monospace', fontSize: "9px", color: "#7df9ff" })
       .setOrigin(0.5)
       .setShadow(0, 0, "#00c8ff", 8, false, true)
       .setDepth(-6);

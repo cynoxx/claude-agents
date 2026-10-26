@@ -3,7 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { WebSocketServer, type WebSocket } from "ws";
-import type { ClientMessage, EtatBureau, ServerMessage } from "../shared/protocol.ts";
+import type { ClientMessage, EtatBureau, ServerMessage, TempsPole } from "../shared/protocol.ts";
 import type { BureauConfig } from "./config.ts";
 import type { MissionManager } from "./mission.ts";
 import type { Coach } from "./max/coach.ts";
@@ -13,8 +13,12 @@ import type { Mac } from "./max/mac.ts";
 import type { Verrou } from "./max/verrou.ts";
 import type { Planning } from "./max/planning.ts";
 import type { TriMails } from "./max/tri-mails.ts";
+import type { TrieurAuto } from "./max/trieur.ts";
+import type { Sport } from "./max/sport.ts";
 import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
 import { listMissions } from "./storage.ts";
+import { lireIdees } from "./max/coach.ts";
+import { assurerModeleMain } from "./max/modele-main.ts";
 
 export type { AssistantApi } from "./routes-max.ts";
 
@@ -56,8 +60,12 @@ export function createBureauServer(o: {
   verrou?: Verrou;
   planning?: Planning;
   triMails?: TriMails;
+  trieur?: TrieurAuto;
+  sport?: Sport;
   /** Le dossier des modèles de reconnaissance du visage (face-api), servis à la page. */
   modelesVisage?: string;
+  /** La détection de la main (corps 3D) : les fichiers WebAssembly de MediaPipe et le dossier du modèle. */
+  mediapipe?: { wasm: string; dossierModele: string; urlModele?: string };
 }): http.Server {
   const root = path.resolve(o.config.dossierMissions);
   const ouvrir = o.ouvrir ?? ouvrirDansFinder;
@@ -100,6 +108,25 @@ export function createBureauServer(o: {
       return fs.createReadStream(f).pipe(res);
     }
 
+    // MediaPipe Hands (pour tourner le corps 3D avec la main) : les fichiers WebAssembly, et le modèle
+    const mp = chemin.match(/^\/mediapipe\/(vision_wasm_(?:nosimd_|module_)?internal\.(?:js|wasm)|hand_landmarker\.task)$/);
+    if (mp) {
+      if (!o.mediapipe) return fin(res, 404, "Introuvable");
+      if (o.verrou?.verrouille) return fin(res, 423, "Max est verrouillé");
+      const nom = mp[1];
+      const type = nom.endsWith(".wasm") ? "application/wasm" : nom.endsWith(".js") ? "text/javascript; charset=utf-8" : "application/octet-stream";
+      const servir = (f: string) => {
+        res.writeHead(200, { "content-type": type, "cache-control": "max-age=86400" });
+        fs.createReadStream(f).pipe(res);
+      };
+      if (nom !== "hand_landmarker.task") {
+        const f = path.join(o.mediapipe.wasm, nom);
+        return fs.existsSync(f) ? servir(f) : fin(res, 404, "Introuvable");
+      }
+      assurerModeleMain(o.mediapipe.dossierModele, o.mediapipe.urlModele).then(servir, (e: Error) => fin(res, 502, e.message));
+      return;
+    }
+
     if (estRouteMax(chemin)) {
       traiterMax(req, res, chemin, url).catch(() => fin(res, 500, "Erreur interne"));
       return;
@@ -137,6 +164,23 @@ export function createBureauServer(o: {
   // le WebSocketServer relaie les erreurs du serveur HTTP (ex. port pris) : c'est `server.on("error")` qui les traite
   wss.on("error", () => {});
   const envoyer = (ws: WebSocket, msg: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(msg));
+  /** Le temps passé par pôle (un pôle = un conseiller) et les dernières notes de son agent. */
+  const poles = (): TempsPole[] | undefined => {
+    if (!o.conseillers || !o.coach) return undefined;
+    const temps = o.coach.temps();
+    return o.conseillers.defs.map((d) => {
+      const t = temps.get(d.id);
+      return {
+        id: d.id,
+        aujourdhui: t?.aujourdhui ?? 0,
+        semaine: t?.semaine ?? 0,
+        jours: t?.jours ?? [0, 0, 0, 0, 0, 0, 0],
+        limite: t?.limite ?? null,
+        objectif: o.config.objectifsParJour?.[d.id] || null,
+        notes: o.conseillers!.notes(d.id),
+      };
+    });
+  };
   // verrouillé, la page ne reçoit rien de personnel : ni conversation, ni mission, ni agenda, ni conseillers
   const etatComplet = (): EtatBureau => {
     const verrou = o.verrou?.vue();
@@ -158,6 +202,8 @@ export function createBureauServer(o: {
       verrou,
       ...(o.planning ? { planning: o.planning.vue() } : {}),
       ...(o.triMails ? { mails: o.triMails.vue() } : {}),
+      ...(o.sport ? { sport: o.sport.vue() } : {}),
+      ...(o.coach && o.conseillers ? { poles: poles(), idees: lireIdees(root).slice(-8) } : {}),
     };
   };
   const diffuser = () => {
@@ -171,7 +217,9 @@ export function createBureauServer(o: {
   o.verrou?.on("etat", diffuser);
   o.planning?.on("etat", diffuser);
   o.triMails?.on("etat", diffuser);
+  o.sport?.on("etat", diffuser);
   server.on("close", () => {
+    o.sport?.off("etat", diffuser);
     o.planning?.off("etat", diffuser);
     o.triMails?.off("etat", diffuser);
     o.verrou?.off("etat", diffuser);
@@ -247,13 +295,46 @@ export function createBureauServer(o: {
             r = { ok: false, erreur: "Le coach n'est pas disponible." };
             break;
           }
-          const rc = msg.type === "session" ? o.coach.demarrerSession(String(msg.sujet ?? ""), Number(msg.minutes ?? 25)) : o.coach.arreterSession();
+          const pole = String(msg.type === "session" ? (msg.pole ?? "") : "");
+          const poleOk = !pole || !o.conseillers || o.conseillers.defs.some((d) => d.id === pole);
+          const rc = !poleOk
+            ? { ok: false, texte: "Pôle inconnu." }
+            : msg.type === "session"
+              ? o.coach.demarrerSession(String(msg.sujet ?? ""), Number(msg.minutes ?? 25), pole || undefined)
+              : o.coach.arreterSession();
           r = rc.ok ? { ok: true } : { ok: false, erreur: rc.texte };
           if (rc.ok) o.assistant?.informer?.(`Depuis la page : ${rc.texte}`);
           break;
         }
         case "vue":
           if (msg.vue === "jarvis" || msg.vue === "bureau") o.assistant?.allerA?.(msg.vue);
+          break;
+        case "pole": {
+          const p = msg.pole === null ? null : String(msg.pole ?? "");
+          if (p !== null && !o.conseillers?.defs.some((d) => d.id === p)) {
+            r = { ok: false, erreur: "Pôle inconnu." };
+            break;
+          }
+          o.assistant?.ouvrirPole?.(p, msg.focus === "corps" ? "corps" : null);
+          break;
+        }
+        case "seance":
+        case "semaine-sport": {
+          if (!o.sport) {
+            r = { ok: false, erreur: "Le suivi du sport n'est pas disponible." };
+            break;
+          }
+          const rs = msg.type === "seance" ? o.sport.noter(String(msg.seance ?? ""), { jour: msg.jour ? String(msg.jour) : undefined }) : o.sport.changerSemaine([{ jour: Number(msg.jour), seance: String(msg.seance ?? "") }]);
+          r = rs.ok ? { ok: true } : { ok: false, erreur: rs.texte };
+          if (rs.ok) o.assistant?.informer?.(`Depuis la page : ${rs.texte}`);
+          break;
+        }
+        case "trier-mails":
+          if (!o.trieur) {
+            r = { ok: false, erreur: "Le tri des mails n'est pas disponible." };
+            break;
+          }
+          void o.trieur.lancer(true).then((t) => !t.ok && envoyer(ws, { type: "erreur", message: t.texte }));
           break;
         default:
           r = { ok: false, erreur: "Message incompréhensible." };

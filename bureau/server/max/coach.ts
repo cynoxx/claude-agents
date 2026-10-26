@@ -20,12 +20,15 @@ export interface SessionTravail {
   fin: string;
   minutes: number;
   sujet: string;
+  /** Le pôle (etudes, business…) ; les anciennes sessions sans pôle comptent pour les études. */
+  pole?: string;
   note?: string;
 }
 
 export interface Minuteur {
   type: "travail" | "pause";
   sujet: string;
+  pole?: string;
   debut: string;
   fin: string;
   minutes: number;
@@ -34,6 +37,7 @@ export interface Minuteur {
 export interface FinMinuteur {
   type: Minuteur["type"];
   sujet: string;
+  pole?: string;
   minutes: number;
   /** Minutes de travail notées aujourd'hui, celle-ci comprise. */
   aujourdhui: number;
@@ -43,6 +47,16 @@ interface Rappel {
   texte: string;
   quand: string; // ISO
 }
+
+/** La limite du jour d'un pôle est atteinte pendant une session. */
+export interface LimitePole {
+  pole: string;
+  limite: number;
+  sujet: string;
+}
+
+export const POLE_DEFAUT = "etudes";
+export const poleDe = (s: { pole?: string }) => s.pole || POLE_DEFAUT;
 
 export interface Reponse {
   ok: boolean;
@@ -155,6 +169,30 @@ export function decrireBilan(b: Bilan): string {
   ].join("\n");
 }
 
+export interface TempsJour {
+  aujourdhui: number;
+  semaine: number;
+  /** Les 7 derniers jours, du plus ancien à aujourd'hui. */
+  jours: number[];
+}
+
+/** Minutes par pôle : aujourd'hui, sur les 7 derniers jours, et jour par jour. */
+export function tempsParPole(sessions: SessionTravail[], maintenant: Date): Map<string, TempsJour> {
+  const base = new Date(maintenant.getTime() - COUPURE_NUIT_H * 3_600_000);
+  const jours = [6, 5, 4, 3, 2, 1, 0].map((n) => iso(new Date(base.getFullYear(), base.getMonth(), base.getDate() - n)));
+  const out = new Map<string, TempsJour>();
+  for (const s of sessions) {
+    const i = jours.indexOf(jourDe(new Date(s.debut)));
+    if (i < 0) continue;
+    const v = out.get(poleDe(s)) ?? { aujourdhui: 0, semaine: 0, jours: [0, 0, 0, 0, 0, 0, 0] };
+    v.semaine += s.minutes;
+    v.jours[i] += s.minutes;
+    if (i === 6) v.aujourdhui += s.minutes;
+    out.set(poleDe(s), v);
+  }
+  return out;
+}
+
 // --- profil (moi.md) et échéances ------------------------------------------------------------------------
 
 export function lireProfil(dossier: string): string {
@@ -247,6 +285,7 @@ export function heureCible(o: { dansMinutes?: number; heure?: string }, maintena
 
 /**
  * Événements : `fin` (FinMinuteur) quand une session ou une pause se termine, `rappel` (texte) à l'heure d'un rappel,
+ * `limite` (LimitePole) quand une session fait atteindre la limite du jour de son pôle,
  * `etat` quand sa vue change.
  */
 export class Coach extends EventEmitter {
@@ -254,23 +293,30 @@ export class Coach extends EventEmitter {
   private timer?: NodeJS.Timeout;
   private rappels: Rappel[] = [];
   private timersRappels: NodeJS.Timeout[] = [];
+  private timerLimite?: NodeJS.Timeout;
 
-  constructor(private o: { dossier: string; dossierDonnees: string }) {
+  constructor(private o: { dossier: string; dossierDonnees: string; /** Minutes par jour au plus, par pôle ({ business: 60 }). */ limites?: Record<string, number> }) {
     super();
     this.restaurer();
   }
 
   // minuteur
 
-  demarrerSession(sujet: string, minutes: number): Reponse {
+  demarrerSession(sujet: string, minutes: number, pole = POLE_DEFAUT): Reponse {
     if (!(minutes >= 1 && minutes <= 180)) return { ok: false, texte: "Une session dure entre 1 et 180 minutes." };
     if (this.minuteur?.type === "travail") {
       const reste = Math.ceil((new Date(this.minuteur.fin).getTime() - Date.now()) / MINUTE);
       return { ok: false, texte: `Une session est déjà en cours (« ${this.minuteur.sujet} », encore ${dureeParlee(reste)}). Arrête-la d'abord.` };
     }
     const s = sujet.replace(/\s+/g, " ").trim() || "Révisions";
-    this.armer({ type: "travail", sujet: s, minutes, debut: new Date().toISOString(), fin: new Date(Date.now() + minutes * MINUTE).toISOString() });
-    return { ok: true, texte: `Session de ${dureeParlee(minutes)} lancée sur « ${s} », fin à ${heureParlee(new Date(this.minuteur!.fin))}. Je préviendrai à la fin.` };
+    const p = pole.trim() || POLE_DEFAUT;
+    this.armer({ type: "travail", sujet: s, pole: p, minutes, debut: new Date().toISOString(), fin: new Date(Date.now() + minutes * MINUTE).toISOString() });
+    const texte = `Session de ${dureeParlee(minutes)} lancée sur « ${s} » (pôle ${p}), fin à ${heureParlee(new Date(this.minuteur!.fin))}. Je préviendrai à la fin.`;
+    const limite = this.o.limites?.[p];
+    const deja = tempsParPole(lireJournal(this.o.dossier), new Date()).get(p)?.aujourdhui ?? 0;
+    if (limite && deja >= limite) return { ok: true, texte: `${texte}\nAttention : limite du pôle ${p} déjà atteinte aujourd'hui (${dureeParlee(deja)} pour ${dureeParlee(limite)} prévues). Dis-le-lui franchement, sans le bloquer.` };
+    if (limite && deja + minutes > limite) return { ok: true, texte: `${texte}\nIl reste ${dureeParlee(limite - deja)} avant la limite du pôle ${p} : je préviendrai quand elle sera atteinte.` };
+    return { ok: true, texte };
   }
 
   demarrerPause(minutes: number): Reponse {
@@ -297,6 +343,21 @@ export class Coach extends EventEmitter {
 
   bilan(): Bilan {
     return bilan(lireJournal(this.o.dossier), new Date());
+  }
+
+  /** Minutes par pôle (la session en cours comprise), et la limite du jour de chaque pôle. */
+  temps(): Map<string, TempsJour & { limite: number | null }> {
+    const t = tempsParPole(lireJournal(this.o.dossier), new Date());
+    const m = this.minuteur;
+    if (m?.type === "travail") {
+      const enCours = Math.max(0, Math.floor((Math.min(Date.now(), new Date(m.fin).getTime()) - new Date(m.debut).getTime()) / MINUTE));
+      const v = t.get(poleDe(m)) ?? { aujourdhui: 0, semaine: 0, jours: [0, 0, 0, 0, 0, 0, 0] };
+      t.set(poleDe(m), { aujourdhui: v.aujourdhui + enCours, semaine: v.semaine + enCours, jours: [...v.jours.slice(0, 6), v.jours[6] + enCours] });
+    }
+    const out = new Map<string, TempsJour & { limite: number | null }>();
+    for (const [p, v] of t) out.set(p, { ...v, limite: this.o.limites?.[p] || null });
+    for (const [p, l] of Object.entries(this.o.limites ?? {})) if (!out.has(p) && l) out.set(p, { aujourdhui: 0, semaine: 0, jours: [0, 0, 0, 0, 0, 0, 0], limite: l });
+    return out;
   }
 
   // rappels
@@ -335,7 +396,7 @@ export class Coach extends EventEmitter {
     const journal = lireJournal(this.o.dossier);
     const b = bilan(journal, new Date());
     return {
-      minuteur: this.minuteur ? { type: this.minuteur.type, sujet: this.minuteur.sujet, fin: this.minuteur.fin } : null,
+      minuteur: this.minuteur ? { type: this.minuteur.type, sujet: this.minuteur.sujet, fin: this.minuteur.fin, ...(this.minuteur.pole ? { pole: this.minuteur.pole } : {}) } : null,
       aujourdhui: b.aujourdhui,
       total: journal.reduce((t, s) => t + s.minutes, 0),
       serie: b.serie,
@@ -354,8 +415,10 @@ export class Coach extends EventEmitter {
         : "Échéances : aucune notée (ajouter_echeance pour en ajouter).",
     );
     lignes.push(`Travail noté : ${decrireBilan(this.bilan()).split("\n").slice(0, 4).join(" ")}`);
+    const temps = [...this.temps()].filter(([, v]) => v.aujourdhui || v.limite);
+    if (temps.length) lignes.push(`Temps par pôle aujourd'hui : ${temps.map(([p, v]) => `${p} ${dureeParlee(v.aujourdhui)}${v.limite ? ` (limite ${dureeParlee(v.limite)})` : ""}`).join(", ")}.`);
     const m = this.minuteur;
-    if (m) lignes.push(m.type === "travail" ? `Session de travail en cours : « ${m.sujet} », fin à ${heureParlee(new Date(m.fin))}.` : `Pause en cours jusqu'à ${heureParlee(new Date(m.fin))}.`);
+    if (m) lignes.push(m.type === "travail" ? `Session de travail en cours (pôle ${poleDe(m)}) : « ${m.sujet} », fin à ${heureParlee(new Date(m.fin))}.` : `Pause en cours jusqu'à ${heureParlee(new Date(m.fin))}.`);
     if (this.rappels.length) lignes.push(`Rappels programmés :\n${this.listeRappels()}`);
     const idees = lireIdees(this.o.dossier).length;
     if (idees) lignes.push(`Idées au parking : ${idees} (lire_idees pour les voir).`);
@@ -372,6 +435,7 @@ export class Coach extends EventEmitter {
 
   fermer(): void {
     clearTimeout(this.timer);
+    clearTimeout(this.timerLimite);
     this.timersRappels.forEach(clearTimeout);
     this.timersRappels = [];
   }
@@ -388,11 +452,28 @@ export class Coach extends EventEmitter {
     fs.mkdirSync(this.o.dossierDonnees, { recursive: true });
     fs.writeFileSync(this.fichier(FICHIER_MINUTEUR), JSON.stringify(m));
     this.timer = setTimeout(() => this.terminer(), Math.max(0, new Date(m.fin).getTime() - Date.now()));
+    this.armerLimite(m);
     this.emit("etat");
+  }
+
+  /** Si la session fait dépasser la limite du jour de son pôle : un événement `limite` au moment où elle est atteinte. */
+  private armerLimite(m: Minuteur): void {
+    clearTimeout(this.timerLimite);
+    const limite = m.type === "travail" ? this.o.limites?.[poleDe(m)] : undefined;
+    if (!limite) return;
+    const deja = tempsParPole(lireJournal(this.o.dossier), new Date(m.debut)).get(poleDe(m))?.aujourdhui ?? 0;
+    if (deja >= limite) return;
+    const atteinte = new Date(m.debut).getTime() + (limite - deja) * MINUTE;
+    if (atteinte >= new Date(m.fin).getTime()) return;
+    this.timerLimite = setTimeout(() => {
+      const l: LimitePole = { pole: poleDe(m), limite, sujet: m.sujet };
+      this.emit("limite", l);
+    }, Math.max(0, atteinte - Date.now()));
   }
 
   private desarmer(): void {
     clearTimeout(this.timer);
+    clearTimeout(this.timerLimite);
     this.minuteur = null;
     fs.rmSync(this.fichier(FICHIER_MINUTEUR), { force: true });
     this.emit("etat");
@@ -403,7 +484,7 @@ export class Coach extends EventEmitter {
     if (!m) return;
     this.desarmer();
     if (m.type === "travail") this.enregistrer(m, new Date(m.fin));
-    const fin: FinMinuteur = { type: m.type, sujet: m.sujet, minutes: m.minutes, aujourdhui: this.bilan().aujourdhui };
+    const fin: FinMinuteur = { type: m.type, sujet: m.sujet, ...(m.pole ? { pole: m.pole } : {}), minutes: m.minutes, aujourdhui: this.bilan().aujourdhui };
     this.emit("fin", fin);
     this.emit("etat");
   }
@@ -414,7 +495,7 @@ export class Coach extends EventEmitter {
     const minutes = Math.floor((fin - new Date(m.debut).getTime()) / MINUTE);
     if (minutes < 1) return 0;
     const n = note?.replace(/\s+/g, " ").trim();
-    ajouterAuJournal(this.o.dossier, { debut: m.debut, fin: new Date(fin).toISOString(), minutes, sujet: m.sujet, ...(n ? { note: n } : {}) });
+    ajouterAuJournal(this.o.dossier, { debut: m.debut, fin: new Date(fin).toISOString(), minutes, sujet: m.sujet, ...(m.pole ? { pole: m.pole } : {}), ...(n ? { note: n } : {}) });
     return minutes;
   }
 

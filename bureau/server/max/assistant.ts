@@ -7,7 +7,7 @@ import { Phraseur } from "../voix/phraseur.ts";
 import type { AssistantApi } from "../routes-max.ts";
 import { consigneMax } from "./consigne.ts";
 import type { FinReponse } from "./cerveau.ts";
-import { dureeParlee, type FinMinuteur } from "./coach.ts";
+import { dureeParlee, type FinMinuteur, type LimitePole } from "./coach.ts";
 
 export interface OreilleLike extends EventEmitter {
   demarrer(): void;
@@ -71,6 +71,8 @@ export interface OptionsAssistant {
   /** Verrouillé, Max ne se réveille pas ; il se reverrouille en s'endormant. */
   verrou?: VerrouLike;
   planning?: PlanningLike;
+  /** Le sport (séance du jour, muscles travaillés), pour le contexte de Max. */
+  sport?: { decrire(): string };
 }
 
 const PROPOSER_PLANNING =
@@ -164,6 +166,16 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return "🏢 Direction le bureau";
     case "retour_jarvis":
       return "🔵 Retour à l'écran de Max";
+    case "ouvrir_pole":
+      return e("focus") === "corps" ? "🧍 Max affiche ton corps" : `🗂 Max ouvre la fiche ${e("pole")}`;
+    case "noter_seance":
+      return `🏋️ Séance notée : ${e("seance")}`;
+    case "lire_sport":
+      return "🏋️ Max regarde ton sport";
+    case "changer_semaine_sport":
+      return "🗓 Max change ta semaine de sport";
+    case "trier_mails":
+      return "📬 Max trie tes mails";
     case "WebSearch":
       return `🔎 Max cherche sur le web : ${e("query")}`;
     case "WebFetch":
@@ -197,6 +209,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private infos: string[] = [];
   private dernier: { texte: string; heure: number } | null = null;
   private ecran: VueEcran = "jarvis";
+  private pole: string | null = null;
+  private focus: string | null = null;
 
   constructor(private o: OptionsAssistant) {
     super();
@@ -238,6 +252,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
     o.manager.on("etat", (e: EtatBureau) => this.surMission(e));
     o.coach?.on("etat", () => this.changer());
     o.coach?.on("fin", (f: FinMinuteur) => this.finMinuteur(f));
+    o.coach?.on("limite", (l: LimitePole) => this.limitePole(l));
     o.coach?.on("rappel", (texte: string) => {
       if (this.etat === "veille") this.reveiller(false);
       this.noter("max", `🔔 ${texte}`);
@@ -257,6 +272,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
       cerveau: this.dispoCerveau,
       ...(this.o.coach ? { coach: this.o.coach.vue() } : {}),
       vue: this.ecran,
+      pole: this.pole,
+      focus: this.focus,
     };
   }
 
@@ -272,6 +289,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.relancerMinuterie();
     this.changer();
     if (accueil) {
+      // il arrive : le Bureau trie ses mails pendant que Max le salue
+      this.emit("arrivee");
       const base = this.o.coach?.accueil() ?? ACCUEIL;
       const bonjour = prenom ? base.replace(/^Salut !/, `Salut ${prenom} !`) : base;
       this.noter("max", bonjour);
@@ -338,6 +357,15 @@ export class Assistant extends EventEmitter implements AssistantApi {
     if (vue !== "jarvis" && vue !== "bureau") return;
     if (this.ecran === vue) return;
     this.ecran = vue;
+    if (vue === "bureau") this.pole = this.focus = null;
+    this.changer();
+  }
+
+  /** Ouvre la fiche d'un pôle sur l'écran de Max (null : l'accueil). */
+  ouvrirPole(pole: string | null, focus: string | null = null): void {
+    this.pole = pole;
+    this.focus = pole ? focus : null;
+    if (pole) this.ecran = "jarvis";
     this.changer();
   }
 
@@ -386,7 +414,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
         carnet: this.o.carnet(),
         missions: this.o.missions(),
         profil: this.o.profil?.(),
-        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire()].filter(Boolean).join("\n"),
+        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire()].filter(Boolean).join("\n"),
         conseillers: this.o.conseillers?.(),
       }),
     );
@@ -495,6 +523,21 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.envoyer(
       `[Bureau] Début du créneau « ${c.titre} » (${c.debut}–${c.fin}, ${c.type}) de son emploi du temps. Annonce-le en une phrase. Travail ou cours : propose de lancer une session minutée sur ce sujet. Pause ou repas : souhaite-lui une bonne pause. Sommeil : encourage-le à aller dormir.`,
       { de: "bureau", texte: `🗓 ${c.debut} · ${c.titre}` },
+    );
+  }
+
+  /** Une session fait atteindre la limite du jour de son pôle (le business) : Max le dit, sans rien arrêter. */
+  private limitePole(l: LimitePole): void {
+    if (this.o.verrou?.verrouille) {
+      const phrase = `Ça fait ${dureeParlee(l.limite)} de ${l.pole} aujourd'hui : c'est ta limite.`;
+      this.noter("max", phrase);
+      this.parler(phrase);
+      return;
+    }
+    if (this.etat === "veille") this.reveiller(false);
+    this.envoyer(
+      `[Bureau] Limite du pôle ${l.pole} atteinte : ${dureeParlee(l.limite)} aujourd'hui (session « ${l.sujet} » en cours). Dis-le-lui en une ou deux phrases, franchement mais sans le culpabiliser, rappelle sa priorité du moment, et propose d'arrêter cette session pour passer à la suite. Ne l'arrête pas toi-même.`,
+      { de: "bureau", texte: `⏳ Limite ${l.pole} atteinte (${dureeParlee(l.limite)})` },
     );
   }
 
