@@ -17,6 +17,8 @@ import { lireCarnet } from "../server/max/carnet.ts";
 import { Coach, lireIdees, lireJournal, lireProfil } from "../server/max/coach.ts";
 import { CONSEILLERS_DEFAUT, Conseillers } from "../server/max/conseillers.ts";
 import { Mac, type Executer } from "../server/max/mac.ts";
+import { Verrou } from "../server/max/verrou.ts";
+import { Visage } from "../server/max/visage.ts";
 import type { AssistantVue, MissionVue, ServerMessage } from "../shared/protocol.ts";
 
 const FAKE = path.join(__dirname, "fake-claude.mjs");
@@ -390,4 +392,102 @@ describe("routes et WebSocket de Max", () => {
       await client.close();
     }
   }, 30_000);
+});
+
+describe("verrou par le visage (serveur)", () => {
+  const desc = (base: number) => Array.from({ length: 128 }, (_, i) => Math.sin(i * base) * 0.3);
+  let root: string;
+  let donnees: string;
+  let jeton: string;
+  let assistant: FauxAssistant;
+  let manager: MissionManager;
+  let verrou: Verrou;
+  let server: ReturnType<typeof createBureauServer>;
+  let base: string;
+  let modeles: string;
+
+  beforeEach(async () => {
+    root = tmp();
+    donnees = tmp();
+    modeles = tmp();
+    fs.writeFileSync(path.join(modeles, "tiny_face_detector_model-weights_manifest.json"), "[]");
+    jeton = creerJeton(donnees);
+    const config = { ...DEFAULT_CONFIG, dossierMissions: root, dossierDonnees: donnees };
+    assistant = new FauxAssistant();
+    manager = new MissionManager(config, FAKE);
+    const visage = new Visage(donnees);
+    visage.enregistrer([desc(1), desc(1), desc(1)], "Johan");
+    verrou = new Verrou({ visage, actif: true });
+    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, verrou, modelesVisage: modeles });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+    base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+  afterEach(async () => {
+    await new Promise((r) => server.close(r));
+  });
+  const avecJeton = () => ({ "x-bureau-jeton": jeton, "content-type": "application/json" });
+
+  async function connecter() {
+    const ws = new WebSocket(base.replace("http", "ws") + "/ws");
+    const messages: ServerMessage[] = [];
+    ws.on("message", (d) => messages.push(JSON.parse(String(d))));
+    await new Promise((r) => ws.on("open", r));
+    const attendre = async (cond: () => boolean) => {
+      for (let i = 0; i < 200 && !cond(); i++) await new Promise((r) => setTimeout(r, 10));
+    };
+    return { ws, messages, attendre };
+  }
+
+  it("verrouillé : la page ne reçoit rien de personnel et ne peut rien commander", async () => {
+    const { ws, messages, attendre } = await connecter();
+    await attendre(() => messages.length > 0);
+    const premier = messages[0];
+    expect(premier.type === "etat" && premier.etat.verrou).toMatchObject({ verrouille: true, enregistre: true, prenom: "Johan" });
+    expect(premier.type === "etat" && premier.etat.assistant?.messages).toEqual([]);
+    expect(premier.type === "etat" && premier.etat.conseillers).toBeUndefined();
+    ws.send(JSON.stringify({ type: "parler-max", texte: "lis mes mails" }));
+    ws.send(JSON.stringify({ type: "lancer", texte: "mission" }));
+    await attendre(() => messages.filter((m) => m.type === "erreur").length >= 2);
+    expect(messages.filter((m) => m.type === "erreur").every((m) => m.type === "erreur" && m.message.includes("verrouillé"))).toBe(true);
+    expect(assistant.appels).toEqual([]);
+    expect(manager.snapshot().mission).toBeNull();
+    expect((await fetch(base + "/api/missions")).status).toBe(423);
+    const outil = await fetch(base + "/api/outils/etat", { headers: avecJeton() });
+    expect(outil.status).toBe(423);
+    ws.close();
+  });
+
+  it("Siri ne réveille pas Max verrouillé mais demande la caméra à la page", async () => {
+    const r = await (await fetch(base + "/api/reveil", { method: "POST", headers: avecJeton() })).json();
+    expect(r.texte).toContain("caméra");
+    expect(assistant.appels).toEqual([]);
+    expect(verrou.vue().demande).toBeGreaterThan(0);
+  });
+
+  it("s'ouvre avec le bon visage qui bouge, puis tout remarche", async () => {
+    const { ws, messages, attendre } = await connecter();
+    ws.send(JSON.stringify({ type: "visage-verifier", descripteur: desc(7), vivant: true }));
+    await attendre(() => messages.some((m) => m.type === "visage"));
+    expect(messages.find((m) => m.type === "visage")).toMatchObject({ ok: false, texte: "Je ne te reconnais pas." });
+    ws.send(JSON.stringify({ type: "visage-verifier", descripteur: desc(1), vivant: false }));
+    ws.send(JSON.stringify({ type: "visage-verifier", descripteur: desc(1), vivant: true }));
+    await attendre(() => messages.filter((m) => m.type === "visage").length >= 3);
+    expect(messages.filter((m) => m.type === "visage").map((m) => m.type === "visage" && m.ok)).toEqual([false, false, true]);
+    expect(verrou.verrouille).toBe(false);
+    await attendre(() => messages.some((m) => m.type === "etat" && m.etat.verrou?.verrouille === false && !!m.etat.assistant));
+    ws.send(JSON.stringify({ type: "parler-max", texte: "Salut" }));
+    await attendre(() => assistant.appels.includes("ecrire:Salut"));
+    expect(assistant.appels).toContain("ecrire:Salut");
+    expect((await fetch(base + "/api/missions")).status).toBe(200);
+    ws.send(JSON.stringify({ type: "verrouiller" }));
+    await attendre(() => verrou.verrouille);
+    expect(assistant.appels).toContain("veille");
+    ws.close();
+  });
+
+  it("sert les modèles de reconnaissance, même verrouillé, et rien d'autre", async () => {
+    expect((await fetch(base + "/modeles-visage/tiny_face_detector_model-weights_manifest.json")).status).toBe(200);
+    expect((await fetch(base + "/modeles-visage/../jeton")).status).not.toBe(200);
+    expect((await fetch(base + "/modeles-visage/absent.bin")).status).toBe(404);
+  });
 });

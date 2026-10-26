@@ -118,12 +118,25 @@ export interface ConseillerVue {
   heure?: string; // ISO, dernière question
 }
 
+/** Le verrou par reconnaissance du visage. */
+export interface VerrouVue {
+  /** La reconnaissance est activée dans la config. */
+  actif: boolean;
+  /** Un visage est enregistré. */
+  enregistre: boolean;
+  verrouille: boolean;
+  prenom: string;
+  /** Moment (ms) de la dernière demande de réveil (Siri) : la page allume alors la caméra. */
+  demande: number;
+}
+
 export interface EtatBureau {
   claude: { ok: boolean; version?: string; erreur?: string };
   mission: MissionVue | null;
   assistant?: AssistantVue;
   conseillers?: ConseillerVue[];
   jarvis?: JarvisVue;
+  verrou?: VerrouVue;
 }
 
 export interface EtatFichier {
@@ -137,7 +150,8 @@ export interface EtatFichier {
 
 export type ServerMessage =
   | { type: "etat"; etat: EtatBureau }
-  | { type: "erreur"; message: string };
+  | { type: "erreur"; message: string }
+  | { type: "visage"; ok: boolean; texte: string };
 
 export type ClientMessage =
   | { type: "lancer"; texte: string }
@@ -150,4 +164,8 @@ export type ClientMessage =
   | { type: "taire" }
   | { type: "session"; minutes?: number; sujet?: string }
   | { type: "fin-session" }
-  | { type: "vue"; vue: VueEcran };
+  | { type: "vue"; vue: VueEcran }
+  | { type: "visage-verifier"; descripteur: number[]; vivant: boolean }
+  | { type: "visage-enregistrer"; descripteurs: number[][]; prenom: string }
+  | { type: "visage-effacer" }
+  | { type: "verrouiller" };

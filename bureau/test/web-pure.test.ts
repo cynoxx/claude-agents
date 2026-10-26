@@ -116,3 +116,31 @@ describe("écran Jarvis", () => {
     expect(prochainsRdv(agenda, new Date("2026-10-27T14:00:00")).map((e) => e.titre)).toEqual(["Anniversaire Léa", "Biochimie", "Sport"]);
   });
 });
+
+describe("reconnaissance du visage (calculs)", () => {
+  /** 68 repères : la mâchoire de x=0 (point 0) à x=100 (point 16), le nez (point 30) en `nez`. */
+  const visage = (nez: number) => Array.from({ length: 68 }, (_, i) => ({ x: i === 0 ? 0 : i === 16 ? 100 : i === 30 ? nez : 50, y: 0 }));
+
+  it("mesure l'orientation de la tête", async () => {
+    const { lacet } = await import("../web/visage-pur.ts");
+    expect(lacet(visage(50))).toBe(0.5);
+    expect(lacet(visage(30))).toBe(0.3);
+    expect(lacet([])).toBeNaN();
+  });
+
+  it("voit une tête qui tourne des deux côtés, pas une photo immobile ou un seul côté", async () => {
+    const { MouvementTete } = await import("../web/visage-pur.ts");
+    const photo = new MouvementTete();
+    for (let i = 0; i < 40; i++) photo.ajouter(0.68 + (i % 3) * 0.005);
+    expect(photo.vu).toBe(false);
+    expect(photo.reste).toBe("gauche");
+
+    const tete = new MouvementTete();
+    for (const l of [0.5, 0.45, 0.38, 0.33]) tete.ajouter(l);
+    expect(tete.reste).toBe("droite");
+    for (const l of [0.45, 0.55, 0.64]) tete.ajouter(l);
+    expect(tete.vu).toBe(true);
+    expect(tete.reste).toBeNull();
+    expect(new MouvementTete().ajouter(NaN)).toBe(false);
+  });
+});

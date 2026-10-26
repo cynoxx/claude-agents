@@ -29,6 +29,11 @@ export interface CerveauLike extends EventEmitter {
 interface ManagerLike extends EventEmitter {
   snapshot(): EtatBureau;
 }
+/** Le verrou par le visage (événement `deverrouille` avec le prénom). */
+export interface VerrouLike extends EventEmitter {
+  readonly verrouille: boolean;
+  verrouiller(): void;
+}
 /** Le coach (événements `fin`, `rappel`, `etat`). */
 export interface CoachLike extends EventEmitter {
   vue(): CoachVue;
@@ -57,6 +62,8 @@ export interface OptionsAssistant {
   horodater?: boolean;
   /** Le nom du raccourci Siri, rappelé quand Max s'endort. */
   phraseSiri?: string;
+  /** Verrouillé, Max ne se réveille pas ; il se reverrouille en s'endormant. */
+  verrou?: VerrouLike;
 }
 
 const ACCUEIL = "Salut ! Je t'écoute.";
@@ -203,7 +210,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
     o.bouche.on("debut", () => {
       clearTimeout(this.reouverture);
       if (this.o.oreille) this.o.oreille.muet = true;
-      this.etat = "parle";
+      // endormi (rappel dit pendant qu'il est verrouillé), il reste endormi
+      if (this.etat !== "veille") this.etat = "parle";
       this.changer();
     });
     o.bouche.on("phrase", (t: string) => {
@@ -225,6 +233,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
       this.noter("max", `🔔 ${texte}`);
       this.parler(texte);
     });
+    o.verrou?.on("deverrouille", (prenom: string) => this.reveiller(true, prenom));
   }
 
   vue(): AssistantVue {
@@ -240,8 +249,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
     };
   }
 
-  reveiller(accueil = true): void {
-    if (this.etat !== "veille") return;
+  reveiller(accueil = true, prenom = ""): void {
+    if (this.etat !== "veille" || this.o.verrou?.verrouille) return;
     this.veilleDemandee = false;
     this.etat = "ecoute";
     if (this.o.oreille) {
@@ -252,7 +261,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.relancerMinuterie();
     this.changer();
     if (accueil) {
-      const bonjour = this.o.coach?.accueil() ?? ACCUEIL;
+      const base = this.o.coach?.accueil() ?? ACCUEIL;
+      const bonjour = prenom ? base.replace(/^Salut !/, `Salut ${prenom} !`) : base;
       this.noter("max", bonjour);
       this.parler(bonjour);
     }
@@ -278,6 +288,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.couperReponse = false;
     this.phrase = "";
     this.etat = "veille";
+    this.o.verrou?.verrouiller();
     this.noter("bureau", `😴 Max est en veille. Dis « Dis Siri, ${this.o.phraseSiri ?? "Max au rapport"} » ou clique sur 👂 pour le réveiller.`);
   }
 
@@ -294,7 +305,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
 
   ecrire(texte: string): void {
     const t = texte.trim();
-    if (!t) return;
+    if (!t || this.o.verrou?.verrouille) return;
     if (this.etat === "veille") this.reveiller(false);
     this.envoyer(t, { de: "toi", texte: t });
   }
@@ -454,6 +465,15 @@ export class Assistant extends EventEmitter implements AssistantApi {
 
   /** Fin d'une session ou d'une pause : Max se réveille s'il dormait et l'annonce. */
   private finMinuteur(f: FinMinuteur): void {
+    if (this.o.verrou?.verrouille) {
+      const phrase =
+        f.type === "travail"
+          ? `Ta session de ${dureeParlee(f.minutes)} est finie, bravo ! Dis « ${this.o.phraseSiri ?? "Max au rapport"} » pour me réveiller.`
+          : "La pause est finie.";
+      this.noter("max", phrase);
+      this.parler(phrase);
+      return;
+    }
     if (this.etat === "veille") this.reveiller(false);
     if (f.type === "travail") {
       this.envoyer(

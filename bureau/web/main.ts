@@ -3,6 +3,7 @@ import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
 import { HAUTEUR, LARGEUR, OfficeScene } from "./office-scene.ts";
 import { Conversation } from "./conversation.ts";
 import { Jarvis } from "./jarvis.ts";
+import { EcranVerrou } from "./verrou.ts";
 import { Interface } from "./ui.ts";
 import "./style.css";
 
@@ -18,6 +19,7 @@ const ui = new Interface(envoyer);
 const scene = new OfficeScene({ onClic: (id) => ui.clicPersonnage(id) });
 const conversation = new Conversation(envoyer);
 const jarvis = new Jarvis(envoyer);
+const verrou = new EcranVerrou(envoyer);
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -40,12 +42,15 @@ function connecter(): void {
   ws.onmessage = (e) => {
     const msg: ServerMessage = JSON.parse(e.data);
     if (msg.type === "etat") {
+      verrou.rendre(msg.etat.verrou);
       ui.rendre(msg.etat);
       jarvis.rendre(msg.etat);
       conversation.rendre(msg.etat.assistant);
       scene.sync(msg.etat.mission, msg.etat.assistant);
       scene.syncConseillers(msg.etat.conseillers);
-    } else {
+    } else if (msg.type === "visage") {
+      verrou.recevoir(msg);
+    } else if (document.body.dataset.verrou !== "oui") {
       ui.toast(msg.message);
     }
   };

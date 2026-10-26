@@ -13,6 +13,8 @@ import { Coach, lireProfil } from "./max/coach.ts";
 import { Conseillers } from "./max/conseillers.ts";
 import { InfosJarvis } from "./max/infos-jarvis.ts";
 import { Mac } from "./max/mac.ts";
+import { Verrou } from "./max/verrou.ts";
+import { Visage } from "./max/visage.ts";
 import { ecrireConfigMcp } from "./max/mcp-config.ts";
 import { MissionManager } from "./mission.ts";
 import { listMissions, markInterrupted } from "./storage.ts";
@@ -54,6 +56,8 @@ const mac = new Mac({
   ...(config.mac.dossierCaptures ? { dossierCaptures: config.mac.dossierCaptures } : {}),
 });
 const jarvis = new InfosJarvis(mac);
+// Le verrou par le visage : fermé au démarrage si un visage est enregistré
+const verrou = new Verrou({ visage: new Visage(config.dossierDonnees), actif: config.visage.actif });
 const assistant = new Assistant({
   oreille,
   bouche,
@@ -70,11 +74,24 @@ const assistant = new Assistant({
   conseillers: () => conseillers.liste(),
   horodater: true,
   phraseSiri: config.voix.phraseSiri,
+  verrou,
 });
 console.log(`${dispoOreille.ok ? "🎙 " : "⚠️ "} ${dispoOreille.detail}`);
 console.log(`${dispoBouche.ok ? "🔊" : "⚠️ "} ${dispoBouche.detail}`);
 
-const server = createBureauServer({ config, manager, webDir: path.join(racine, "web", "dist"), jeton, assistant, coach, conseillers, mac, jarvis });
+const server = createBureauServer({
+  config,
+  manager,
+  webDir: path.join(racine, "web", "dist"),
+  jeton,
+  assistant,
+  coach,
+  conseillers,
+  mac,
+  jarvis,
+  verrou,
+  modelesVisage: path.join(racine, "node_modules", "@vladmandic", "face-api", "model"),
+});
 
 const claudePret = checkClaude(bin).then((etat) => {
   manager.setClaude(etat);
@@ -101,6 +118,10 @@ server.listen(config.port, "127.0.0.1", async () => {
   console.log("Laisse cette fenêtre ouverte. Ctrl+C pour fermer le Bureau.\n");
   if (!process.env.BUREAU_NO_OPEN) ouvrirDansFinder(url);
   jarvis.demarrer();
+  if (verrou.verrouille) {
+    verrou.demander();
+    console.log("🔒 Max est verrouillé : regarde la caméra pour le déverrouiller.");
+  }
   if ((await claudePret) && !process.env.BUREAU_SANS_REVEIL) assistant.reveiller();
 });
 

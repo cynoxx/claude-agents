@@ -39,6 +39,8 @@ export interface BureauConfig {
   /** Un conseiller par domaine de la vie (remplace la liste par défaut si présent). */
   conseillers: ConseillerDef[];
   mac: MacConfig;
+  /** La reconnaissance du visage : active dès qu'un visage est enregistré (false = jamais de verrou). */
+  visage: { actif: boolean };
 }
 
 export interface MacConfig {
@@ -75,6 +77,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   },
   conseillers: CONSEILLERS_DEFAUT,
   mac: { ville: null, musique: "auto", dossierCaptures: null },
+  visage: { actif: true },
 };
 
 export function expandHome(p: string): string {
@@ -118,6 +121,7 @@ export function loadConfig(dir: string): BureauConfig {
     limites: { ...DEFAULT_CONFIG.limites, ...user.limites },
     voix: { ...DEFAULT_CONFIG.voix, ...user.voix },
     mac: { ...DEFAULT_CONFIG.mac, ...user.mac },
+    visage: { ...DEFAULT_CONFIG.visage, ...user.visage },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };
   if (c.mac.dossierCaptures) c.mac.dossierCaptures = expandHome(c.mac.dossierCaptures);

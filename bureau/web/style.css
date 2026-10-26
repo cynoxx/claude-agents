@@ -720,3 +720,139 @@ body[data-vue="jarvis"] {
     transition: none;
   }
 }
+
+/* --- l'écran verrouillé et la reconnaissance du visage ------------------------------------------- */
+.verrou,
+.v-reglages {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow: auto;
+  color: #dff9ff;
+}
+.verrou {
+  background: radial-gradient(ellipse at 50% 40%, #0d1a2e 0%, #05070f 70%);
+}
+.v-reglages {
+  z-index: 70;
+  background: rgba(5, 7, 15, 0.85);
+}
+.verrou[hidden],
+.v-reglages[hidden] {
+  display: none;
+}
+.v-boite {
+  position: relative;
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.v-reglages .v-boite {
+  padding: 20px;
+  border-radius: 14px;
+  background: #0b1424;
+  border: 1px solid rgba(125, 249, 255, 0.35);
+}
+.v-cadenas {
+  font-size: 44px;
+}
+.verrou h1,
+.v-reglages h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.v-cadre {
+  width: 220px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(125, 249, 255, 0.35);
+  box-shadow: 0 0 30px rgba(125, 249, 255, 0.15);
+  background: #000;
+  display: none;
+}
+.v-cadre[data-actif="oui"] {
+  display: block;
+  animation: v-pulse 1.6s ease-in-out infinite;
+}
+.v-cadre video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+@keyframes v-pulse {
+  50% {
+    border-color: #7df9ff;
+    box-shadow: 0 0 40px rgba(125, 249, 255, 0.45);
+  }
+}
+.v-statut {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 16px;
+}
+.v-statut[data-ok="oui"] {
+  color: #7dffb0;
+  font-weight: 700;
+}
+.v-note {
+  margin: 0;
+  font-size: 12px;
+  color: #7fb8c8;
+}
+.verrou button,
+.v-reglages button {
+  background: rgba(125, 249, 255, 0.08);
+  border: 1px solid rgba(125, 249, 255, 0.45);
+  color: #dff9ff;
+  box-shadow: 0 0 12px rgba(125, 249, 255, 0.15);
+}
+.v-reglages button.danger {
+  border-color: rgba(228, 59, 68, 0.6);
+}
+.v-fermer {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 10px;
+}
+.v-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.v-prenom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+}
+.v-prenom[hidden] {
+  display: none;
+}
+.v-prenom input {
+  font: inherit;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(125, 249, 255, 0.4);
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+}
+body[data-verrou="oui"] {
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .v-cadre[data-actif="oui"] {
+    animation: none;
+  }
+}

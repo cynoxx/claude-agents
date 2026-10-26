@@ -11,6 +11,7 @@ import { ajouterEcheance, decrireBilan, lireIdees, noterIdee, type Coach } from 
 import type { Conseillers } from "./max/conseillers.ts";
 import { Confirmations } from "./max/confirmations.ts";
 import type { Mac } from "./max/mac.ts";
+import type { Verrou } from "./max/verrou.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
 import { listMissions } from "./storage.ts";
@@ -59,6 +60,7 @@ export function routesMax(o: {
   coach?: Coach;
   conseillers?: Conseillers;
   mac?: Mac;
+  verrou?: Verrou;
 }) {
   const root = path.resolve(o.config.dossierMissions);
   const confirmations = new Confirmations();
@@ -97,6 +99,14 @@ export function routesMax(o: {
         return repondre(res, 200, { ok: false, texte: (e as Error).message });
       }
     };
+
+    if (o.verrou?.verrouille) {
+      if (`${req.method} ${chemin}` === "POST /api/reveil") {
+        o.verrou.demander();
+        return repondre(res, 200, { ok: true, texte: "Max est verrouillé : regarde la caméra." });
+      }
+      return repondre(res, 423, { ok: false, texte: "Max est verrouillé : il faut d'abord te reconnaître à la caméra." });
+    }
 
     switch (`${req.method} ${chemin}`) {
       case "POST /api/reveil":

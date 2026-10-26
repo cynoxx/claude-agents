@@ -3,13 +3,14 @@ import http from "node:http";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { WebSocketServer, type WebSocket } from "ws";
-import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
+import type { ClientMessage, EtatBureau, ServerMessage } from "../shared/protocol.ts";
 import type { BureauConfig } from "./config.ts";
 import type { MissionManager } from "./mission.ts";
 import type { Coach } from "./max/coach.ts";
 import type { Conseillers } from "./max/conseillers.ts";
 import type { InfosJarvis } from "./max/infos-jarvis.ts";
 import type { Mac } from "./max/mac.ts";
+import type { Verrou } from "./max/verrou.ts";
 import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
 import { listMissions } from "./storage.ts";
 
@@ -50,6 +51,9 @@ export function createBureauServer(o: {
   conseillers?: Conseillers;
   mac?: Mac;
   jarvis?: InfosJarvis;
+  verrou?: Verrou;
+  /** Le dossier des modèles de reconnaissance du visage (face-api), servis à la page. */
+  modelesVisage?: string;
 }): http.Server {
   const root = path.resolve(o.config.dossierMissions);
   const ouvrir = o.ouvrir ?? ouvrirDansFinder;
@@ -82,10 +86,22 @@ export function createBureauServer(o: {
       return fin(res, 400, "Adresse invalide");
     }
 
+    // les modèles de face-api (pour l'écran verrouillé : servis même verrouillé)
+    const modele = chemin.match(/^\/modeles-visage\/([a-z0-9_.-]+\.(?:json|bin))$/);
+    if (modele) {
+      if (!o.modelesVisage) return fin(res, 404, "Introuvable");
+      const f = path.join(o.modelesVisage, modele[1]);
+      if (!fs.existsSync(f)) return fin(res, 404, "Introuvable");
+      res.writeHead(200, { "content-type": modele[1].endsWith(".json") ? "application/json" : "application/octet-stream", "cache-control": "max-age=86400" });
+      return fs.createReadStream(f).pipe(res);
+    }
+
     if (estRouteMax(chemin)) {
       traiterMax(req, res, chemin, url).catch(() => fin(res, 500, "Erreur interne"));
       return;
     }
+
+    if (chemin.startsWith("/api/") && o.verrou?.verrouille) return fin(res, 423, "Max est verrouillé");
 
     if (chemin === "/api/missions") {
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -117,7 +133,21 @@ export function createBureauServer(o: {
   // le WebSocketServer relaie les erreurs du serveur HTTP (ex. port pris) : c'est `server.on("error")` qui les traite
   wss.on("error", () => {});
   const envoyer = (ws: WebSocket, msg: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(msg));
-  const etatComplet = () => ({ ...o.manager.snapshot(), assistant: o.assistant?.vue(), conseillers: o.conseillers?.vue(), jarvis: o.jarvis?.vue() });
+  // verrouillé, la page ne reçoit rien de personnel : ni conversation, ni mission, ni agenda, ni conseillers
+  const etatComplet = (): EtatBureau => {
+    const verrou = o.verrou?.vue();
+    if (verrou?.verrouille) {
+      const a = o.assistant?.vue();
+      return {
+        claude: o.manager.snapshot().claude,
+        mission: null,
+        verrou,
+        jarvis: { meteo: o.jarvis?.vue().meteo ?? null, agenda: null },
+        ...(a ? { assistant: { etat: "veille", phrase: a.phrase, messages: [], oreille: a.oreille, bouche: a.bouche, cerveau: a.cerveau, vue: "jarvis" } } : {}),
+      };
+    }
+    return { ...o.manager.snapshot(), assistant: o.assistant?.vue(), conseillers: o.conseillers?.vue(), jarvis: o.jarvis?.vue(), verrou };
+  };
   const diffuser = () => {
     const etat = etatComplet();
     for (const ws of wss.clients) envoyer(ws, { type: "etat", etat });
@@ -126,7 +156,9 @@ export function createBureauServer(o: {
   o.assistant?.on("etat", diffuser);
   o.conseillers?.on("etat", diffuser);
   o.jarvis?.on("etat", diffuser);
+  o.verrou?.on("etat", diffuser);
   server.on("close", () => {
+    o.verrou?.off("etat", diffuser);
     o.jarvis?.off("etat", diffuser);
     o.manager.off("etat", diffuser);
     o.assistant?.off("etat", diffuser);
@@ -144,6 +176,23 @@ export function createBureauServer(o: {
         return envoyer(ws, { type: "erreur", message: "Message incompréhensible." });
       }
       let r: { ok: boolean; erreur?: string } = { ok: true };
+      const v = o.verrou;
+      if (msg.type === "visage-verifier" || msg.type === "visage-enregistrer" || msg.type === "visage-effacer" || msg.type === "verrouiller") {
+        if (!v) return envoyer(ws, { type: "visage", ok: false, texte: "La reconnaissance du visage n'est pas disponible." });
+        if (msg.type === "verrouiller") {
+          o.assistant?.veille();
+          v.verrouiller();
+          return;
+        }
+        const rv =
+          msg.type === "visage-verifier"
+            ? v.tenter(msg.descripteur, msg.vivant === true)
+            : msg.type === "visage-enregistrer"
+              ? v.enregistrer(Array.isArray(msg.descripteurs) ? msg.descripteurs : [], String(msg.prenom ?? ""))
+              : v.effacer();
+        return envoyer(ws, { type: "visage", ok: rv.ok, texte: rv.texte });
+      }
+      if (v?.verrouille) return envoyer(ws, { type: "erreur", message: "🔒 Max est verrouillé : regarde la caméra pour le déverrouiller." });
       switch (msg.type) {
         case "lancer":
           r = o.manager.lancer(String(msg.texte ?? ""));

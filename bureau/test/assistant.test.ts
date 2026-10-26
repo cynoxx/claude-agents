@@ -443,6 +443,58 @@ describe("Assistant — coach", () => {
   });
 });
 
+class FauxVerrou extends EventEmitter {
+  verrouille = true;
+  verrouiller() {
+    this.verrouille = true;
+  }
+  ouvrir(prenom = "Johan") {
+    this.verrouille = false;
+    this.emit("deverrouille", prenom);
+  }
+}
+
+describe("Assistant — verrou par le visage", () => {
+  let verrou: FauxVerrou;
+  let coach: FauxCoach;
+  beforeEach(() => {
+    verrou = new FauxVerrou();
+    coach = new FauxCoach();
+    creer({ verrou, coach });
+  });
+
+  it("ne se réveille pas et n'écoute rien tant qu'il est verrouillé", () => {
+    a.reveiller();
+    a.ecrire("Lis mes mails");
+    expect(a.vue().etat).toBe("veille");
+    expect(oreille.active).toBe(false);
+    expect(cerveaux).toHaveLength(0);
+  });
+
+  it("se réveille et salue par son prénom quand le visage est reconnu", () => {
+    verrou.ouvrir("Johan");
+    expect(a.vue().etat).not.toBe("veille");
+    expect(oreille.active).toBe(true);
+    expect(bouche.dites).toEqual(["Salut Johan ! Déjà 50 minutes de travail aujourd'hui. Je t'écoute."]);
+  });
+
+  it("se reverrouille en s'endormant", () => {
+    verrou.ouvrir();
+    a.veille();
+    expect(verrou.verrouille).toBe(true);
+  });
+
+  it("verrouillé, dit un rappel ou la fin d'une session sans se réveiller", async () => {
+    coach.emit("rappel", "Au lit !");
+    coach.emit("fin", { type: "travail", sujet: "Anatomie", minutes: 25, aujourdhui: 75 });
+    await jusqua(() => bouche.dites.length === 2 && !bouche.parle);
+    expect(bouche.dites).toEqual(["Au lit !", "Ta session de 25 minutes est finie, bravo ! Dis « Max au rapport » pour me réveiller."]);
+    expect(a.vue().etat).toBe("veille");
+    expect(oreille.active).toBe(false);
+    expect(cerveaux).toHaveLength(0);
+  });
+});
+
 describe("Assistant — intégration avec un vrai cerveau et une vraie bouche (faux binaires)", () => {
   const envAvant = { ...process.env };
   afterEach(() => {
