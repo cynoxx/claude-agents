@@ -21,6 +21,7 @@ import { Verrou } from "../server/max/verrou.ts";
 import { Planning } from "../server/max/planning.ts";
 import { TriMails } from "../server/max/tri-mails.ts";
 import { Sport } from "../server/max/sport.ts";
+import { Reveil } from "../server/max/reveil.ts";
 import { Visage } from "../server/max/visage.ts";
 import type { AssistantVue, EtatBureau, MissionVue, ServerMessage } from "../shared/protocol.ts";
 
@@ -166,7 +167,8 @@ describe("routes et WebSocket de Max", () => {
     planning = new Planning({ dossier: root, dossierDonnees: donnees });
     triMails = new TriMails();
     sport = new Sport({ dossier: root });
-    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac, planning, triMails, sport });
+    const reveil = new Reveil({ dossierDonnees: donnees, telephone: null, appelleur: null, heureDefaut: "07:00", rappelMinutes: 5, essais: 4, preparer: async () => "" });
+    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac, planning, triMails, sport, reveil });
     await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -241,6 +243,7 @@ describe("routes et WebSocket de Max", () => {
           "enregistrer_planning", "lire_planning", "preparer_planning_calendrier", "ajouter_planning_calendrier",
           "trier_mails", "afficher_mails", "preparer_rangement", "ranger_mails",
           "ouvrir_pole", "noter_seance", "lire_sport", "changer_semaine_sport",
+          "regler_reveil", "annuler_reveil", "etat_reveil", "essayer_reveil",
         ].sort(),
       );
       expect((await texte("etat_bureau")).texte).toBe("Aucune mission en cours.");
@@ -428,6 +431,12 @@ describe("routes et WebSocket de Max", () => {
       expect(coach.temps().get("business")?.limite).toBe(60);
       expect((await texte("arreter_session")).erreur).toBe(false);
       expect((await texte("demarrer_session", { sujet: "x", pole: "astrologie" })).erreur).toBe(true);
+
+      // le réveil (pas configuré ici : l'heure se règle quand même, l'essai est refusé)
+      expect((await texte("regler_reveil", { heure: "8h" })).texte).toMatch(/Prochain réveil : .*08:00.*pas encore configuré/);
+      expect((await texte("etat_reveil")).texte).toContain("pas configuré");
+      expect((await texte("essayer_reveil")).erreur).toBe(true);
+      expect((await texte("annuler_reveil")).texte).toContain("annulé");
     } finally {
       await client.close();
     }

@@ -15,6 +15,7 @@ import type { Verrou } from "./max/verrou.ts";
 import type { Planning } from "./max/planning.ts";
 import type { TriMails } from "./max/tri-mails.ts";
 import type { Sport } from "./max/sport.ts";
+import type { Reveil } from "./max/reveil.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
 import { listMissions } from "./storage.ts";
@@ -69,6 +70,7 @@ export function routesMax(o: {
   planning?: Planning;
   triMails?: TriMails;
   sport?: Sport;
+  reveil?: Reveil;
 }) {
   const root = path.resolve(o.config.dossierMissions);
   const confirmations = new Confirmations();
@@ -393,6 +395,18 @@ export function routesMax(o: {
         const ch = Array.isArray(corps.changements) ? (corps.changements as { jour: string; seance: string }[]) : [];
         if (!ch.length) return repondre(res, 200, { ok: false, texte: "Aucun changement donné." });
         return repondre(res, 200, o.sport.changerSemaine(ch.slice(0, 7)));
+      }
+      // le réveil par appel
+      case "POST /api/outils/reveil":
+      case "POST /api/outils/annuler-reveil":
+      case "GET /api/outils/reveil":
+      case "POST /api/outils/essai-reveil": {
+        const rv = o.reveil;
+        if (!rv) return repondre(res, 503, { ok: false, texte: "Le réveil n'est pas disponible." });
+        if (chemin === "/api/outils/annuler-reveil") return repondre(res, 200, rv.annulerProchain());
+        if (chemin === "/api/outils/essai-reveil") return repondre(res, 200, await rv.essayer());
+        if (req.method === "GET") return repondre(res, 200, { ok: true, texte: rv.decrire() });
+        return repondre(res, 200, rv.regler(texte("heure"), { quotidien: corps.tous_les_jours === true }));
       }
       case "POST /api/outils/vue": {
         const vue = texte("vue");

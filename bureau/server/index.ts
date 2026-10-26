@@ -18,6 +18,9 @@ import { Planning } from "./max/planning.ts";
 import { TriMails } from "./max/tri-mails.ts";
 import { TrieurAuto } from "./max/trieur.ts";
 import { Sport } from "./max/sport.ts";
+import { Musique } from "./max/musique.ts";
+import { Reveil } from "./max/reveil.ts";
+import { creerTwilio, preparateurReveil } from "./max/reveil-montage.ts";
 import { Visage } from "./max/visage.ts";
 import { ecrireConfigMcp } from "./max/mcp-config.ts";
 import { MissionManager } from "./mission.ts";
@@ -76,6 +79,25 @@ const trieur = new TrieurAuto({
   profil,
 });
 const sport = new Sport({ dossier: config.dossierMissions });
+// ta musique : l'intro au lancement de Max, et le fond de l'appel du réveil
+const musique = new Musique({
+  source: config.musique.fichier,
+  dossier: path.join(config.dossierDonnees, "musique"),
+  ffmpeg: config.voix.ffmpeg,
+  lecteur: process.platform === "darwin" ? "afplay" : null,
+});
+// le réveil : Max t'appelle sur ton téléphone (Twilio), sa voix sur ta musique
+const twilio = creerTwilio(config);
+const reveil = new Reveil({
+  dossierDonnees: config.dossierDonnees,
+  telephone: config.reveil.telephone,
+  appelleur: twilio,
+  heureDefaut: config.reveil.heure,
+  rappelMinutes: config.reveil.rappelMinutes,
+  essais: config.reveil.essais,
+  garderEveille: process.platform === "darwin",
+  preparer: preparateurReveil({ config, twilio, bouche, musique, sport, profil, prenom: () => verrou.vue().prenom }),
+});
 const assistant = new Assistant({
   oreille,
   bouche,
@@ -95,7 +117,13 @@ const assistant = new Assistant({
   verrou,
   planning,
   sport,
+  ...(config.musique.intro ? { intro: () => musique.jouerIntro() } : {}),
+  reveil,
 });
+// réveillé par l'appel, ou il parle à Max : plus de rappels ; Max le saura à son prochain message
+assistant.on("parole", () => reveil.confirmer());
+reveil.on("reveille", (r: { parole: boolean }) => !r.parole && assistant.informer("Il vient d'être réveillé par ton appel de ce matin (il a décroché et écouté)."));
+reveil.on("echec", () => assistant.informer(`Il n'a répondu à aucun des ${config.reveil.essais} appels du réveil ce matin.`));
 // il arrive (réveil avec accueil) : ses mails sont triés pendant que Max le salue
 assistant.on("arrivee", () => {
   if (process.platform === "darwin") void trieur.lancer();
@@ -119,6 +147,8 @@ const server = createBureauServer({
   triMails,
   trieur,
   sport,
+  musique,
+  reveil,
   modelesVisage: path.join(racine, "node_modules", "@vladmandic", "face-api", "model"),
   mediapipe: { wasm: path.join(racine, "node_modules", "@mediapipe", "tasks-vision", "wasm"), dossierModele: path.join(config.dossierDonnees, "modeles") },
 });
@@ -148,6 +178,7 @@ server.listen(config.port, "127.0.0.1", async () => {
   console.log("Laisse cette fenêtre ouverte. Ctrl+C pour fermer le Bureau.\n");
   if (!process.env.BUREAU_NO_OPEN) ouvrirDansFinder(url);
   jarvis.demarrer();
+  reveil.demarrer();
   if (verrou.verrouille) {
     verrou.demander();
     console.log("🔒 Max est verrouillé : regarde la caméra pour le déverrouiller.");
@@ -162,6 +193,7 @@ const fermer = () => {
   bouche.arreter();
   coach.fermer();
   planning.fermer();
+  reveil.fermer();
   jarvis.arreter();
   conseillers.arreterTout();
   manager.arreter();

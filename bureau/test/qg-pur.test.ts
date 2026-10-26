@@ -110,3 +110,24 @@ describe("semaine de sport", () => {
     expect(["pec_dos", "bras_epaules", "jambes", "repos"].map(seanceSuivante)).toEqual(["bras_epaules", "jambes", "repos", "pec_dos"]);
   });
 });
+
+describe("hologramme de Max", () => {
+  it("dessine une tête en œuf, plus étroite au menton", async () => {
+    const { pointTete } = await import("../web/humanoide.ts");
+    const [, ySommet] = pointTete(0, 100, 100, 30, 40);
+    const [, yMenton] = pointTete(Math.PI, 100, 100, 30, 40);
+    expect(ySommet).toBe(60);
+    expect(yMenton).toBeCloseTo(140);
+    const [xHaut] = pointTete(Math.PI / 4, 100, 100, 30, 40);
+    const [xBas] = pointTete((3 * Math.PI) / 4, 100, 100, 30, 40);
+    expect(xHaut - 100).toBeGreaterThan(xBas - 100);
+  });
+
+  it("génère des crêtes de montagnes stables et bornées", async () => {
+    const { crete } = await import("../web/montagnes.ts");
+    const a = Array.from({ length: 50 }, (_, i) => crete(i / 50, 11));
+    expect(a).toEqual(Array.from({ length: 50 }, (_, i) => crete(i / 50, 11)));
+    expect(Math.min(...a)).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...a)).toBeLessThanOrEqual(1.2);
+  });
+});

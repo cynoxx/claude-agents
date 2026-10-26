@@ -4,7 +4,7 @@
 // le champ de question ne bougent pas).
 import type { ClientMessage, ConseillerVue, EtatBureau, MailsVue, TempsPole } from "../shared/protocol.ts";
 import { JOURS_SEMAINE, MUSCLES, SEANCES, seance } from "../shared/sport.ts";
-import { barres, duree, semaineSport, seanceSuivante, tuile } from "./poles-pur.ts";
+import { barres, decalerHeure, duree, quandReveil, semaineSport, seanceSuivante, tuile } from "./poles-pur.ts";
 import { compteMails, prochainsRdv } from "./jarvis.ts";
 import type { Corps3D } from "./corps.ts";
 
@@ -70,12 +70,20 @@ export class QG {
       this.envoyer({ type: "parler-max", texte: "Range les pubs dans le dossier Max - Pubs, s'il te plaît." });
     });
     $("j-mails-carte").addEventListener("click", () => this.ouvrirMails());
+    $("j-alarme").addEventListener("click", () => this.envoyer({ type: "pole", pole: "sante" }));
   }
 
   rendre(etat: EtatBureau): void {
     this.etat = etat;
     this.rendreTuiles();
     this.rendreMails();
+    const rv = etat.reveil;
+    const pastille = $("j-alarme");
+    pastille.hidden = !rv?.prochain;
+    if (rv?.prochain) {
+      pastille.textContent = `⏰ ${rv.enCours ? "réveil en cours" : quandReveil(rv.prochain)}`;
+      pastille.dataset.etat = !rv.configure ? "non-configure" : rv.enCours ? "en-cours" : "";
+    }
     const voulu = etat.assistant?.pole ?? null;
     if (voulu !== this.pole) this.ouvrir(voulu);
     if (this.pole) this.rendreFiche();
@@ -120,9 +128,9 @@ export class QG {
     this.mainVoulue = false;
     const fiche = $("qg-fiche");
     const c = this.conseiller();
-    $("qg-accueil").hidden = !c;
     fiche.hidden = !c;
     document.body.dataset.pole = c ? c.id : "";
+    this.changerMode(!!c);
     if (!pole || !c) {
       fiche.innerHTML = "";
       return;
@@ -155,6 +163,20 @@ export class QG {
           if (this.etat?.sport) this.corps.maj(this.etat.sport.muscles);
         })
         .catch(() => this.piedCorps("Le corps 3D n'a pas pu se charger."));
+    }
+  }
+
+  /**
+   * Accueil ↔ fiche : sur une fiche, Max reste visible en petit en haut (sa sphère rétrécit, sa phrase reste
+   * lisible) et la fiche prend la place des panneaux de l'accueil, sans jamais passer dessus.
+   */
+  private changerMode(fiche: boolean): void {
+    const ecran = $("jarvis");
+    ecran.dataset.mode = fiche ? "fiche" : "accueil";
+    for (const el of fiche ? [$("qg-fiche")] : [...document.querySelectorAll<HTMLElement>("#qg-accueil .j-cote")]) {
+      el.classList.remove("qg-entre");
+      void el.offsetWidth;
+      el.classList.add("qg-entre");
     }
   }
 
@@ -256,9 +278,22 @@ ${id === "business" && depasse ? `<p class="j-petit qf-rouge">Limite atteinte : 
           }</em></button>`,
       )
       .join("")}</div><p class="j-petit">${s.seances30} séance(s) ces 30 derniers jours.</p></div>
+${this.htmlReveil(e)}
 <div class="j-carte"><h3>Muscles travaillés <small>· 14 jours</small></h3><ul class="qf-muscles">${muscles
       .map((m) => `<li><span>${MUSCLES[m.id]}</span><span class="qg-jauge"><i style="width:${Math.round(m.intensite * 100)}%"></i></span><small>${m.fois}× · ${ilYA(m.derniere)}</small></li>`)
       .join("")}</ul></div>`;
+  }
+
+  private htmlReveil(e: EtatBureau): string {
+    const rv = e.reveil;
+    if (!rv) return "";
+    const heure = rv.prochain ? `${String(new Date(rv.prochain).getHours()).padStart(2, "0")}:${String(new Date(rv.prochain).getMinutes()).padStart(2, "0")}` : rv.heure;
+    return `<div class="j-carte qf-reveil"><h3>Réveil <small>· Max t'appelle</small></h3>
+<div class="j-gros">⏰ ${rv.enCours ? "En cours…" : quandReveil(rv.prochain)}</div>
+<p class="j-petit">${rv.configure ? `D'habitude à ${rv.heure}. Décroche et écoute : sinon il rappelle toutes les 5 minutes.` : "Pas encore configuré : il faut ton numéro et un compte Twilio (README, section « Le réveil »)."}</p>
+<div class="qf-boutons"><button type="button" data-action="alarme-regler" data-heure="${decalerHeure(heure, -15)}">−15 min</button><button type="button" data-action="alarme-regler" data-heure="${decalerHeure(heure, 15)}">+15 min</button>${
+      rv.prochain ? `<button type="button" data-action="alarme-annuler">Pas de réveil</button>` : ""
+    }${rv.configure ? `<button type="button" data-action="alarme-essayer">📞 Tester</button>` : ""}</div></div>`;
   }
 
   private piedCorps(texte: string): void {
@@ -288,6 +323,13 @@ ${id === "business" && depasse ? `<p class="j-petit qf-rouge">Limite atteinte : 
       case "jour":
         if (s) this.envoyer({ type: "semaine-sport", jour: Number(el.dataset.jour), seance: seanceSuivante(s.semaine[Number(el.dataset.jour)]) });
         return;
+      case "alarme-regler":
+        return this.envoyer({ type: "alarme", action: "regler", heure: el.dataset.heure });
+      case "alarme-annuler":
+        return this.envoyer({ type: "alarme", action: "annuler" });
+      case "alarme-essayer":
+        el.textContent = "📞 Ça sonne…";
+        return this.envoyer({ type: "alarme", action: "essayer" });
       case "main":
         this.mainVoulue = true;
         void this.corps?.activerMain(!this.corps.mainActive);

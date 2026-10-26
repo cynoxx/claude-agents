@@ -73,6 +73,10 @@ export interface OptionsAssistant {
   planning?: PlanningLike;
   /** Le sport (séance du jour, muscles travaillés), pour le contexte de Max. */
   sport?: { decrire(): string };
+  /** L'intro au lancement (animation et musique) ; renvoie le délai avant que Max parle. */
+  intro?: () => number;
+  /** Le réveil par appel, pour le contexte de Max. */
+  reveil?: { decrire(): string };
 }
 
 const PROPOSER_PLANNING =
@@ -176,6 +180,14 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return "🗓 Max change ta semaine de sport";
     case "trier_mails":
       return "📬 Max trie tes mails";
+    case "regler_reveil":
+      return `⏰ Réveil réglé : ${e("heure")}${entree.tous_les_jours ? " (tous les jours)" : ""}`;
+    case "annuler_reveil":
+      return "⏰ Prochain réveil annulé";
+    case "etat_reveil":
+      return "⏰ Max regarde ton réveil";
+    case "essayer_reveil":
+      return "📞 Appel d'essai du réveil";
     case "WebSearch":
       return `🔎 Max cherche sur le web : ${e("query")}`;
     case "WebFetch":
@@ -209,6 +221,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private infos: string[] = [];
   private dernier: { texte: string; heure: number } | null = null;
   private ecran: VueEcran = "jarvis";
+  private minuterieIntro?: NodeJS.Timeout;
   private pole: string | null = null;
   private focus: string | null = null;
 
@@ -291,19 +304,28 @@ export class Assistant extends EventEmitter implements AssistantApi {
     if (accueil) {
       // il arrive : le Bureau trie ses mails pendant que Max le salue
       this.emit("arrivee");
-      const base = this.o.coach?.accueil() ?? ACCUEIL;
-      const bonjour = prenom ? base.replace(/^Salut !/, `Salut ${prenom} !`) : base;
-      this.noter("max", bonjour);
-      this.parler(bonjour);
-      // une fois par jour, au premier réveil : construire l'emploi du temps ensemble
-      if (this.o.planning?.doitProposer()) {
-        this.o.planning.noterPropose();
-        this.envoyer(PROPOSER_PLANNING, { de: "bureau", texte: "🗓 Premier réveil du jour : Max te propose ton emploi du temps" });
-      }
+      const saluer = () => {
+        if (this.etat === "veille") return;
+        const base = this.o.coach?.accueil() ?? ACCUEIL;
+        const bonjour = prenom ? base.replace(/^Salut !/, `Salut ${prenom} !`) : base;
+        this.noter("max", bonjour);
+        this.parler(bonjour);
+        // une fois par jour, au premier réveil : construire l'emploi du temps ensemble
+        if (this.o.planning?.doitProposer()) {
+          this.o.planning.noterPropose();
+          this.envoyer(PROPOSER_PLANNING, { de: "bureau", texte: "🗓 Premier réveil du jour : Max te propose ton emploi du temps" });
+        }
+      };
+      // l'intro (animation et musique) d'abord : Max parle quand la musique a baissé
+      const delai = this.o.intro?.() ?? 0;
+      clearTimeout(this.minuterieIntro);
+      if (delai > 0) this.minuterieIntro = setTimeout(saluer, delai);
+      else saluer();
     }
   }
 
   veille(): void {
+    clearTimeout(this.minuterieIntro);
     clearTimeout(this.reouverture);
     clearTimeout(this.minuterieVeille);
     this.veilleDemandee = false;
@@ -346,6 +368,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
       this.informer("C'est votre premier échange de la journée et il n'a pas encore d'emploi du temps : après avoir répondu, propose-lui de construire ensemble son emploi du temps d'aujourd'hui.");
     }
     if (this.etat === "veille") this.reveiller(false);
+    this.emit("parole");
     this.envoyer(t, { de: "toi", texte: t });
   }
 
@@ -385,6 +408,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
       this.parler("Oui ?");
       return;
     }
+    this.emit("parole");
     this.envoyer(message, { de: "toi", texte: message });
   }
 
@@ -414,7 +438,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
         carnet: this.o.carnet(),
         missions: this.o.missions(),
         profil: this.o.profil?.(),
-        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire()].filter(Boolean).join("\n"),
+        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
         conseillers: this.o.conseillers?.(),
       }),
     );

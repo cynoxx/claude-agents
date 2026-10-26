@@ -180,6 +180,39 @@ limite business** ; les 5 pôles actuels.
   squat à 80 kilos » → `noter_seance` avec la note, et Max remarque que ce n'était pas le jour prévu ; « lance-moi
   trente minutes sur Asclepium » avec 55 min déjà faites → il le dit franchement et laisse choisir.
 
+## Hologramme, intro en musique, réveil par appel (ajoutés ensuite)
+
+- **Bug corrigé** : en ouvrant une fiche de pôle, l'accueil restait affiché dessous (une condition inversée). Désormais
+  l'écran de Max est une grille (barre, contenu qui défile, tuiles, champ de texte) : rien ne peut passer sur autre
+  chose ; sur une fiche, Max reste visible en bandeau (sa silhouette en petit et sa phrase). Vérifié par un script qui
+  mesure les chevauchements visibles à 5 tailles d'écran (de 390×844 à 1920×1000), sur l'accueil et chaque fiche.
+- **Style « hologramme »** (d'après un reel choisi par l'utilisateur) : `web/humanoide.ts` remplace la sphère. C'est un
+  buste en canvas 2D : contours bleus emboîtés, lignes du visage, cœur orange (doré quand il réfléchit, qui bat quand il
+  parle), veines dorées, particules qui s'envolent du crâne, ondes quand il écoute, tête qui suit le pointeur,
+  apparition en comète. Le fond `web/montagnes.ts` est une chaîne de montagnes en particules avec des filets dorés,
+  dessinée une fois puis animée par quelques étincelles, à 30 images par seconde. Le buste cache les montagnes
+  derrière lui.
+- **Intro au lancement** (`server/max/musique.ts`, `web/intro.ts`) : à chaque réveil avec accueil, la page joue
+  l'animation (éclair rouge et or, anneaux, M-A-X, systèmes en ligne, tuiles qui arrivent) et le Mac joue un extrait
+  de la musique de l'utilisateur, préparé une fois par ffmpeg : 5 s pleine puissance, puis baissée à 25 %, fondu. Max
+  salue après 5,5 s. Le fichier de musique reste sur le Mac (`~/Documents/Bureau/musique/max.mp3`), jamais dans Git.
+- **Réveil par appel** (`server/max/reveil.ts`, `twilio.ts`, `message-reveil.ts`) : choix de l'utilisateur, un appel
+  téléphonique seulement, à une heure fixée le soir avec Max (7 h par défaut).
+  - Le message est préparé 10 minutes avant l'appel. Le texte (heure, échéance, séance du jour) est dit par la voix
+    Piper de Max et mixé par ffmpeg sur la musique (4 s de musique, la voix sur la musique baissée, puis la musique
+    revient). Le fichier est déposé chez Twilio (Assets Serverless, chemin aléatoire), et l'appel le joue avec
+    `<Play>`. Si une étape manque, l'appel lit le texte avec une voix Twilio (`<Say>`).
+  - Le Mac n'a pas besoin d'être joignable depuis internet : TwiML en ligne, état de l'appel lu par l'API, avec
+    détection du répondeur.
+  - Réveillé = décroché, au moins 20 s, et pas un répondeur. Sinon, rappel toutes les 5 min, 4 appels au plus. Un
+    message à Max arrête les rappels.
+  - `caffeinate -s` garde le Mac éveillé, quand il est branché, dans les 10 h avant l'appel. Un fichier empêche de
+    rappeler pour le même réveil après un redémarrage.
+  - Outils de Max : `regler_reveil`, `annuler_reveil`, `etat_reveil`, `essayer_reveil` ; `npm run appel` pour un
+    essai.
+  - Essai réel (Opus) : « bonne nuit, je me couche vers minuit » → Max vérifie que 7 h lui laisse ses 7 heures et ne
+    change rien ; « teste l'appel » → appel lancé.
+
 ## Hors périmètre
 
 WhatsApp (pas de façon fiable d'envoyer sans clic), lire les SMS reçus, répondre à un mail, contrôle de la maison.

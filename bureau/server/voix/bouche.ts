@@ -77,6 +77,25 @@ export class Bouche extends EventEmitter {
     return say.ok ? { ...say, detail: say.detail + soucisPiper } : say;
   }
 
+  /**
+   * Enregistre une phrase dite par Max dans un fichier WAV, sans la jouer (le message du réveil) : avec Piper, ou
+   * avec `say`. Renvoie false si c'est impossible.
+   */
+  async enregistrer(texte: string, fichier: string): Promise<boolean> {
+    fs.mkdirSync(path.dirname(fichier), { recursive: true });
+    if (this.avecPiper && this.o.piper) {
+      try {
+        await this.o.piper.moteur.synthetiser(texte, fichier);
+        return fs.existsSync(fichier);
+      } catch {
+        return false;
+      }
+    }
+    if (!this.disponible) return false;
+    const args = [...(this.voix ? ["-v", this.voix] : []), "-r", String(this.o.debit), "-o", fichier, "--file-format=WAVE", "--data-format=LEI16@22050", texte];
+    return new Promise((resolve) => execFile(this.o.bin, args, { timeout: 60_000 }, (e) => resolve(!e && fs.existsSync(fichier))));
+  }
+
   arreter(): void {
     this.taire();
     this.o.piper?.moteur.arreter();

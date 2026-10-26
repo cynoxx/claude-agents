@@ -198,6 +198,18 @@ export interface TempsPole {
   notes: string[];
 }
 
+/** Le réveil par appel. */
+export interface ReveilVue {
+  /** Ton numéro et Twilio sont réglés. */
+  configure: boolean;
+  /** L'heure habituelle (« 07:00 »). */
+  heure: string;
+  /** Le prochain appel (ISO), ou null. */
+  prochain: string | null;
+  /** Un réveil est en cours (il rappelle tant que tu n'as pas répondu). */
+  enCours: boolean;
+}
+
 export interface EtatBureau {
   claude: { ok: boolean; version?: string; erreur?: string };
   mission: MissionVue | null;
@@ -211,6 +223,9 @@ export interface EtatBureau {
   poles?: TempsPole[];
   /** Les dernières idées mises au parking. */
   idees?: string[];
+  /** Moment (ms) du dernier lancement de Max : la page joue alors l'animation d'intro. */
+  intro?: number;
+  reveil?: ReveilVue;
 }
 
 export interface EtatFichier {
@@ -241,6 +256,7 @@ export type ClientMessage =
   | { type: "seance"; seance: string; jour?: string }
   | { type: "semaine-sport"; jour: number; seance: string }
   | { type: "trier-mails" }
+  | { type: "alarme"; action: "regler" | "annuler" | "essayer"; heure?: string }
   | { type: "fin-session" }
   | { type: "vue"; vue: VueEcran }
   | { type: "visage-verifier"; descripteur: number[]; vivant: boolean }

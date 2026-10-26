@@ -414,4 +414,21 @@ serveur.registerTool(
   async ({ changements }) => appeler("POST", "/api/outils/semaine-sport", { changements }),
 );
 
+// le réveil : Max l'appelle sur son téléphone
+serveur.registerTool(
+  "regler_reveil",
+  {
+    description:
+      "Règle l'heure à laquelle tu l'appelles sur son téléphone pour le réveiller. Par défaut, seulement le prochain réveil (« demain à 8 h ») ; tous_les_jours pour changer son heure habituelle.",
+    inputSchema: {
+      heure: z.string().describe("HH:MM, par exemple 07:00"),
+      tous_les_jours: z.boolean().default(false).describe("true pour changer l'heure de tous les jours"),
+    },
+  },
+  async ({ heure, tous_les_jours }) => appeler("POST", "/api/outils/reveil", { heure, tous_les_jours }),
+);
+serveur.registerTool("annuler_reveil", { description: "Pas de réveil la prochaine fois (par exemple un jour sans cours)." }, async () => appeler("POST", "/api/outils/annuler-reveil"));
+serveur.registerTool("etat_reveil", { description: "Le prochain réveil prévu, et si le réveil par appel est configuré." }, async () => appeler("GET", "/api/outils/reveil"));
+serveur.registerTool("essayer_reveil", { description: "Un appel d'essai tout de suite, quand il veut vérifier que le réveil marche." }, async () => appeler("POST", "/api/outils/essai-reveil"));
+
 await serveur.connect(new StdioServerTransport());

@@ -1,0 +1,106 @@
+// La musique de Max (ton fichier, par exemple `~/Documents/Bureau/musique/max.mp3`) : l'intro jouée sur le Mac quand
+// Max se lance, et le fond musical de l'appel du réveil. ffmpeg prépare les extraits (une fois, gardés en cache) :
+// la musique démarre fort, puis baisse pour laisser parler Max, et s'éteint en fondu.
+import { execFile, spawn } from "node:child_process";
+import { EventEmitter } from "node:events";
+import fs from "node:fs";
+import path from "node:path";
+
+export type Executer = (bin: string, args: string[]) => Promise<{ code: number; stderr: string }>;
+
+const executerParDefaut: Executer = (bin, args) =>
+  new Promise((resolve) => {
+    execFile(bin, args, { timeout: 120_000 }, (e, _stdout, stderr) => resolve({ code: e ? ((e as { code?: number }).code ?? 1) : 0, stderr: String(stderr) }));
+  });
+
+/** L'intro : 14 s, pleine puissance 5 s, puis baisse sous la voix de Max, et fondu final. */
+export const INTRO_MS = 14_000;
+/** Max commence à parler quand la musique a baissé. */
+export const PAROLE_APRES_MS = 5_500;
+
+export function argsIntro(source: string, sortie: string): string[] {
+  return [
+    "-y", "-loglevel", "error", "-i", source,
+    "-af", "atrim=0:14,afade=t=in:d=0.4,volume='if(lt(t,5),1,if(lt(t,6),1-0.75*(t-5),0.25))':eval=frame,afade=t=out:st=11.5:d=2.5",
+    "-ac", "2", "-ar", "44100", sortie,
+  ];
+}
+
+/**
+ * Le message du réveil (la voix de Max, en WAV) sur la musique : 4 s de musique seule, puis la voix par-dessus la
+ * musique baissée, puis la musique revient et s'éteint. Sortie en MP3 mono 22 kHz (assez pour un téléphone).
+ */
+export function argsMixReveil(musique: string, voix: string, sortie: string, dureeVoix: number): string[] {
+  const fin = Math.ceil(4 + dureeVoix + 4);
+  return [
+    "-y", "-loglevel", "error", "-i", musique, "-i", voix,
+    "-filter_complex",
+    `[0:a]atrim=0:${fin},volume='if(lt(t,4),0.9,if(lt(t,${(4 + dureeVoix).toFixed(1)}),0.18,0.6))':eval=frame,afade=t=in:d=0.3,afade=t=out:st=${fin - 2}:d=2[m];` +
+      `[1:a]adelay=4000|4000,volume=1.6[v];[m][v]amix=inputs=2:duration=first:normalize=0[out]`,
+    "-map", "[out]", "-ac", "1", "-ar", "22050", "-b:a", "64k", sortie,
+  ];
+}
+
+/** Événement : `intro` (moment, en ms) quand l'intro démarre, pour l'animation de la page. */
+export class Musique extends EventEmitter {
+  private executer: Executer;
+
+  constructor(
+    private o: {
+      /** Ton fichier de musique ; null ou absent = pas de musique. */
+      source: string | null;
+      /** Où ranger les extraits préparés. */
+      dossier: string;
+      ffmpeg: string;
+      /** Le lecteur audio du Mac (`afplay`) ; null = pas de son (hors Mac). */
+      lecteur: string | null;
+      executer?: Executer;
+    },
+  ) {
+    super();
+    this.executer = o.executer ?? executerParDefaut;
+  }
+
+  get disponible(): boolean {
+    return !!this.o.source && fs.existsSync(this.o.source);
+  }
+
+  get source(): string | null {
+    return this.disponible ? this.o.source : null;
+  }
+
+  /** Un extrait préparé par ffmpeg, refait seulement si ton fichier change. */
+  private async extrait(nom: string, args: (source: string, sortie: string) => string[]): Promise<string | null> {
+    const source = this.source;
+    if (!source) return null;
+    const cle = Math.round(fs.statSync(source).mtimeMs).toString(36);
+    const sortie = path.join(this.o.dossier, `${nom}-${cle}.wav`);
+    if (fs.existsSync(sortie)) return sortie;
+    fs.mkdirSync(this.o.dossier, { recursive: true });
+    const r = await this.executer(this.o.ffmpeg, args(source, sortie));
+    return r.code === 0 && fs.existsSync(sortie) ? sortie : null;
+  }
+
+  /**
+   * L'intro au lancement de Max : l'animation de la page démarre tout de suite (`intro`), la musique aussi (sur le
+   * Mac). Renvoie le délai avant que Max parle (0 sans musique).
+   */
+  jouerIntro(): number {
+    this.emit("intro", Date.now());
+    if (!this.disponible || !this.o.lecteur) return this.disponible ? 0 : 1200;
+    const lecteur = this.o.lecteur;
+    void this.extrait("intro", argsIntro).then((f) => {
+      if (f) spawn(lecteur, [f], { stdio: "ignore" }).on("error", () => {});
+    });
+    return PAROLE_APRES_MS;
+  }
+
+  /** Mixe un message (WAV) sur la musique, pour l'appel du réveil ; null sans musique ou si ffmpeg échoue. */
+  async mixerReveil(voix: string, dureeVoix: number, sortie: string): Promise<string | null> {
+    const source = this.source;
+    if (!source) return null;
+    fs.mkdirSync(path.dirname(sortie), { recursive: true });
+    const r = await this.executer(this.o.ffmpeg, argsMixReveil(source, voix, sortie, dureeVoix));
+    return r.code === 0 && fs.existsSync(sortie) ? sortie : null;
+  }
+}

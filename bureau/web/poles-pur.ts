@@ -82,6 +82,25 @@ export function semaineSport(s: SportVue): { jour: string; nom: string; emoji: s
   });
 }
 
+/** « demain 07:00 », « aujourd'hui 07:00 », « mardi 08:15 ». */
+export function quandReveil(prochainIso: string | null, maintenant = new Date()): string {
+  if (!prochainIso) return "aucun";
+  const p = new Date(prochainIso);
+  const hh = `${String(p.getHours()).padStart(2, "0")}:${String(p.getMinutes()).padStart(2, "0")}`;
+  const jour = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const demain = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate() + 1);
+  if (jour(p) === jour(maintenant)) return `aujourd'hui ${hh}`;
+  if (jour(p) === jour(demain)) return `demain ${hh}`;
+  return `${p.toLocaleDateString("fr-FR", { weekday: "long" })} ${hh}`;
+}
+
+/** Décale une heure « HH:MM » de quelques minutes (sur 24 h). */
+export function decalerHeure(heure: string, minutes: number): string {
+  const [h, m] = heure.split(":").map(Number);
+  const t = (((h * 60 + m + minutes) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+}
+
 /** La séance suivante dans l'ordre 1 → 2 → 3 → repos → 1 (pour changer un jour d'un clic). */
 export function seanceSuivante(id: string): string {
   const i = SEANCES.findIndex((s) => s.id === id);

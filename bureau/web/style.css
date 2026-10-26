@@ -1846,3 +1846,374 @@ body[data-verrou="oui"] {
     width: 60px;
   }
 }
+
+/* --- mise en page sans chevauchement, et passages accueil ↔ fiche ------------------------------------- */
+/* l'écran de Max en 4 rangées : barre, contenu (qui défile s'il ne tient pas), tuiles, champ de texte */
+.jarvis {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+.qg-corps {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  gap: 12px;
+}
+.qg-corps > .j-centre {
+  flex: 1 0 auto;
+}
+.j-sphere {
+  transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.j-dit {
+  transition: font-size 0.3s;
+}
+/* sur une fiche : Max en petit, en bandeau au-dessus de la fiche */
+.jarvis[data-mode="fiche"] #qg-accueil {
+  flex: none;
+  display: block;
+}
+.jarvis[data-mode="fiche"] .j-cote {
+  display: none;
+}
+.jarvis[data-mode="fiche"] .j-sphere-zone {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(125, 249, 255, 0.05);
+  border: 1px solid rgba(125, 249, 255, 0.18);
+}
+.jarvis[data-mode="fiche"] .j-sphere {
+  width: 54px;
+  flex: none;
+}
+.jarvis[data-mode="fiche"] .j-dit {
+  margin: 0;
+  min-height: 0;
+  max-width: none;
+  font-size: 15px;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.jarvis[data-mode="fiche"] .j-toi,
+.jarvis[data-mode="fiche"] .j-soucis {
+  display: none;
+}
+.jarvis[data-mode="fiche"] .qg-fiche {
+  flex: none;
+  overflow: visible;
+}
+.qg-entre {
+  animation: qg-entre 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes qg-entre {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.qg-fiche {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .qg-entre,
+  .j-sphere {
+    animation: none;
+    transition: none;
+  }
+}
+/* le bandeau de Max reste en haut quand on fait défiler la fiche */
+.jarvis[data-mode="fiche"] #qg-accueil {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding-bottom: 6px;
+  background: linear-gradient(#060a14 75%, transparent);
+}
+@media (max-width: 760px) {
+  /* sur téléphone, c'est toute la page qui défile */
+  .jarvis {
+    display: flex;
+  }
+  .qg-corps {
+    overflow: visible;
+  }
+}
+@media (max-width: 760px) {
+  .jarvis[data-mode="fiche"] #qg-accueil {
+    position: static;
+  }
+}
+.qf-titre {
+  flex: 1;
+  min-width: 0;
+}
+.qf-titre p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qf-tete .espace {
+  display: none;
+}
+
+/* --- l'intro au lancement de Max -------------------------------------------------------------------- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 50%, #0d1a2e 0%, #02040a 70%);
+  font-family: var(--mono);
+  color: #dff9ff;
+  cursor: pointer;
+}
+.intro.sort {
+  animation: intro-sort 0.7s cubic-bezier(0.6, 0, 0.8, 0.2) forwards;
+}
+@keyframes intro-sort {
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+/* l'éclair rouge et or qui traverse l'écran */
+.intro-eclair {
+  position: absolute;
+  top: 46%;
+  left: -60%;
+  width: 60%;
+  height: 10px;
+  transform: skewX(-30deg);
+  background: linear-gradient(90deg, transparent, #e4252b 30%, #ffcd3c 70%, #fff8d0);
+  box-shadow: 0 0 24px #ffb300, 0 0 60px #e4252b;
+  opacity: 0;
+}
+.intro-eclair.deux {
+  top: 52%;
+  height: 4px;
+}
+.intro.joue .intro-eclair {
+  animation: intro-eclair 0.75s cubic-bezier(0.3, 0, 0.2, 1) 0.1s forwards;
+}
+.intro.joue .intro-eclair.deux {
+  animation-delay: 0.22s;
+}
+@keyframes intro-eclair {
+  0% {
+    left: -60%;
+    opacity: 1;
+  }
+  100% {
+    left: 130%;
+    opacity: 1;
+  }
+}
+.intro-coeur {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 22px;
+}
+.intro-anneaux {
+  position: relative;
+  width: min(46vh, 70vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.intro-anneaux i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #7df9ff;
+  border-left-color: rgba(125, 249, 255, 0.4);
+  box-shadow: 0 0 22px rgba(125, 249, 255, 0.25);
+  opacity: 0;
+}
+.intro-anneaux i:nth-child(2) {
+  inset: 12%;
+  border-top-color: #ffcd3c;
+  border-right-color: rgba(255, 205, 60, 0.4);
+}
+.intro-anneaux i:nth-child(3) {
+  inset: 26%;
+  border-bottom-color: #7df9ff;
+}
+.intro.joue .intro-anneaux i {
+  animation: intro-anneau 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, intro-tourne 3s linear infinite;
+}
+.intro.joue .intro-anneaux i:nth-child(2) {
+  animation-delay: 0.45s, 0s;
+  animation-direction: normal, reverse;
+}
+.intro.joue .intro-anneaux i:nth-child(3) {
+  animation-delay: 0.6s, 0s;
+}
+.intro.joue .intro-anneaux i:nth-child(1) {
+  animation-delay: 0.3s, 0s;
+}
+@keyframes intro-anneau {
+  from {
+    opacity: 0;
+    transform: scale(0.3) rotate(-120deg);
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes intro-tourne {
+  to {
+    rotate: 360deg;
+  }
+}
+.intro-nom {
+  position: absolute;
+  top: calc(min(46vh, 70vw) / 2 - 0.6em);
+  font-size: min(9vh, 64px);
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  padding-left: 0.35em;
+  color: #7df9ff;
+  text-shadow: 0 0 18px rgba(125, 249, 255, 0.8);
+}
+.intro-nom span {
+  display: inline-block;
+  opacity: 0;
+}
+.intro.joue .intro-nom span {
+  animation: intro-lettre 0.5s steps(4) forwards;
+}
+.intro.joue .intro-nom span:nth-child(1) {
+  animation-delay: 1s;
+}
+.intro.joue .intro-nom span:nth-child(2) {
+  animation-delay: 1.2s;
+}
+.intro.joue .intro-nom span:nth-child(3) {
+  animation-delay: 1.4s;
+}
+@keyframes intro-lettre {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px);
+    color: #ffcd3c;
+  }
+  60% {
+    opacity: 1;
+    color: #fff;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.intro-lignes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 250px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+.intro-lignes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  opacity: 0;
+}
+.intro.joue .intro-lignes li {
+  animation: intro-ligne 0.35s ease-out forwards;
+  animation-delay: calc(1.9s + var(--i) * 0.32s);
+}
+@keyframes intro-ligne {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+.intro-lignes b.ok {
+  color: var(--vert);
+}
+.intro-lignes b.ko {
+  color: #ffb4a8;
+}
+/* à la sortie de l'intro : les tuiles des pôles arrivent l'une après l'autre */
+.jarvis.qg-arrive .qg-tuile {
+  animation: qg-entre 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis.qg-arrive .qg-tuile:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.jarvis.qg-arrive .qg-tuile:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.jarvis.qg-arrive .qg-tuile:nth-child(4) {
+  animation-delay: 0.24s;
+}
+.jarvis.qg-arrive .qg-tuile:nth-child(5) {
+  animation-delay: 0.32s;
+}
+.jarvis.qg-arrive .j-cote,
+.jarvis.qg-arrive .qg-barre {
+  animation: qg-entre 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis .qg-alarme {
+  cursor: pointer;
+  padding: 3px 10px;
+  box-shadow: none;
+  font-size: 13px;
+}
+.jarvis .qg-alarme[data-etat="non-configure"] {
+  opacity: 0.6;
+}
+.jarvis .qg-alarme[data-etat="en-cours"] {
+  border-color: var(--or);
+  color: var(--or);
+  animation: qg-clignote 1.2s infinite;
+}
+
+/* --- le style hologramme : fond de montagnes, cartes en verre fumé ---------------------------------- */
+.j-fond {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.jarvis > :not(.j-fond) {
+  position: relative;
+  z-index: 1;
+}
+.jarvis {
+  background: radial-gradient(ellipse at 50% 30%, #0b1830 0%, #03060d 70%);
+}
+.jarvis .j-carte,
+.jarvis .qg-tuile,
+.qf-tete {
+  background-color: rgba(4, 9, 20, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.jarvis .qg-tuile {
+  background-image: linear-gradient(160deg, color-mix(in srgb, var(--pole) 20%, transparent), transparent);
+}
+.j-sphere {
+  width: min(48vh, 100%);
+}
+.j-dit {
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.9);
+}

@@ -2,7 +2,7 @@
 
 Une équipe d'agents Claude Code qui travaille sous tes yeux, dans un bureau en pixel art.
 
-Tu parles à **Max**, le chef, comme à Jarvis. Il vit sur un **écran façon Jarvis** (une sphère lumineuse qui réagit quand il écoute, réfléchit et parle) et **pilote ton Mac** : apps, sites, musique, volume, iMessage, mails, agenda, météo. Il te reconnaît à la **caméra**, comme Face ID, et ne se réveille que pour toi. « Max, emmène-moi au bureau » te fait plonger dans le bureau pixel art. Quand tu lui dis « Max, compare les mutuelles pour moi », il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et ta vie est rangée en cinq **pôles**, chacun avec son agent et sa fiche sur l'écran de Max : 🩺 Études (le Prof), 💪 Sport & santé (le Coach, avec ton corps en 3D), 💼 Business (l'Associé), 📱 Apps & quêtes (le Dev), 🏠 Vie & mails (le Majordome). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
+Tu parles à **Max**, le chef, comme à Jarvis. Il vit sur un **écran façon Jarvis** : un buste holographique fait de lignes de lumière, au cœur orange qui brille quand il parle, devant des montagnes de particules et **pilote ton Mac** : apps, sites, musique, volume, iMessage, mails, agenda, météo. Il te reconnaît à la **caméra**, comme Face ID, et ne se réveille que pour toi. « Max, emmène-moi au bureau » te fait plonger dans le bureau pixel art. Quand tu lui dis « Max, compare les mutuelles pour moi », il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et ta vie est rangée en cinq **pôles**, chacun avec son agent et sa fiche sur l'écran de Max : 🩺 Études (le Prof), 💪 Sport & santé (le Coach, avec ton corps en 3D), 💼 Business (l'Associé), 📱 Apps & quêtes (le Dev), 🏠 Vie & mails (le Majordome). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
 
 > Le guide complet : [le Bureau](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md), [Max vocal](../docs/superpowers/specs/2026-10-26-max-vocal-design.md) et [Max coach et les conseillers](../docs/superpowers/specs/2026-10-26-max-coach-conseillers-design.md) et [Max façon Jarvis](../docs/superpowers/specs/2026-10-27-max-jarvis-design.md).
 
@@ -88,7 +88,7 @@ npm run arreter
 
 Tout s'organise en **trois niveaux** :
 
-1. **L'accueil** (l'écran de Max, à la sphère) : c'est là que tu arrives. En haut, ta barre de joueur (niveau, XP, série 🔥, J-49) et le minuteur en cours. À gauche, l'heure, la météo et **ton emploi du temps** du jour. Au centre, Max. À droite, **« Maintenant »** (le créneau en cours, ta progression vers tes 6 h d'études), tes mails et la quête en cours. En bas, **les cinq tuiles de tes pôles**.
+1. **L'accueil** (l'écran de Max) : c'est là que tu arrives. En haut, ta barre de joueur (niveau, XP, série 🔥, J-49) et le minuteur en cours. À gauche, l'heure, la météo et **ton emploi du temps** du jour. Au centre, Max. À droite, **« Maintenant »** (le créneau en cours, ta progression vers tes 6 h d'études), tes mails et la quête en cours. En bas, **les cinq tuiles de tes pôles**.
 2. **La fiche d'un pôle** : clique sur une tuile (ou dis « Max, ouvre ma fiche sport »). Elle s'ouvre sur place, sans aller au bureau. **← Accueil** (ou Échap) pour revenir.
 3. **Le bureau** (pixel art) : là où l'équipe de robots fait les **quêtes**, les vrais travaux que tu lui confies (recherche, rédaction, code). « Max, emmène-moi au bureau », ou le bouton **🏢 Le bureau**.
 
@@ -123,6 +123,49 @@ Chaque fiche a aussi **« Ce que <agent> retient »** (ses notes), sa dernière 
 **Tes séances** : 1. Pec-Dos, 2. Biceps-Triceps-Épaules, 3. Jambes, et le **repos**, qui compte autant. Elles sont fixées par jour de la semaine ; par défaut lundi Pec-Dos, mardi Biceps-Triceps-Épaules, mercredi Jambes, jeudi repos, vendredi Pec-Dos, samedi Biceps-Triceps-Épaules, dimanche repos. Pour changer un jour, **clique dessus** dans « Ta semaine » (il passe à la séance suivante), ou dis « Max, mets les jambes le dimanche ». Pour noter une séance : bouton **✅ Séance faite**, ou « Max, j'ai fait ma séance », ou « Autre… » si tu as fait une autre séance que prévu. Dans « Ta semaine » : ✓ faite, ✗ manquée, • aujourd'hui.
 
 Les séances sont gardées dans `~/Documents/Bureau/sport/seances.jsonl`, ta semaine type dans `sport/semaine.json`.
+
+### Quand Max se lance : l'intro et ta musique
+
+À chaque lancement (« Dis Siri, Max au rapport », puis ton visage), un éclair rouge et or traverse l'écran, les anneaux de Max s'assemblent, ses systèmes s'allument, puis il se forme en comète de particules. Ta musique démarre en même temps, puis elle baisse pour qu'il te salue par-dessus.
+
+Pour la musique, mets ton MP3 (par exemple *Real Gone*) ici, une seule fois :
+
+```bash
+mkdir -p ~/Documents/Bureau/musique
+cp ~/Downloads/Cars_1_Real_Gone.mp3 ~/Documents/Bureau/musique/max.mp3
+```
+
+(Adapte le chemin si ton fichier est ailleurs.) La même musique sert de fond à l'appel du réveil. Pour couper l'intro : `"musique": { "intro": false }` dans `bureau.config.json`.
+
+### Le réveil : Max t'appelle
+
+Le matin, Max **t'appelle sur ton téléphone** : tu décroches, et tu entends sa voix sur ta musique (« Debout ! Il est 7 heures. Plus que 48 jours avant l'examen. Aujourd'hui, séance Jambes… »).
+
+- **L'heure** : 7 h par défaut. Le soir, quand tu lui dis bonne nuit, Max te propose l'heure qui garde tes 7 heures de sommeil. Tu peux aussi dire « Max, réveille-moi à 8 h demain », « pas de réveil demain », ou « mets mon réveil à 6 h 45 tous les jours ». L'heure s'affiche en haut de l'écran (⏰), et se règle aussi dans la fiche Sport & santé (−15 min, +15 min, pas de réveil, 📞 tester).
+- **Pour être considéré réveillé**, décroche et écoute au moins 20 secondes. Sinon (pas décroché, ta messagerie, ou tu raccroches tout de suite), il **rappelle toutes les 5 minutes**, 4 appels au plus. Dès que tu parles à Max, il arrête de rappeler.
+- **Le Mac doit rester allumé la nuit, ouvert et branché**, avec le Bureau ouvert : c'est lui qui passe l'appel. Le Bureau l'empêche de s'endormir la nuit d'un réveil (l'écran peut s'éteindre).
+
+**Le régler (une fois, 10 minutes)** : l'appel passe par **Twilio**, un service d'appels. Il faut environ 1 € par mois pour le numéro, et quelques centimes par appel.
+
+1. Crée un compte sur https://www.twilio.com (Sign up). Vérifie ton numéro de téléphone quand Twilio le demande.
+2. Achète un numéro qui peut appeler : **Phone Numbers > Buy a number** (un numéro américain, le moins cher, marche très bien pour appeler un portable français).
+3. Autorise les appels vers la France : **Voice > Settings > Geo permissions**, coche **France**.
+4. Sur la page d'accueil de la console, copie l'**Account SID** (AC…) et l'**Auth Token**.
+5. Dans `bureau.config.json`, ajoute :
+
+```json
+"reveil": {
+  "telephone": "+33612345678",
+  "heure": "07:00",
+  "twilio": { "compte": "AC…", "jeton": "ton Auth Token", "numero": "+1…" }
+}
+```
+
+6. Essaie : `npm run appel` (ton téléphone sonne tout de suite, et la commande te dit si tu aurais été considéré réveillé).
+
+Avec un compte d'essai Twilio (gratuit), l'appel commence par un message en anglais de Twilio, et il faut appuyer sur une touche. Ajouter du crédit (20 $ suffisent pour des mois) l'enlève.
+
+`bureau.config.json` reste sur ton Mac : il n'est jamais envoyé sur GitHub. Le message du matin est déposé chez Twilio (sur une adresse impossible à deviner) le temps de l'appel.
 
 ### Les réglages des pôles
 
@@ -168,9 +211,9 @@ Quand une mission se termine, Max te le dit tout seul et te résume le résultat
 
 ## L'écran de Max et ses pouvoirs
 
-Quand tu dis « Dis Siri, Max au rapport », la page s'ouvre sur **l'écran de Max** : au centre la sphère (bleue quand il écoute, dorée quand il réfléchit, qui vibre quand il parle), ce qu'il dit en grand, et autour l'heure, la météo, ton agenda du jour, ton objectif (J-49), le minuteur en cours et la mission en cours.
+Quand tu dis « Dis Siri, Max au rapport », la page s'ouvre sur **l'écran de Max** : au centre Max en hologramme (lumineux quand il écoute, avec des ondes autour de sa tête ; son cœur devient doré quand il réfléchit et bat quand il parle ; sa tête suit ton pointeur), ce qu'il dit en grand, et autour l'heure, la météo, ton agenda du jour, ton objectif (J-49), le minuteur en cours et la mission en cours.
 
-- **« Max, emmène-moi au bureau »** (ou « montre-moi l'équipe ») : on plonge dans la sphère et on arrive dans le bureau pixel art. **« Max, reviens »**, ou le bouton **🔵 Max** en haut du bureau, te ramène.
+- **« Max, emmène-moi au bureau »** (ou « montre-moi l'équipe ») : on plonge dans le cœur de Max et on arrive dans le bureau pixel art. **« Max, reviens »**, ou le bouton **🔵 Max** en haut du bureau, te ramène.
 - Tu peux aussi écrire à Max en bas de l'écran.
 
 Ce que Max sait faire sur ton Mac :
@@ -390,6 +433,9 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 | « Dis Max, … » ne marche pas | Mets à jour (`git pull`) : Whisper écrit souvent « Dimax » ou « D'y max », Max les comprend maintenant. Sinon, dis simplement « Max, … ». |
 | Le corps 3D ne tourne pas avec la main | La première fois, le Bureau télécharge le modèle de la main (8 Mo) : il faut internet. Autorise la caméra pour localhost. Mets ta main bien en vue, paume vers la caméra, et pince franchement le pouce et l'index. Sinon, la souris marche toujours. |
 | La fenêtre des mails ne s'ouvre pas à mon arrivée | Elle s'ouvre quand il y a des mails non lus (et au plus une fois toutes les 10 minutes). Le bouton **🔄 Retrier** de la fiche Vie & mails le refait. Vérifie aussi que Mail a l'autorisation (voir « Les autorisations du Mac »). |
+| Pas de musique à l'intro | Vérifie que ton MP3 est bien à `~/Documents/Bureau/musique/max.mp3` (ou indique son chemin : `"musique": { "fichier": "~/Music/max.mp3" }`). `npm run setup` dit s'il le trouve. |
+| Le réveil n'a pas appelé | Le Mac doit être allumé, ouvert, branché, avec le Bureau ouvert. Teste avec `npm run appel`. Une erreur « 401 » : Account SID ou Auth Token faux. « 21215 » ou « Geo » : autorise la France dans Twilio (Voice > Settings > Geo permissions). |
+| L'appel du réveil a une voix robotique sans musique | La voix de Max ou la musique n'a pas pu être préparée : il faut `npm run voix`, ffmpeg (`brew install ffmpeg`) et ton MP3. `npm run appel` dit ce qui manque. |
 | Max ne t'entend pas | Vérifie l'autorisation du micro (Réglages Système > Confidentialité et sécurité > Micro). `npm run micros` montre le micro utilisé ; impose-en un autre avec `"voix": { "micro": ":1" }`. |
 | Max réagit à la télé | Il ne répond qu'aux phrases qui commencent par « Max » : baisse un peu le son, ou mets-le en veille. |
 | Max met du temps à répondre | Opus réfléchit quelques secondes. Pour plus de vitesse : `"modeles": { "conversation": "sonnet" }`. |

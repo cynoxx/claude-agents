@@ -3,7 +3,8 @@
 import type { AssistantVue, ClientMessage, EtatBureau, EtatMax, MailsVue, PlanningVue, VueEcran } from "../shared/protocol.ts";
 import { dureeCourte, restant } from "./conversation.ts";
 import { duree } from "./poles-pur.ts";
-import { Sphere } from "./sphere.ts";
+import { Humanoide } from "./humanoide.ts";
+import { Montagnes } from "./montagnes.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -67,13 +68,15 @@ export function compteMails(m: MailsVue): { total: number; aTraiter: number } {
 const echapper = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export class Jarvis {
-  private sphere: Sphere;
+  private sphere: Humanoide;
   private vue: VueEcran = "jarvis";
   private etat?: EtatBureau;
 
   constructor(private envoyer: (m: ClientMessage) => void) {
-    this.sphere = new Sphere($<HTMLCanvasElement>("sphere"));
+    // Max en buste humanoïde de particules, devant ses montagnes
+    this.sphere = new Humanoide($<HTMLCanvasElement>("sphere"));
     this.sphere.demarrer();
+    new Montagnes($<HTMLCanvasElement>("j-fond"));
     $<HTMLFormElement>("j-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const champ = $<HTMLInputElement>("j-texte");
@@ -185,12 +188,20 @@ export class Jarvis {
         window.dispatchEvent(new Event("zone-bureau"));
       }, 650);
     } else {
-      this.sphere.agrandir(1);
+      // le retour, à l'envers : on ressort de la sphère, qui se resserre jusqu'à sa taille normale
+      let z = 12;
+      this.sphere.agrandir(z);
       ecran.hidden = false;
       document.body.dataset.vue = "jarvis";
       ecran.classList.add("revient");
+      const reduire = () => {
+        z = Math.max(1, z / 1.15);
+        this.sphere.agrandir(z);
+        if (z > 1 && this.vue === "jarvis") requestAnimationFrame(reduire);
+      };
       requestAnimationFrame(() => {
         ecran.classList.remove("plonge");
+        requestAnimationFrame(reduire);
         setTimeout(() => ecran.classList.remove("revient"), 500);
       });
     }

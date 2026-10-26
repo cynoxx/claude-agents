@@ -15,6 +15,8 @@ import type { Planning } from "./max/planning.ts";
 import type { TriMails } from "./max/tri-mails.ts";
 import type { TrieurAuto } from "./max/trieur.ts";
 import type { Sport } from "./max/sport.ts";
+import type { Musique } from "./max/musique.ts";
+import type { Reveil } from "./max/reveil.ts";
 import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
 import { listMissions } from "./storage.ts";
 import { lireIdees } from "./max/coach.ts";
@@ -62,6 +64,8 @@ export function createBureauServer(o: {
   triMails?: TriMails;
   trieur?: TrieurAuto;
   sport?: Sport;
+  musique?: Musique;
+  reveil?: Reveil;
   /** Le dossier des modèles de reconnaissance du visage (face-api), servis à la page. */
   modelesVisage?: string;
   /** La détection de la main (corps 3D) : les fichiers WebAssembly de MediaPipe et le dossier du modèle. */
@@ -204,8 +208,16 @@ export function createBureauServer(o: {
       ...(o.triMails ? { mails: o.triMails.vue() } : {}),
       ...(o.sport ? { sport: o.sport.vue() } : {}),
       ...(o.coach && o.conseillers ? { poles: poles(), idees: lireIdees(root).slice(-8) } : {}),
+      ...(intro ? { intro } : {}),
+      ...(o.reveil ? { reveil: o.reveil.vue() } : {}),
     };
   };
+  let intro = 0;
+  const surIntro = (t: number) => {
+    intro = t;
+    diffuser();
+  };
+  o.musique?.on("intro", surIntro);
   const diffuser = () => {
     const etat = etatComplet();
     for (const ws of wss.clients) envoyer(ws, { type: "etat", etat });
@@ -218,7 +230,10 @@ export function createBureauServer(o: {
   o.planning?.on("etat", diffuser);
   o.triMails?.on("etat", diffuser);
   o.sport?.on("etat", diffuser);
+  o.reveil?.on("etat", diffuser);
   server.on("close", () => {
+    o.reveil?.off("etat", diffuser);
+    o.musique?.off("intro", surIntro);
     o.sport?.off("etat", diffuser);
     o.planning?.off("etat", diffuser);
     o.triMails?.off("etat", diffuser);
@@ -232,7 +247,7 @@ export function createBureauServer(o: {
 
   wss.on("connection", (ws) => {
     envoyer(ws, { type: "etat", etat: etatComplet() });
-    ws.on("message", (data) => {
+    ws.on("message", async (data) => {
       let msg: ClientMessage;
       try {
         msg = JSON.parse(String(data));
@@ -327,6 +342,17 @@ export function createBureauServer(o: {
           const rs = msg.type === "seance" ? o.sport.noter(String(msg.seance ?? ""), { jour: msg.jour ? String(msg.jour) : undefined }) : o.sport.changerSemaine([{ jour: Number(msg.jour), seance: String(msg.seance ?? "") }]);
           r = rs.ok ? { ok: true } : { ok: false, erreur: rs.texte };
           if (rs.ok) o.assistant?.informer?.(`Depuis la page : ${rs.texte}`);
+          break;
+        }
+        case "alarme": {
+          const rv = o.reveil;
+          if (!rv) {
+            r = { ok: false, erreur: "Le réveil n'est pas disponible." };
+            break;
+          }
+          const ra = msg.action === "annuler" ? rv.annulerProchain() : msg.action === "essayer" ? await rv.essayer() : rv.regler(String(msg.heure ?? ""));
+          r = ra.ok ? { ok: true } : { ok: false, erreur: ra.texte };
+          if (ra.ok) o.assistant?.informer?.(`Depuis la page : ${ra.texte}`);
           break;
         }
         case "trier-mails":

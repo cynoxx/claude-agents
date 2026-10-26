@@ -52,6 +52,22 @@ export interface BureauConfig {
   tempsParJour: Record<string, number>;
   /** Objectif de minutes par jour, par pôle (affiché comme une barre à remplir). */
   objectifsParJour: Record<string, number>;
+  /** Ta musique (MP3) : l'intro quand Max se lance, et le fond de l'appel du réveil. */
+  musique: { fichier: string; intro: boolean };
+  /** Le réveil : Max t'appelle sur ton téléphone (par Twilio). */
+  reveil: ReveilConfig;
+}
+
+export interface ReveilConfig {
+  /** Ton numéro, au format international (+33612345678) ; null = pas de réveil par appel. */
+  telephone: string | null;
+  /** L'heure habituelle ; Max la change avec toi le soir. */
+  heure: string;
+  rappelMinutes: number;
+  essais: number;
+  /** La voix Twilio de secours (si la voix de Max n'a pas pu être préparée). */
+  voixTwilio: string;
+  twilio: { compte: string; jeton: string; numero: string };
 }
 
 export interface MacConfig {
@@ -94,6 +110,8 @@ export const DEFAULT_CONFIG: BureauConfig = {
   visage: { actif: true },
   tempsParJour: { business: 60 },
   objectifsParJour: { etudes: 360 },
+  musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true },
+  reveil: { telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "" } },
 };
 
 export function expandHome(p: string): string {
@@ -140,9 +158,12 @@ export function loadConfig(dir: string): BureauConfig {
     visage: { ...DEFAULT_CONFIG.visage, ...user.visage },
     tempsParJour: { ...DEFAULT_CONFIG.tempsParJour, ...user.tempsParJour },
     objectifsParJour: { ...DEFAULT_CONFIG.objectifsParJour, ...user.objectifsParJour },
+    musique: { ...DEFAULT_CONFIG.musique, ...user.musique },
+    reveil: { ...DEFAULT_CONFIG.reveil, ...user.reveil, twilio: { ...DEFAULT_CONFIG.reveil.twilio, ...user.reveil?.twilio } },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };
   if (c.mac.dossierCaptures) c.mac.dossierCaptures = expandHome(c.mac.dossierCaptures);
+  c.musique.fichier = expandHome(c.musique.fichier);
   c.voix.modele = c.voix.modele ? expandHome(c.voix.modele) : path.join(c.dossierDonnees, "modeles", MODELE_WHISPER);
   return c;
 }

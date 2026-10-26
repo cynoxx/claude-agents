@@ -34,7 +34,8 @@
         <p class="v-note">Max garde seulement une « empreinte » de ton visage (des nombres, pas de photo), sur ce Mac. Une photo peut parfois tromper une webcam : c'est pour ça que Max te demande aussi de tourner la tête, ce qu'une photo ne sait pas faire. Garde ton mot de passe ou Touch ID pour protéger le Mac lui-même.</p>
       </div>
     </div>
-    <section id="jarvis" class="jarvis" aria-label="Max">
+    <section id="jarvis" class="jarvis" data-mode="accueil" aria-label="Max">
+      <canvas id="j-fond" class="j-fond" aria-hidden="true"></canvas>
       <header class="qg-barre">
         <div class="j-nom">MAX</div>
         <div id="j-statut" class="j-statut" data-etat="veille">En veille</div>
@@ -45,6 +46,7 @@
           <span class="qg-pastille" data-hud="echeance" hidden></span>
         </div>
         <span id="j-minuteur" class="qg-pastille qg-minuteur" hidden></span>
+        <button type="button" id="j-alarme" class="qg-pastille qg-alarme" title="Ton réveil : Max t'appelle" hidden></button>
         <span class="espace"></span>
         <button type="button" id="j-visage" hidden>🔐 Visage</button>
         <button type="button" id="j-reveil">👂 Réveiller</button>

@@ -462,6 +462,19 @@ describe("Assistant — coach", () => {
     expect(a.vue()).toMatchObject({ vue: "bureau", pole: null });
   });
 
+  it("joue l'intro au lancement, puis salue quand la musique a baissé", async () => {
+    let intros = 0;
+    creer({ coach, intro: () => (intros++, 40) });
+    a.reveiller();
+    expect(intros).toBe(1);
+    expect(bouche.dites).toEqual([]);
+    await jusqua(() => bouche.dites.length > 0);
+    expect(bouche.dites[0]).toContain("Salut");
+    a.veille();
+    a.reveiller(false);
+    expect(intros).toBe(1); // pas d'intro pour un réveil sans accueil
+  });
+
   it("met le sport dans le contexte du jour", () => {
     creer({ coach, sport: { decrire: () => "Sport — séance du jour (lundi) : Pec-Dos" } });
     a.reveiller();
