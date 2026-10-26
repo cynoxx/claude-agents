@@ -141,6 +141,7 @@ const reveilMac = new ReveilMac({
   verrou,
   ecouter: () => assistant.reveiller(false),
   ouvrirPage: () => ouvrirMax(),
+  journal: (m) => console.log(m),
   prenom: () => verrou.vue().prenom,
 });
 reveil.on("sonne", (s: SonnerieMac) => void reveilMac.sonner(s));

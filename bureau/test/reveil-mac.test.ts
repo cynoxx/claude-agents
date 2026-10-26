@@ -71,3 +71,49 @@ describe("réveil sur le Mac", () => {
     expect(texteInsistance({ essai: 2, heure: local("2026-10-27", "07:00"), maintenant: local("2026-10-27", "07:02"), verrouille: true })).toContain("Regarde la caméra");
   });
 });
+
+describe("réveil sur le Mac : la voix est lente (XTTS)", () => {
+  function lent(voixMs: number, delaiVoixMs: number) {
+    const evts: string[] = [];
+    const dossier = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-reveil-lent-"));
+    const r = new ReveilMac({
+      mac: { volume: async () => {}, lireVolume: async () => 35 },
+      musique: {
+        disponible: true,
+        jouerAmorce: async () => (evts.push("amorce"), true),
+        mixerReveil: async (_v, _d, sortie) => (fs.writeFileSync(sortie, "mp3"), sortie),
+        jouerFichier: (f) => (evts.push(`joue ${path.basename(f)}`), true),
+        arreterLecture: () => void evts.push("stop"),
+      },
+      bouche: {
+        enregistrer: (_t, f) => new Promise((res) => setTimeout(() => (fs.writeFileSync(f, "wav"), res(true)), voixMs)),
+        dire: (t) => void evts.push(`dit ${t.slice(0, 5)}`),
+        taire: () => {},
+      },
+      premierMessage: () => "Debout !",
+      verrou: null,
+      ecouter: () => {},
+      ouvrirPage: () => {},
+      prenom: () => "",
+      dossier,
+      delaiVoixMs,
+      journal: (m) => void evts.push(`journal: ${m.slice(0, 30)}`),
+    });
+    return { r, evts };
+  }
+
+  it("la musique démarre tout de suite, puis la voix mêlée à la musique la remplace", async () => {
+    const { r, evts } = lent(30, 1000);
+    await r.sonner({ essai: 1, heure: new Date(), test: false });
+    expect(evts).toEqual(["amorce", "joue reveil-mac-1.mp3"]);
+  });
+
+  it("si la voix est trop lente, la musique joue quand même et Max parle en direct", async () => {
+    const { r, evts } = lent(500, 40);
+    await r.sonner({ essai: 1, heure: new Date(), test: false });
+    expect(evts[0]).toBe("amorce");
+    expect(evts[1]).toMatch(/^journal: ⏰ Réveil : la voix n/);
+    expect(evts.at(-1)).toMatch(/^dit Debou/);
+    expect(evts).not.toContain("stop");
+  });
+});

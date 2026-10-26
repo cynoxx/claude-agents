@@ -145,6 +145,16 @@ export class Musique extends EventEmitter {
     return PAROLE_APRES_MS;
   }
 
+  /**
+   * L'amorce du réveil : ta musique, tout de suite (l'extrait de l'intro), pendant que la voix de Max se fabrique.
+   * Renvoie false sans musique ou hors Mac.
+   */
+  async jouerAmorce(): Promise<boolean> {
+    if (!this.disponible || !this.o.lecteur) return false;
+    const f = await this.extrait("intro", argsIntro);
+    return f ? this.jouerFichier(f) : false;
+  }
+
   /** Joue un fichier sur le Mac (le réveil) ; arrête la lecture précédente. false hors Mac. */
   jouerFichier(fichier: string): boolean {
     this.arreterLecture();
