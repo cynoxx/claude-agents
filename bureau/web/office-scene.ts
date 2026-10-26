@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { MissionVue, RobotVue } from "../shared/protocol.ts";
+import type { AssistantVue, EtatMax, MissionVue, RobotVue } from "../shared/protocol.ts";
 import { creerTextures } from "./sprites.ts";
 import { ECHELLE, Robot, type Point } from "./robot.ts";
 
@@ -45,6 +45,13 @@ const ICONES: Record<RobotVue["statut"], string> = {
   arrete: "",
 };
 
+const BULLE_REPOS: Record<EtatMax, string> = {
+  veille: "Zzz…",
+  ecoute: "Je t'écoute\u00a0!",
+  reflechit: "Hmm…",
+  parle: "",
+};
+
 export interface Rappels {
   onClic(id: string): void;
 }
@@ -56,7 +63,7 @@ export class OfficeScene extends Phaser.Scene {
   private postes: Phaser.GameObjects.Image[] = [];
   private missionNom: string | null = null;
   private fete = false;
-  private enAttente: MissionVue | null | undefined;
+  private enAttente: { m: MissionVue | null; a?: AssistantVue } | undefined;
   private finiDepuis = new Map<string, number>();
 
   constructor(private rappels: Rappels) {
@@ -69,7 +76,7 @@ export class OfficeScene extends Phaser.Scene {
     this.max = new Robot(this, MAX.x, MAX.y, "max", "👑 Max", ALLEE_Y, () => this.rappels.onClic("max"));
     this.max.setBulle("Donne-moi une mission\u00a0!");
     this.time.addEvent({ delay: 500, loop: true, callback: () => this.cacherBullesFinies() });
-    if (this.enAttente !== undefined) this.sync(this.enAttente);
+    if (this.enAttente !== undefined) this.sync(this.enAttente.m, this.enAttente.a);
   }
 
   private dessinerDecor(): void {
@@ -111,21 +118,20 @@ export class OfficeScene extends Phaser.Scene {
     this.postes = POSTES.map((p) => this.add.image(p.x, p.y, "bureau-off").setScale(ECHELLE).setDepth(p.y + 22));
   }
 
-  /** Met la scène en accord avec l'état reçu du serveur. */
-  sync(m: MissionVue | null): void {
+  /** Met la scène en accord avec l'état reçu du serveur (mission et conversation avec Max). */
+  sync(m: MissionVue | null, a?: AssistantVue): void {
     if (!this.max) {
-      this.enAttente = m;
+      this.enAttente = { m, a };
       return;
     }
     if ((m?.nom ?? null) !== this.missionNom) this.nouvelleMission(m);
-    if (!m) {
-      this.max.setBulle("Donne-moi une mission\u00a0!");
-      this.max.travailler(false);
-      return;
-    }
 
-    this.max.setBulle(m.max.bulle);
-    this.max.travailler(m.phase === "planification" || m.phase === "relecture");
+    // la bulle de Max : ce qu'il dit à voix haute, sinon l'état de la mission, sinon son humeur du moment
+    const auRepos = a ? BULLE_REPOS[a.etat] : "Donne-moi une mission\u00a0!";
+    this.max.setBulle(a?.phrase || (m && m.max.bulle) || auRepos);
+    const occupe = (!!m && (m.phase === "planification" || m.phase === "relecture")) || a?.etat === "parle" || a?.etat === "reflechit";
+    this.max.travailler(occupe);
+    if (!m) return;
 
     m.robots.forEach((r, i) => {
       let robot = this.robots.get(r.id);

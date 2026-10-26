@@ -118,6 +118,131 @@ main {
   margin: 8px 0 0;
 }
 
+.conversation {
+  max-width: 960px;
+  margin: 12px auto 0;
+  padding: 0 16px;
+}
+.conv-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+.voyant {
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 2px solid var(--contour);
+}
+.voyant[data-etat="ecoute"] {
+  background: #23533a;
+}
+.voyant[data-etat="reflechit"] {
+  background: #5a4a1f;
+}
+.voyant[data-etat="parle"] {
+  background: #2c3f7a;
+}
+.organes {
+  font-size: 13px;
+  color: #ffb4a8;
+}
+.espace {
+  flex: 1;
+}
+.messages {
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 2px solid var(--contour);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+}
+.messages:empty::before {
+  content: "Dis « Max, … » ou écris-lui ci-dessous.";
+  color: var(--discret);
+}
+.messages li {
+  max-width: 85%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.messages li p {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.messages .qui {
+  font-weight: 600;
+  font-size: 12px;
+  margin-right: 6px;
+}
+.messages time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--discret);
+}
+.messages .de-toi {
+  justify-self: end;
+  background: #2c3f7a;
+}
+.messages .de-max {
+  border-left: 3px solid var(--or);
+}
+.messages .de-bureau {
+  justify-self: center;
+  max-width: 100%;
+  background: transparent;
+  color: var(--discret);
+  font-size: 13px;
+  padding: 0;
+}
+.messages .de-bureau .qui,
+.messages .de-bureau time {
+  display: none;
+}
+.form-max {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+#texte-max {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--texte);
+  background: var(--surface);
+  border: 2px solid var(--contour);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+#texte-max:focus {
+  outline: 2px solid var(--or);
+}
+.mission-directe {
+  max-width: 960px;
+  margin: 16px auto 24px;
+  padding: 0 16px;
+}
+.mission-directe summary {
+  cursor: pointer;
+  color: var(--discret);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.mission-directe #mission {
+  margin: 0;
+  padding: 0;
+}
+
 #mission {
   display: flex;
   gap: 10px;

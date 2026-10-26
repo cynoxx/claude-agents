@@ -2,6 +2,15 @@
 // Faux ffmpeg pour les tests : écrit du PCM 16 bits mono 16 kHz sur stdout.
 // FAKE_FFMPEG = phrase (silence, 1 s de « voix », silence, puis fin) | erreur | infini
 const mode = process.env.FAKE_FFMPEG ?? "phrase";
+const args = process.argv.slice(2);
+if (args.includes("-version")) {
+  console.log("ffmpeg version 9.9-fake");
+  process.exit(0);
+}
+if (args.includes("-list_devices")) {
+  process.stderr.write("[AVFoundation indev @ 0x1] AVFoundation audio devices:\n[AVFoundation indev @ 0x1] [0] Microphone MacBook Pro\n");
+  process.exit(1);
+}
 const TAUX = 16000;
 const morceau = (ms, voix) => {
   const n = Math.round((TAUX * ms) / 1000);

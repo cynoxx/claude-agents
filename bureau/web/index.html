@@ -27,15 +27,33 @@
 
     <main>
       <div id="jeu"></div>
-      <p class="aide">Clique sur un robot (ou sur Max) pour voir tout ce qu'il fait.</p>
+      <p class="aide">Clique sur un robot (ou sur Max) pour voir tout ce qu'il fait. Pour parler à Max, commence ta phrase par « Max ».</p>
     </main>
 
+    <section id="conversation" class="conversation" hidden>
+      <div class="conv-tete">
+        <span id="voyant" class="voyant">😴 Max dort</span>
+        <span id="organes" class="organes"></span>
+        <span class="espace"></span>
+        <button type="button" id="btn-taire" hidden>🤫 Tais-toi</button>
+        <button type="button" id="btn-reveil">👂 Réveiller Max</button>
+      </div>
+      <ol id="messages" class="messages" aria-live="polite"></ol>
+      <form id="form-max" class="form-max">
+        <input id="texte-max" autocomplete="off" placeholder="Écris à Max… ou dis-lui « Max, … »" />
+        <button type="submit">Envoyer</button>
+      </form>
+    </section>
+
+    <details class="mission-directe">
+      <summary>Lancer une mission directement, sans passer par Max</summary>
     <form id="mission">
       <textarea id="texte" rows="2" placeholder="Quelle est la mission ? (Entrée pour lancer, Maj+Entrée pour aller à la ligne)"></textarea>
       <div class="boutons">
         <button type="submit" id="btn-lancer">🚀 Lancer</button>
       </div>
     </form>
+    </details>
 
     <aside id="panneau" class="panneau" hidden>
       <button class="fermer" aria-label="Fermer">×</button>
