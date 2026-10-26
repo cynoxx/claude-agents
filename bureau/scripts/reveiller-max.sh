@@ -24,7 +24,8 @@ if ! curl -fs "$URL/api/sante" > /dev/null 2>&1; then
   fi
   BUREAU_NO_OPEN=1 nohup npx --no-install tsx server/index.ts >> "$JOURNAL" 2>&1 &
   disown
-  for _ in $(seq 1 60); do
+  # la voix XTTS met jusqu'à une ou deux minutes à se charger : on laisse 3 minutes
+  for _ in $(seq 1 360); do
     curl -fs "$URL/api/sante" > /dev/null 2>&1 && break
     sleep 0.5
   done
