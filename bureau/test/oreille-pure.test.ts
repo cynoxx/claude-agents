@@ -116,6 +116,24 @@ describe("reconnaitreAppel", () => {
     expect(reconnaitreAppel("Hé Maxe : tu m'entends ?")).toBe("tu m'entends ?");
     expect(reconnaitreAppel("Bonjour Max.")).toBe("");
   });
+  it("comprend « Dis Max » tel que Whisper l'écrit vraiment (mots collés, apostrophe, lettre seule)", () => {
+    // transcriptions réelles de whisper.cpp pour « Dis Max, … » et « Hé Max, … »
+    expect(reconnaitreAppel("Dimax, quelle heure est-il ?")).toBe("quelle heure est-il ?");
+    expect(reconnaitreAppel("Dimax lance une session.")).toBe("lance une session.");
+    expect(reconnaitreAppel("D'y max. C'est quoi la météo ?")).toBe("C'est quoi la météo ?");
+    expect(reconnaitreAppel("Dis-Max, ça va ?")).toBe("ça va ?");
+    expect(reconnaitreAppel("Dismax, ça va ?")).toBe("ça va ?");
+    expect(reconnaitreAppel("Dit Max, ça va ?")).toBe("ça va ?");
+    expect(reconnaitreAppel("Et Max, tu m'entends ?")).toBe("tu m'entends ?");
+    expect(reconnaitreAppel("DMAX !")).toBe("");
+    expect(reconnaitreAppel("G-Max.")).toBe("");
+    expect(reconnaitreAppel("D'y max.")).toBe("");
+  });
+  it("ne se croit pas appelé par des mots qui ressemblent (Maxime, maximum, Dimanche…)", () => {
+    expect(reconnaitreAppel("Dimanche on va au cinéma")).toBeNull();
+    expect(reconnaitreAppel("Maximum trois personnes")).toBeNull();
+    expect(reconnaitreAppel("Et maxi, c'est combien ?")).toBeNull();
+  });
   it("renvoie une chaîne vide quand on l'appelle sans rien dire d'autre", () => {
     expect(reconnaitreAppel("Ok Max")).toBe("");
   });

@@ -4,11 +4,16 @@ const sansAccents = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").to
 /** Un mot sans sa ponctuation autour, en minuscules sans accents. */
 const mot = (tok: string) => sansAccents(tok).replace(/[^a-z0-9']/g, "");
 
-const FORMULES = new Set(["ok", "okay", "hey", "he", "eh", "dis", "alors", "bon", "oui", "bonjour", "salut", "coucou", "yo", "allo"]);
+// « Dis », « Hé »… tels que Whisper les écrit parfois : « Dit », « Dix », « D'y », « Et ».
+const FORMULES = new Set(["ok", "okay", "hey", "he", "eh", "et", "dis", "dit", "dix", "di", "dy", "d'y", "alors", "bon", "oui", "bonjour", "salut", "coucou", "yo", "allo"]);
+/** « Dis Max » prononcé vite devient souvent un seul mot pour Whisper : « Dimax », « Dismax », « DMAX », « G-Max ». */
+const PREFIXES_COLLES = ["d", "di", "dis", "dit", "dix", "dy", "g", "j"];
 
 function noms(motCle: string): Set<string> {
   const m = mot(motCle);
-  return m === "max" ? new Set(["max", "maxe", "maxs", "maxx", "macs", "mac", "maks"]) : new Set([m]);
+  if (m !== "max") return new Set([m]);
+  const variantes = ["max", "maxe", "maxs", "maxx", "macs", "mac", "maks"];
+  return new Set([...variantes, ...PREFIXES_COLLES.flatMap((p) => variantes.map((v) => p + v))]);
 }
 
 const sansPonctuationDebut = (s: string) => s.replace(/^[\s,.:;!?—–-]+/, "").trim();
