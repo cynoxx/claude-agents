@@ -163,7 +163,7 @@ Le matin, Max **t'appelle sur ton téléphone** : tu décroches, et tu entends s
 
 6. Essaie : `npm run appel` (ton téléphone sonne tout de suite, et la commande te dit si tu aurais été considéré réveillé).
 
-Avec un compte d'essai Twilio (gratuit), l'appel commence par un message en anglais de Twilio, et il faut appuyer sur une touche. Ajouter du crédit (20 $ suffisent pour des mois) l'enlève.
+**Le compte d'essai ne suffit pas pour le réveil.** Pendant l'essai, Twilio ne permet d'appeler qu'avec ses propres messages modèles : impossible d'y mettre la voix de Max (Twilio répond « trial accounts have limited parameter access »). Il faut passer en **Full access** (bouton Upgrade de la console).
 
 **Une clé API à la place de l'Auth Token (plus sûr)** : dans Twilio, « API keys & auth tokens » > **Create API key**, type **Standard**. Twilio te montre un `SK…` et son secret (une seule fois : copie-le tout de suite). Dans `bureau.config.json`, mets `"cle": "SK…"` et, dans `"jeton"`, le **secret** de la clé (pas l'Auth Token). Si la clé fuit, tu la révoques sans toucher à ton compte.
 

@@ -189,6 +189,9 @@ describe("Twilio", () => {
     expect(await t.appeler("+33", "<Response/>")).toBe("CA2");
     expect(corps[0]).toContain("MachineDetection");
     expect(corps[1]).not.toContain("MachineDetection");
+    // un compte d'essai refuse aussi les paramètres de base : message clair en français
+    const essai = new Twilio({ compte: "AC1", jeton: "x", numero: "+1" }, { dossierDonnees: tmp(), recuperer: async () => ({ ok: false, status: 400, json: async () => ({ message: "Invalid or disallowed parameters provided - trial accounts have limited parameter access" }) }) });
+    await expect(essai.appeler("+33", "<Response/>")).rejects.toThrow(/compte d'essai.*Full access/);
     // une autre erreur (401, mauvais identifiants) n'est pas réessayée
     corps.length = 0;
     const t2 = new Twilio({ compte: "AC1", jeton: "x", numero: "+1" }, { dossierDonnees: tmp(), recuperer: async () => (corps.push("x"), { ok: false, status: 401, json: async () => ({ message: "Authenticate" }) }) });

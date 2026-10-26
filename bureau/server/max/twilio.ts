@@ -27,6 +27,13 @@ export interface EtatAppel {
   reponduPar: string | null;
 }
 
+/**
+ * Un compte d'essai ne peut appeler qu'avec les 4 messages modèles de Twilio (pas de message personnel, pas de
+ * numéro choisi) : le réveil de Max demande le compte complet.
+ */
+export const MESSAGE_ESSAI =
+  "Ton compte Twilio est un compte d'essai : il n'autorise que les messages modèles de Twilio, pas le message personnel de Max. Passe le compte en « Full access » (Upgrade dans la console Twilio) pour que le réveil marche.";
+
 export const STATUTS_FINAUX = new Set(["completed", "busy", "no-answer", "failed", "canceled"]);
 
 const API = "https://api.twilio.com/2010-04-01";
@@ -82,7 +89,12 @@ export class Twilio {
       return (await this.requete<{ sid: string }>("POST", url, { ...base, MachineDetection: "Enable", Timeout: "40" })).sid;
     } catch (e) {
       if (!/\(400\)/.test((e as Error).message)) throw e;
-      return (await this.requete<{ sid: string }>("POST", url, base)).sid;
+      try {
+        return (await this.requete<{ sid: string }>("POST", url, base)).sid;
+      } catch (e2) {
+        if (/trial accounts have limited parameter access/i.test((e2 as Error).message)) throw new Error(MESSAGE_ESSAI);
+        throw e2;
+      }
     }
   }
 
