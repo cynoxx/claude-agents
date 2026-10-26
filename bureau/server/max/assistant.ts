@@ -1,6 +1,6 @@
 // L'assistant : relie l'oreille, le cerveau et la bouche de Max, gère le mot-clé, la veille et les annonces de mission.
 import { EventEmitter } from "node:events";
-import type { AssistantVue, CoachVue, Creneau, Dispo, EtatBureau, EtatMax, MessageConversation, MissionResume, Phase, VueEcran } from "../../shared/protocol.ts";
+import type { AssistantVue, CoachVue, Creneau, Dispo, EtatBureau, EtatMax, MessageConversation, MissionResume, Phase, SportVue, VueEcran } from "../../shared/protocol.ts";
 import { extraireResume, texteParle } from "../../shared/parole.ts";
 import { reconnaitreAppel } from "../voix/mot-cle.ts";
 import { Phraseur } from "../voix/phraseur.ts";
@@ -8,6 +8,7 @@ import type { AssistantApi } from "../routes-max.ts";
 import { consigneMax } from "./consigne.ts";
 import type { FinReponse } from "./cerveau.ts";
 import { dureeParlee, type FinMinuteur, type LimitePole } from "./coach.ts";
+import { complementSport } from "./sport.ts";
 
 export interface OreilleLike extends EventEmitter {
   demarrer(): void;
@@ -72,7 +73,7 @@ export interface OptionsAssistant {
   verrou?: VerrouLike;
   planning?: PlanningLike;
   /** Le sport (séance du jour, muscles travaillés), pour le contexte de Max. */
-  sport?: { decrire(): string };
+  sport?: { decrire(): string; vue?(): Pick<SportVue, "prevue" | "faite"> };
   /** L'intro au lancement (animation et musique) ; renvoie le délai avant que Max parle. */
   intro?: () => number;
   /** Le réveil par appel, pour le contexte de Max. */
@@ -307,7 +308,9 @@ export class Assistant extends EventEmitter implements AssistantApi {
       const saluer = () => {
         if (this.etat === "veille") return;
         const base = this.o.coach?.accueil() ?? ACCUEIL;
-        const bonjour = prenom ? base.replace(/^Salut !/, `Salut ${prenom} !`) : base;
+        const sport = this.o.sport?.vue ? complementSport(this.o.sport.vue()) : "";
+        const avecSport = sport ? base.replace(/ Je t'écoute\.$/, ` ${sport} Je t'écoute.`) : base;
+        const bonjour = prenom ? avecSport.replace(/^Salut !/, `Salut ${prenom} !`) : avecSport;
         this.noter("max", bonjour);
         this.parler(bonjour);
         // une fois par jour, au premier réveil : construire l'emploi du temps ensemble

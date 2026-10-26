@@ -106,6 +106,14 @@ Tout s'organise en **trois niveaux** :
 2. **La fiche d'un pôle** : clique sur une tuile (ou dis « Max, ouvre ma fiche sport »). Elle s'ouvre sur place, sans aller au bureau. **← Accueil** (ou Échap) pour revenir.
 3. **Le bureau** (pixel art) : là où l'équipe de robots fait les **quêtes**, les vrais travaux que tu lui confies (recherche, rédaction, code). « Max, emmène-moi au bureau », ou le bouton **🏢 Le bureau**.
 
+**Max est vivant.**
+- **Il te regarde** : quand tu es devant l'écran, sa tête **se tourne vers toi** (la caméra repère ton visage quatre fois par seconde, en toute petite image ; rien n'est enregistré ni envoyé). Quand tu reviens après être parti un moment, son cœur s'embrase et une onde dorée part de lui. Bouton **👁** dans la barre pour l'arrêter (il suit alors ton pointeur).
+- **Ses anneaux** : autour de sa tête tournent des anneaux de données, avec son état, ton échéance (J-49), ta séance du jour et ta progression d'études.
+- **Sa voix fait vibrer les montagnes** : quand il parle, une onde de lumière dorée court le long des crêtes.
+- **Les sons** : ouvrir une fiche, la fermer, l'arrivée des mails, la reconnaissance de ton visage ont chacun un petit son discret. Bouton **🔈** pour les couper.
+- **Les fiches s'ouvrent comme des hologrammes** : elles se déplient de haut en bas, traversées d'une ligne de lumière.
+- **Son « Salut ! »** te dit aussi ta séance du jour (« Côté sport, aujourd'hui c'est Pec-Dos »), ou te félicite si elle est déjà faite.
+
 **Les deux sortes d'agents.** Les **agents des pôles** (Prof, Coach, Associé, Dev, Majordome) sont tes conseillers : chacun connaît son domaine, garde ses notes et répond à tes questions. Ils sont assis dans l'aile « Tes pôles » du bureau. Les **robots** (Chercheur, Codeur, Designer, Rédacteur, Analyste) sont l'équipe d'exécution : Max les lance sur une quête et ils produisent un résultat. Tu ne parles qu'à Max : il passe la question au bon agent, ou lance les robots.
 
 | Pôle | Son agent | Sur sa fiche |

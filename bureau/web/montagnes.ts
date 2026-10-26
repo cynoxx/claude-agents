@@ -1,6 +1,7 @@
 // Le fond de l'écran de Max : une chaîne de montagnes en particules bleues, traversée de rivières dorées, qui
 // scintille doucement et bouge un peu avec le pointeur. Dessinée une fois (à chaque changement de taille), puis
-// seules quelques étincelles sont animées : ça ne coûte presque rien.
+// seules quelques étincelles sont animées : ça ne coûte presque rien. Quand Max parle, une onde de lumière part
+// du centre et court le long des crêtes, au rythme de sa voix.
 
 /** Bruit 1D lisse et reproductible (pour des crêtes qui ne changent pas d'une fois à l'autre). */
 export function bruit(x: number, graine: number): number {
@@ -36,8 +37,13 @@ export class Montagnes {
   private dernier = 0;
   private decalage = 0;
   private decalageCible = 0;
+  private energie = 0;
 
-  constructor(private canvas: HTMLCanvasElement) {
+  /** `voix` : le niveau de la voix de Max (0 à 1), lu à chaque image. */
+  constructor(
+    private canvas: HTMLCanvasElement,
+    private voix: () => number = () => 0,
+  ) {
     this.ctx = canvas.getContext("2d")!;
     new ResizeObserver(() => this.preparer()).observe(canvas);
     window.addEventListener("pointermove", (e) => (this.decalageCible = (e.clientX / innerWidth - 0.5) * -14));
@@ -125,14 +131,28 @@ export class Montagnes {
     const ctx = this.ctx;
     this.decalage += (this.decalageCible - this.decalage) * 0.08;
     const dx = -20 + this.decalage;
+    this.energie += (Math.min(1, this.voix()) - this.energie) * 0.25;
+    const en = this.energie;
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(this.couche, dx, 0);
-    // les crêtes scintillent
+    if (en > 0.03) {
+      // les montagnes s'éclairent un peu quand il parle
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = en * 0.3;
+      ctx.drawImage(this.couche, dx, 0);
+      ctx.restore();
+    }
+    // les crêtes scintillent, et l'onde de sa voix court le long d'elles
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     for (const e of this.etincelles) {
       const a = Math.max(0, Math.sin(t * 1.3 + e.phase));
-      if (a < 0.6) continue;
-      ctx.fillStyle = `rgba(200,240,255,${(a - 0.6) * 2})`;
-      ctx.fillRect(e.x + dx, e.y, 2, 2);
+      const onde = en > 0.03 ? en * Math.max(0, Math.cos((Math.abs(e.x + dx - w / 2) / w) * 22 - t * 7)) ** 3 : 0;
+      if (a < 0.6 && onde < 0.08) continue;
+      const alpha = Math.max(a < 0.6 ? 0 : (a - 0.6) * 2, onde);
+      ctx.fillStyle = onde > 0.3 ? `rgba(255,215,150,${alpha})` : `rgba(200,240,255,${alpha})`;
+      const taille = (2 + onde * 2.5) * dpr * 0.6;
+      ctx.fillRect(e.x + dx, e.y - taille / 2, taille, taille);
     }
   }
 }

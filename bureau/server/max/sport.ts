@@ -73,6 +73,13 @@ export function musclesTravailles(seances: SeanceFaite[], jour: string): SportVu
 }
 
 /** Événement : `etat` quand le journal ou la semaine type change. */
+/** Ce que Max ajoute à son « Salut ! » côté sport : la séance du jour, ou bravo si elle est faite (rien un jour de repos). */
+export function complementSport(v: Pick<SportVue, "prevue" | "faite">): string {
+  if (v.faite && v.faite !== "repos") return `Séance ${seance(v.faite)?.nom ?? ""} déjà faite aujourd'hui, bravo.`;
+  if (v.prevue === "repos") return "";
+  return `Côté sport, aujourd'hui c'est ${seance(v.prevue)?.nom ?? v.prevue}.`;
+}
+
 export class Sport extends EventEmitter {
   constructor(private o: { dossier: string }) {
     super();

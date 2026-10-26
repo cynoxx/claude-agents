@@ -1,7 +1,9 @@
 // Max en buste humanoïde, façon hologramme de particules : un visage fait de lignes de contour bleues, un cœur
 // orange qui brille dans le visage (plus fort quand il parle), des veines dorées dans le cou, des particules qui
-// s'envolent de la tête, et des ondes autour de lui quand il écoute. Sa tête suit doucement ton pointeur.
-// Il apparaît en comète de particules qui vient se poser sur sa poitrine. Même interface que l'ancienne sphère.
+// s'envolent de la tête, et des ondes autour de lui quand il écoute. Sa tête suit ton visage (caméra, voir
+// regard.ts) ou ton pointeur, en tournant vraiment : les contours intérieurs bougent plus que le bord, comme un
+// volume. Des anneaux de données tournent autour de lui. Il apparaît en comète de particules, et s'illumine quand
+// tu reviens devant l'écran. Même interface que l'ancienne sphère.
 import type { EtatMax } from "../shared/protocol.ts";
 
 interface Reglage {
@@ -22,6 +24,7 @@ const REGLAGES: Record<EtatMax, Reglage> = {
 const BLEU = [96, 200, 255];
 const NB_PARTICULES = 420;
 const APPARITION_S = 2.4;
+const SALUT_S = 1.8;
 
 /** Le contour de la tête : un œuf, plus étroit au menton. t de 0 (sommet) à 2π. */
 export function pointTete(t: number, cx: number, cy: number, rx: number, ry: number, k = 1): [number, number] {
@@ -49,6 +52,12 @@ export class Humanoide {
   private regard = { x: 0, y: 0 };
   private regardCible = { x: 0, y: 0 };
   private apparition = -1;
+  /** La caméra a la main sur le regard jusqu'à ce moment (le pointeur attend). */
+  private cameraJusqua = 0;
+  /** Le salut quand tu reviens (secondes écoulées, -1 = rien). */
+  private salut = -1;
+  /** Les anneaux de données (heure, état, échéance…). */
+  private etiquettes: string[] = [];
   private particules = Array.from({ length: NB_PARTICULES }, () => this.nouvelleParticule(Math.random()));
   private veines: [number, number][][];
 
@@ -75,6 +84,7 @@ export class Humanoide {
       this.veines.push(pts);
     }
     window.addEventListener("pointermove", (e) => {
+      if (performance.now() < this.cameraJusqua) return;
       this.regardCible = { x: (e.clientX / innerWidth) * 2 - 1, y: (e.clientY / innerHeight) * 2 - 1 };
     });
     window.addEventListener("max-apparait", () => this.apparaitre());
@@ -87,6 +97,27 @@ export class Humanoide {
   /** Grossit le visage (la plongée vers le bureau) : 1 = normal. */
   agrandir(z: number): void {
     this.zoom = z;
+  }
+
+  /** Regarde vers toi (de -1 à 1, comme le pointeur), d'après la caméra. */
+  regarder(x: number, y: number): void {
+    this.cameraJusqua = performance.now() + 1500;
+    this.regardCible = { x: Math.max(-1, Math.min(1, x)), y: Math.max(-1, Math.min(1, y)) };
+  }
+
+  /** Tu reviens : son cœur s'embrase et une onde dorée part de lui. */
+  saluer(): void {
+    this.salut = 0;
+  }
+
+  /** Les textes des anneaux de données autour de lui. */
+  donnees(etiquettes: string[]): void {
+    this.etiquettes = etiquettes.slice(0, 4);
+  }
+
+  /** Sa voix (0 à 1), pour que le décor vibre avec lui. */
+  get niveauVoix(): number {
+    return this.voix;
   }
 
   /** La comète de particules qui vient former le buste. */
@@ -128,6 +159,9 @@ export class Humanoide {
     this.regard.x += (this.regardCible.x - this.regard.x) * Math.min(1, dt * 2.5);
     this.regard.y += (this.regardCible.y - this.regard.y) * Math.min(1, dt * 2.5);
     if (this.apparition >= 0) this.apparition += dt;
+    if (this.salut >= 0) this.salut = this.salut + dt > SALUT_S ? -1 : this.salut + dt;
+    // le salut : un éclat qui monte vite et redescend doucement
+    const sal = this.salut < 0 ? 0 : Math.min(1, this.salut / 0.25) * Math.max(0, 1 - this.salut / SALUT_S);
     const app = this.apparition < 0 ? 1 : Math.min(1, Math.max(0, (this.apparition - 0.8) / (APPARITION_S - 0.8)));
 
     const { width: w, height: h } = this.canvas;
@@ -152,7 +186,10 @@ export class Humanoide {
     const cy = oy + S * 0.34 + this.regard.y * 0.012 * S;
     const rx = S * 0.15;
     const ry = S * 0.19;
-    const L = a.lumiere * app;
+    const L = Math.min(1.3, a.lumiere * app + sal * 0.5);
+    // la tête tourne : plus un contour est à l'intérieur, plus il se décale (effet de volume)
+    const tx = this.regard.x * rx * 0.55;
+    const ty = this.regard.y * ry * 0.35;
 
     // la comète : un nuage de particules qui tourne et vient se poser
     if (this.apparition >= 0 && this.apparition < APPARITION_S) {
@@ -167,6 +204,22 @@ export class Humanoide {
         ctx.beginPath();
         ctx.arc(x, y, (1.6 - i / 160) * (S / 400), 0, Math.PI * 2);
         ctx.fill();
+      }
+    }
+
+    // les anneaux de données : des arcs qui tournent lentement, graduations et petits textes
+    if (!petit && app > 0.05) this.anneaux(cx, cy + ry * 0.15, ry * 1.85, S, app, a.lumiere);
+
+    // le salut : une onde dorée qui part du cœur
+    if (!petit && sal > 0) {
+      const p = this.salut / SALUT_S;
+      for (let i = 0; i < 3; i++) {
+        const q = Math.max(0, p - i * 0.08);
+        ctx.strokeStyle = `rgba(255,200,110,${(1 - q) * 0.7 * (1 - i * 0.25)})`;
+        ctx.lineWidth = Math.max(1, (S / 300) * (1 - q));
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + ry * 0.12, rx * (0.6 + q * 4.5), ry * (0.5 + q * 3.6), 0, 0, Math.PI * 2);
+        ctx.stroke();
       }
     }
 
@@ -261,8 +314,9 @@ export class Humanoide {
     // la tête : contour lumineux et contours emboîtés (comme une carte topographique)
     const tete = (kt: number) => {
       ctx.beginPath();
+      const d = 1 - kt;
       for (let i = 0; i <= 64; i++) {
-        const [x, y] = pointTete((i / 64) * Math.PI * 2, cx, cy, rx, ry, kt);
+        const [x, y] = pointTete((i / 64) * Math.PI * 2, cx + tx * d * 1.6, cy + ty * d * 1.6, rx, ry, kt);
         if (i) ctx.lineTo(x, y);
         else ctx.moveTo(x, y);
       }
@@ -288,11 +342,12 @@ export class Humanoide {
       ctx.clip();
       ctx.lineWidth = Math.max(1, S / 900);
       for (let j = 0; j < 22; j++) {
-        const y0 = cy - ry + (j / 21) * ry * 2;
+        const y0 = cy - ry + (j / 21) * ry * 2 + ty * 0.5;
         ctx.strokeStyle = bleu(0.32 * L);
         ctx.beginPath();
         for (let x = cx - rx; x <= cx + rx; x += S / 120) {
-          const d = (x - cx) / rx;
+          // les lignes se resserrent du côté où il tourne la tête
+          const d = (x - cx - tx * 0.5 * (1 - ((x - cx) / rx) ** 2)) / rx;
           const y = y0 + (1 - d * d) * ry * 0.06 + Math.sin(d * 3 + this.t * 1.2 + j) * S * 0.002 * (1 + this.voix * 3);
           if (x === cx - rx) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
@@ -303,10 +358,10 @@ export class Humanoide {
     }
 
     // le cœur orange au milieu du visage : il respire, et bat quand Max parle
-    const eclat = a.coeur * app * (0.85 + 0.15 * Math.sin(this.t * 1.7) + this.voix * 0.6);
-    const gx = cx;
-    const gy = cy + ry * 0.12;
-    const gr = rx * (1.05 + this.voix * 0.3);
+    const eclat = a.coeur * app * (0.85 + 0.15 * Math.sin(this.t * 1.7) + this.voix * 0.6) + sal * 0.9;
+    const gx = cx + tx * 0.75;
+    const gy = cy + ry * 0.12 + ty * 0.6;
+    const gr = rx * (1.05 + this.voix * 0.3 + sal * 0.35);
     const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
     const vert = Math.round(150 + 60 * a.dore);
     g.addColorStop(0, `rgba(255,${Math.round(240 + 15 * a.dore)},190,${Math.min(1, eclat)})`);
@@ -324,7 +379,7 @@ export class Humanoide {
     // les particules qui s'envolent du crâne
     if (!petit) {
       for (const p of this.particules) {
-        p.age += dt * (0.4 + a.vitesse) * 0.5;
+        p.age += dt * (0.4 + a.vitesse + sal * 3) * 0.5;
         if (p.age > p.vie) Object.assign(p, this.nouvelleParticule());
         const [bx, by] = pointTete(p.t, cx, cy, rx, ry);
         const x = bx + p.dx * p.age * S * 0.04;
@@ -347,5 +402,72 @@ export class Humanoide {
       ctx.fillRect(0, h * 0.8, w, h * 0.2);
       ctx.restore();
     }
+  }
+
+  /** Les anneaux de données autour de la tête (style HUD) : trois arcs qui tournent à des vitesses différentes. */
+  private anneaux(cx: number, cy: number, r: number, S: number, app: number, lumiere: number): void {
+    const ctx = this.ctx;
+    const a = (x: number) => Math.max(0, Math.min(1, x * app * (0.55 + 0.45 * lumiere)));
+    ctx.save();
+    ctx.lineCap = "butt";
+    // l'anneau fin gradué
+    ctx.strokeStyle = `rgba(96,200,255,${a(0.28)})`;
+    ctx.lineWidth = Math.max(1, S / 900);
+    for (let i = 0; i < 120; i++) {
+      const an = (i / 120) * Math.PI * 2 + this.t * 0.05;
+      const long = i % 10 === 0 ? 0.04 : 0.018;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(an) * r, cy + Math.sin(an) * r * 0.92);
+      ctx.lineTo(cx + Math.cos(an) * r * (1 - long), cy + Math.sin(an) * r * 0.92 * (1 - long));
+      ctx.stroke();
+    }
+    // deux arcs épais qui tournent en sens contraires
+    const arcs: [number, number, number, number][] = [
+      [1.07, 0.11, 0.9, 0.5],
+      [1.12, -0.07, 0.35, 0.35],
+      [0.95, 0.16, 0.55, 0.22],
+    ];
+    for (const [k, v, long, alpha] of arcs) {
+      ctx.strokeStyle = `rgba(96,200,255,${a(alpha)})`;
+      ctx.lineWidth = Math.max(1, S / 380);
+      for (let j = 0; j < 3; j++) {
+        const debut = this.t * v + (j * Math.PI * 2) / 3;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, r * k, r * k * 0.92, 0, debut, debut + long);
+        ctx.stroke();
+      }
+    }
+    // un point orange qui fait le tour
+    const ap = this.t * 0.4;
+    ctx.fillStyle = `rgba(255,170,70,${a(0.9)})`;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(ap) * r * 1.07, cy + Math.sin(ap) * r * 1.07 * 0.92, S / 260, 0, Math.PI * 2);
+    ctx.fill();
+    // les textes, posés sur l'anneau, qui défilent très lentement
+    if (this.etiquettes.length) {
+      ctx.font = `600 ${Math.max(9, Math.round(S / 70))}px ui-monospace, "SF Mono", Menlo, monospace`;
+      ctx.textBaseline = "middle";
+      const { width: w, height: h } = this.canvas;
+      const marge = Math.max(9, Math.round(S / 70));
+      this.etiquettes.forEach((txt, i) => {
+        // haut gauche, haut droite, puis plus bas de chaque côté ; elles respirent un peu
+        const an = [-2.45, -0.69, 2.75, 0.39][i] + Math.sin(this.t * 0.07 + i) * 0.03;
+        const cote = Math.cos(an) < 0;
+        const largeur = ctx.measureText(txt.toUpperCase()).width;
+        const x = cote ? Math.max(largeur + marge, cx + Math.cos(an) * r * 1.2) : Math.min(w - largeur - marge, cx + Math.cos(an) * r * 1.2);
+        const y = Math.max(marge, Math.min(h - marge, cy + Math.sin(an) * r * 1.1));
+        ctx.textAlign = cote ? "right" : "left";
+        ctx.fillStyle = `rgba(150,225,255,${a(0.85)})`;
+        ctx.fillText(txt.toUpperCase(), x, y);
+        // le petit trait qui relie le texte à l'anneau
+        ctx.strokeStyle = `rgba(96,200,255,${a(0.4)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(an) * r * 1.12, cy + Math.sin(an) * r * 1.03);
+        ctx.lineTo(x + (cote ? 4 : -4), y);
+        ctx.stroke();
+      });
+    }
+    ctx.restore();
   }
 }

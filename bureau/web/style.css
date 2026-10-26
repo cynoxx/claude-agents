@@ -1920,7 +1920,61 @@ body[data-verrou="oui"] {
 .qg-fiche {
   animation: none;
 }
+/* une fiche s'ouvre comme un hologramme : elle se déplie de haut en bas, une ligne de balayage la parcourt */
+.qg-fiche.qg-entre {
+  position: relative;
+  animation: qg-holo 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.qg-fiche.qg-entre::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #7fdcff 20%, #fff 50%, #7fdcff 80%, transparent);
+  box-shadow: 0 0 18px 4px rgba(86, 200, 255, 0.55);
+  animation: qg-balayage 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  pointer-events: none;
+}
+@keyframes qg-holo {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.3;
+    filter: brightness(2.2) saturate(1.4);
+  }
+  70% {
+    filter: brightness(1.25);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: none;
+  }
+}
+@keyframes qg-balayage {
+  from {
+    top: 0;
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.qg-icone {
+  min-width: 34px;
+  padding-inline: 8px;
+}
+.qg-icone[data-actif="non"] {
+  opacity: 0.4;
+}
 @media (prefers-reduced-motion: reduce) {
+  .qg-fiche.qg-entre,
+  .qg-fiche.qg-entre::after,
   .qg-entre,
   .j-sphere {
     animation: none;

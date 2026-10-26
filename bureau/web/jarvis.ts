@@ -5,6 +5,9 @@ import { dureeCourte, restant } from "./conversation.ts";
 import { duree } from "./poles-pur.ts";
 import { Humanoide } from "./humanoide.ts";
 import { Montagnes } from "./montagnes.ts";
+import { Regard } from "./regard.ts";
+import { basculerSons, son, sonsActifs } from "./sons.ts";
+import { SEANCES } from "../shared/sport.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -65,6 +68,18 @@ export function compteMails(m: MailsVue): { total: number; aTraiter: number } {
   };
 }
 
+/** Les petits textes des anneaux de données autour de Max : son état, l'échéance, la séance du jour, les études. */
+export function etiquettesAnneaux(e: EtatBureau): string[] {
+  const t: string[] = [`SYS · ${STATUTS[e.assistant?.etat ?? "veille"].split(" —")[0]}`];
+  const ech = e.assistant?.coach?.echeance;
+  if (ech) t.push(`${ech.nom.slice(0, 18)} · ${ech.jours === 0 ? "JOUR J" : `J-${ech.jours}`}`);
+  const s = e.sport ? SEANCES.find((x) => x.id === (e.sport!.faite ?? e.sport!.prevue)) : null;
+  if (s) t.push(`Séance · ${s.nom}${e.sport!.faite ? " ✓" : ""}`);
+  const et = e.poles?.find((x) => x.id === "etudes");
+  if (et?.objectif) t.push(`Études · ${Math.min(999, Math.round((et.aujourdhui / et.objectif) * 100))} %`);
+  return t;
+}
+
 const echapper = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export class Jarvis {
@@ -76,7 +91,21 @@ export class Jarvis {
     // Max en buste humanoïde de particules, devant ses montagnes
     this.sphere = new Humanoide($<HTMLCanvasElement>("sphere"));
     this.sphere.demarrer();
-    new Montagnes($<HTMLCanvasElement>("j-fond"));
+    // les montagnes vibrent avec sa voix ; sa tête suit ton visage
+    new Montagnes($<HTMLCanvasElement>("j-fond"), () => this.sphere.niveauVoix);
+    new Regard(this.sphere);
+    const sons = $("j-sons");
+    const majSons = () => {
+      sons.textContent = sonsActifs() ? "🔈" : "🔇";
+      sons.dataset.actif = sonsActifs() ? "oui" : "non";
+      sons.title = sonsActifs() ? "Sons de l'interface : clique pour les couper" : "Sons coupés : clique pour les remettre";
+    };
+    majSons();
+    sons.addEventListener("click", () => {
+      basculerSons();
+      majSons();
+      son("clic");
+    });
     $<HTMLFormElement>("j-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const champ = $<HTMLInputElement>("j-texte");
@@ -99,6 +128,7 @@ export class Jarvis {
     this.changerVue(a?.vue ?? "jarvis");
     const e = a?.etat ?? "veille";
     this.sphere.etat(e);
+    this.sphere.donnees(etiquettesAnneaux(etat));
     $("j-statut").textContent = STATUTS[e];
     $("j-statut").dataset.etat = e;
     $("j-reveil").textContent = e === "veille" ? "👂 Réveiller" : "😴 Veille";

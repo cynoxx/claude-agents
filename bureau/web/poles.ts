@@ -3,6 +3,7 @@
 // La fiche est construite une fois à l'ouverture, puis seuls ses blocs qui changent sont réécrits (le corps 3D et
 // le champ de question ne bougent pas).
 import type { ClientMessage, ConseillerVue, EtatBureau, MailsVue, TempsPole } from "../shared/protocol.ts";
+import { son } from "./sons.ts";
 import { JOURS_SEMAINE, MUSCLES, SEANCES, seance } from "../shared/sport.ts";
 import { barres, decalerHeure, duree, quandReveil, semaineSport, seanceSuivante, tuile } from "./poles-pur.ts";
 import { compteMails, prochainsRdv } from "./jarvis.ts";
@@ -128,6 +129,7 @@ export class QG {
   }
 
   private ouvrir(pole: string | null): void {
+    const avant = this.pole;
     this.pole = pole;
     this.blocs.clear();
     this.corps?.detruire();
@@ -139,6 +141,8 @@ export class QG {
     fiche.hidden = !c;
     document.body.dataset.pole = c ? c.id : "";
     this.changerMode(!!c);
+    if (c && c.id !== avant) son("ouvre");
+    else if (!c && avant) son("ferme");
     if (!pole || !c) {
       fiche.innerHTML = "";
       return;
@@ -371,6 +375,7 @@ ${this.htmlReveil(e)}
     $("mf-resume").textContent = m.resume;
     this.remplacer($("mf-categories"), "fenetre-mails", htmlMails(m, 12));
     $("mf-ranger").hidden = !m.categories.some((c) => c.id === "pubs");
+    if ($("mails-fenetre").hidden) son("mail");
     $("mails-fenetre").hidden = false;
   }
 

@@ -87,3 +87,12 @@ describe("Sport", () => {
     expect(d).toContain("Semaine type : lundi Pec-Dos");
   });
 });
+
+describe("l'accueil de Max, côté sport", () => {
+  it("annonce la séance du jour, félicite si elle est faite, se tait un jour de repos", async () => {
+    const { complementSport } = await import("../server/max/sport.ts");
+    expect(complementSport({ prevue: "pec_dos", faite: null })).toBe("Côté sport, aujourd'hui c'est Pec-Dos.");
+    expect(complementSport({ prevue: "jambes", faite: "jambes" })).toBe("Séance Jambes déjà faite aujourd'hui, bravo.");
+    expect(complementSport({ prevue: "repos", faite: null })).toBe("");
+  });
+});

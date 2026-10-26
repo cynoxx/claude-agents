@@ -213,6 +213,27 @@ limite business** ; les 5 pôles actuels.
   - Essai réel (Opus) : « bonne nuit, je me couche vers minuit » → Max vérifie que 7 h lui laisse ses 7 heures et ne
     change rien ; « teste l'appel » → appel lancé.
 
+## Fenêtre à part, Max qui guette et qui regarde (ajoutés ensuite)
+
+- **Fenêtre de Max** (`server/fenetre.ts`) : `open -na <navigateur> --args --app=URL --user-data-dir=<données>/fenetre` avec
+  le premier navigateur Chromium trouvé (Chrome, Brave, Edge…), sinon `open URL` (Safari). Réglage `fenetre.mode` :
+  `app`, `plein-ecran`, `navigateur`. Le raccourci Siri passe par `POST /api/reveil {ouvrir:true}` (le serveur
+  connaît le réglage) et retombe sur `open` si le Bureau est ancien.
+- **Une seule fenêtre** : chaque page envoie `{type:"fenetre", nee}` (son heure d'ouverture) ; le serveur le relaie
+  aux autres, et celles qui sont plus anciennes se ferment (`window.close()`) ou passent sur `ailleurs.html`, ce qui
+  libère la caméra. Indépendant de l'ordre de reconnexion après un redémarrage du serveur.
+- **Guet** (`web/verrou.ts`) : verrouillé, page visible, visage enregistré → détection seule (TinyFaceDetector, entrée
+  160) toutes les 600 ms ; deux détections de suite → reconnaissance complète. Pause après un échec.
+- **Regard** (`web/regard.ts`) : déverrouillé et sur l'écran de Max → détection toutes les 250 ms, position du visage
+  en miroir → `Humanoide.regarder(x, y)` ; la caméra a la priorité sur le pointeur pendant 1,5 s. Première vue ou
+  retour après 20 s d'absence → `saluer()` (cœur embrasé, onde dorée) et un son. Caméra refusée → retour au pointeur.
+- **Tête en volume** : les contours intérieurs se décalent plus que le bord (parallaxe), le cœur et les lignes du
+  visage suivent ; anneaux de données (`etiquettesAnneaux`) dessinés dans le canevas, gardés dans le cadre.
+- **Sons** (`web/sons.ts`) : oscillateurs WebAudio, courts (≤ 0,8 s), volume 0,06 ; coupables (🔈, retenu par le
+  navigateur). La fenêtre d'app est lancée avec `--autoplay-policy=no-user-gesture-required`.
+- **Montagnes** : le niveau de la voix de Max éclaire le décor et fait courir une onde le long des crêtes.
+- **Accueil** : `complementSport` ajoute la séance du jour (ou « déjà faite, bravo ») avant « Je t'écoute ».
+
 ## Hors périmètre
 
 WhatsApp (pas de façon fiable d'envoyer sans clic), lire les SMS reçus, répondre à un mail, contrôle de la maison.

@@ -3,6 +3,7 @@
 // tourner la tête à gauche puis à droite (une photo ne le peut pas). La caméra s'éteint dès que c'est fini, ou au
 // bout de 30 secondes.
 import type { ClientMessage, ServerMessage, VerrouVue } from "../shared/protocol.ts";
+import { son } from "./sons.ts";
 import { CameraVisage } from "./camera-visage.ts";
 import { MouvementTete } from "./visage-pur.ts";
 
@@ -218,6 +219,7 @@ export class EcranVerrou {
       const r = await this.demanderAuServeur({ type: "visage-verifier", descripteur: net.descripteur, vivant: true });
       if (r.ok) {
         this.statut("Reconnu !", true);
+        son("deverrouille");
         break;
       }
       this.statut(r.texte);
