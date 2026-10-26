@@ -15,7 +15,6 @@
         <span id="titre-mission"></span>
       </div>
       <nav>
-        <button id="btn-muet" hidden>🔊</button>
         <button id="btn-resultat" hidden>📄 Résultat</button>
         <button id="btn-reprendre" hidden>▶️ Reprendre</button>
         <button id="btn-arreter" class="danger" hidden>⏹ Arrêter</button>
@@ -34,11 +33,9 @@
     <form id="mission">
       <textarea id="texte" rows="2" placeholder="Quelle est la mission ? (Entrée pour lancer, Maj+Entrée pour aller à la ligne)"></textarea>
       <div class="boutons">
-        <button type="button" id="btn-micro" hidden title="Dicter la mission (Option + Espace)">🎤 Parler</button>
         <button type="submit" id="btn-lancer">🚀 Lancer</button>
       </div>
     </form>
-    <label id="auto" class="auto" hidden><input type="checkbox" id="auto-lancer" /> Lancer dès que j'ai fini de parler</label>
 
     <aside id="panneau" class="panneau" hidden>
       <button class="fermer" aria-label="Fermer">×</button>

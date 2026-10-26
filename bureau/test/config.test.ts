@@ -9,7 +9,7 @@ describe("loadConfig", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-cfg-"));
     const c = loadConfig(dir);
     expect(c.port).toBe(4747);
-    expect(c.modeles).toEqual({ chef: "opus", robots: "sonnet" });
+    expect(c.modeles).toEqual({ chef: "opus", robots: "sonnet", conversation: "opus" });
     expect(c.limites).toEqual({ robots: 5, etapes: 3, minutesParRobot: 20 });
     expect(c.dossierMissions).toBe(path.join(os.homedir(), "Documents", "Bureau"));
     expect(c.projets).toEqual([]);
@@ -22,9 +22,43 @@ describe("loadConfig", () => {
       JSON.stringify({ projets: [{ nom: "Cynox", chemin: "~/Code/cynox" }], modeles: { robots: "haiku" } }),
     );
     const c = loadConfig(dir);
-    expect(c.modeles).toEqual({ chef: "opus", robots: "haiku" });
+    expect(c.modeles).toEqual({ chef: "opus", robots: "haiku", conversation: "opus" });
     expect(c.projets).toEqual([{ nom: "Cynox", chemin: path.join(os.homedir(), "Code/cynox") }]);
     expect(c.limites).toEqual(DEFAULT_CONFIG.limites);
+  });
+
+  it("donne des réglages de voix par défaut, avec le modèle Whisper dans le dossier de données", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-cfg-"));
+    const c = loadConfig(dir);
+    const donnees = path.join(os.homedir(), "Library", "Application Support", "Bureau");
+    expect(c.dossierDonnees).toBe(donnees);
+    expect(c.voix).toEqual({
+      active: true,
+      ffmpeg: "ffmpeg",
+      whisper: "whisper-cli",
+      say: "say",
+      modele: path.join(donnees, "modeles", "ggml-large-v3-turbo-q5_0.bin"),
+      micro: null,
+      voixMac: null,
+      debit: 185,
+      motCle: "max",
+      suiteSecondes: 10,
+      veilleMinutes: 30,
+    });
+  });
+
+  it("fusionne un bloc voix partiel et développe ~ dans les chemins", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-cfg-"));
+    fs.writeFileSync(
+      path.join(dir, "bureau.config.json"),
+      JSON.stringify({ dossierDonnees: "~/donnees", voix: { micro: ":1", modele: "~/m.bin" }, modeles: { conversation: "sonnet" } }),
+    );
+    const c = loadConfig(dir);
+    expect(c.dossierDonnees).toBe(path.join(os.homedir(), "donnees"));
+    expect(c.voix.micro).toBe(":1");
+    expect(c.voix.modele).toBe(path.join(os.homedir(), "m.bin"));
+    expect(c.voix.debit).toBe(185);
+    expect(c.modeles.conversation).toBe("sonnet");
   });
 
   it("signale un JSON invalide avec un message clair", () => {

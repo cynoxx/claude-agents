@@ -2,8 +2,6 @@ import Phaser from "phaser";
 import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
 import { HAUTEUR, LARGEUR, OfficeScene } from "./office-scene.ts";
 import { Interface } from "./ui.ts";
-import { Vocal } from "./vocal.ts";
-import { Dictee, Parole } from "./voix-navigateur.ts";
 import "./style.css";
 
 let ws: WebSocket | null = null;
@@ -16,7 +14,6 @@ const envoyer = (m: ClientMessage) => {
 
 const ui = new Interface(envoyer);
 const scene = new OfficeScene({ onClic: (id) => ui.clicPersonnage(id) });
-const vocal = new Vocal(Dictee.duNavigateur(), Parole.duNavigateur(), (message) => ui.toast(message));
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -40,7 +37,6 @@ function connecter(): void {
     const msg: ServerMessage = JSON.parse(e.data);
     if (msg.type === "etat") {
       ui.rendre(msg.etat);
-      vocal.surEtat(msg.etat);
       scene.sync(msg.etat.mission);
     } else {
       ui.toast(msg.message);

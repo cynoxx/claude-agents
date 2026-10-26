@@ -1,5 +1,4 @@
-// Logique pure du vocal : quoi dire, quoi lire, quelle voix choisir. Aucun accès au navigateur ici.
-import type { MissionVue } from "../shared/protocol.ts";
+// Préparer un texte pour la voix : quoi lire, comment le couper, quelle voix choisir. Fonctions pures.
 
 export interface VoixInfo {
   name: string;
@@ -97,50 +96,4 @@ export function choisirVoix<T extends VoixInfo>(voix: T[]): T | null {
   return voix
     .filter((v) => lang(v).startsWith("fr"))
     .reduce<T | null>((meilleure, v) => (!meilleure || score(v) > score(meilleure) ? v : meilleure), null);
-}
-
-/** Ce que Max dit à voix haute quand l'état de la mission change. `undefined` = premier état reçu : on se tait. */
-export function quoiDire(avant: MissionVue | null | undefined, apres: MissionVue | null): string | null {
-  if (!avant || !apres || avant.nom !== apres.nom || avant.phase === apres.phase) return null;
-  switch (apres.phase) {
-    case "travail":
-      return avant.phase === "planification" ? texteParle(apres.max.bulle) || "L'équipe se met au travail." : null;
-    case "termine": {
-      const resume = apres.resultat ? extraireResume(apres.resultat) : "";
-      return resume ? `Mission terminée. ${resume}` : "Mission terminée.";
-    }
-    case "pause":
-      return "Le quota est atteint : je mets la mission en pause.";
-    case "echec": {
-      const raison = apres.erreur ? couper(texteParle(apres.erreur), 160) : "";
-      return raison ? `La mission a échoué. ${raison}` : "La mission a échoué.";
-    }
-    default:
-      return null;
-  }
-}
-
-/** Ajoute ce qui vient d'être dicté au texte déjà écrit dans la zone de mission. */
-export function assemblerTexte(base: string, dicte: string): string {
-  return [base.trim(), dicte.trim()].filter(Boolean).join(" ");
-}
-
-/** Message pour l'utilisateur quand la dictée échoue ; `null` quand c'est lui qui l'a arrêtée. */
-export function messageErreurDictee(code: string): string | null {
-  switch (code) {
-    case "aborted":
-      return null;
-    case "not-allowed":
-      return "Le micro est bloqué. Autorise-le : clique sur l'icône à gauche de l'adresse du site, puis réessaie.";
-    case "service-not-allowed":
-      return "La dictée est désactivée. Active la Dictée dans Réglages Système > Clavier (et autorise le micro pour ce site), puis réessaie.";
-    case "no-speech":
-      return "Je n'ai rien entendu. Réessaie en parlant un peu plus près du micro.";
-    case "audio-capture":
-      return "Aucun micro trouvé sur cet ordinateur.";
-    case "network":
-      return "La dictée a besoin d'internet : le navigateur envoie ta voix à Google ou Apple pour la transcrire.";
-    default:
-      return `La dictée a échoué (${code}).`;
-  }
 }

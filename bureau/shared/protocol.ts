@@ -59,9 +59,35 @@ export interface MissionResume {
   debut: string;
 }
 
+/** Max en conversation : 😴 veille · 👂 écoute · 💭 réfléchit · 🗣 parle. */
+export type EtatMax = "veille" | "ecoute" | "reflechit" | "parle";
+
+export interface MessageConversation {
+  de: "toi" | "max" | "bureau";
+  texte: string;
+  heure: string; // ISO
+}
+
+/** Un organe de Max (oreille, bouche, cerveau) : marche-t-il, et sinon pourquoi. */
+export interface Dispo {
+  ok: boolean;
+  detail?: string;
+}
+
+export interface AssistantVue {
+  etat: EtatMax;
+  /** La phrase que Max est en train de prononcer (sa bulle dans la scène). */
+  phrase: string;
+  messages: MessageConversation[];
+  oreille: Dispo;
+  bouche: Dispo;
+  cerveau: Dispo;
+}
+
 export interface EtatBureau {
   claude: { ok: boolean; version?: string; erreur?: string };
   mission: MissionVue | null;
+  assistant?: AssistantVue;
 }
 
 export interface EtatFichier {
@@ -81,4 +107,8 @@ export type ClientMessage =
   | { type: "lancer"; texte: string }
   | { type: "arreter" }
   | { type: "reprendre" }
-  | { type: "ouvrir-dossier"; nom?: string };
+  | { type: "ouvrir-dossier"; nom?: string }
+  | { type: "parler-max"; texte: string }
+  | { type: "reveil" }
+  | { type: "veille" }
+  | { type: "taire" };
