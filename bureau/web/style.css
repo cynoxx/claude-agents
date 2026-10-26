@@ -2217,3 +2217,73 @@ body[data-verrou="oui"] {
 .j-dit {
   text-shadow: 0 0 12px rgba(0, 0, 0, 0.9);
 }
+
+/* --- le réveil qui sonne sur le Mac ----------------------------------------------------------------- */
+.alarme-ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 45%, rgba(255, 120, 30, 0.35), rgba(3, 6, 13, 0.95) 65%);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #fff;
+  animation: al-pulse 1.6s ease-in-out infinite;
+}
+@keyframes al-pulse {
+  50% {
+    background-color: rgba(255, 80, 20, 0.12);
+  }
+}
+.al-boite {
+  text-align: center;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+.al-icone {
+  font-size: 72px;
+  animation: al-sonne 0.5s ease-in-out infinite alternate;
+}
+@keyframes al-sonne {
+  from {
+    transform: rotate(-12deg);
+  }
+  to {
+    transform: rotate(12deg);
+  }
+}
+.al-boite h1 {
+  margin: 0;
+  font-size: clamp(42px, 9vw, 96px);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 30px #ff8a2b;
+}
+.al-heure {
+  font-family: var(--mono);
+  font-size: clamp(36px, 7vw, 72px);
+  color: #ffd23f;
+}
+.al-aide {
+  margin: 8px 0 0;
+  color: #ffe2c4;
+}
+.alarme-ecran button {
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  padding: 16px 34px;
+  border-radius: 999px;
+  border: 0;
+  color: #1b1b2f;
+  background: linear-gradient(#ffd94f, #f5a21c);
+  box-shadow: 0 0 30px rgba(255, 170, 40, 0.7);
+  cursor: pointer;
+}
+.verrou.v-alarme {
+  background: radial-gradient(ellipse at 50% 40%, rgba(255, 110, 30, 0.35), #05070f 70%);
+}
+.verrou.v-alarme #v-titre {
+  color: #ffd23f;
+  animation: qg-clignote 1.2s infinite;
+}

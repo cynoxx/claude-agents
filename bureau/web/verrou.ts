@@ -43,12 +43,13 @@ export class EcranVerrou {
     } else this.statut(m.texte, m.ok);
   }
 
-  rendre(v: VerrouVue | undefined): void {
+  rendre(v: VerrouVue | undefined, alarme = false): void {
     this.vue = v;
     const verrouille = !!v?.verrouille;
     $("verrou").hidden = !verrouille;
     document.body.dataset.verrou = verrouille ? "oui" : "non";
-    if (v) $("v-titre").textContent = v.prenom ? `Bonjour ${v.prenom} ?` : "Max est verrouillé";
+    $("verrou").classList.toggle("v-alarme", alarme);
+    if (v) $("v-titre").textContent = alarme ? "⏰ Debout ! Regarde la caméra pour arrêter le réveil" : v.prenom ? `Bonjour ${v.prenom} ?` : "Max est verrouillé";
     $("j-visage").textContent = v?.enregistre ? "🔐 Visage" : "🔐 Activer le visage";
     $("j-visage").hidden = !v?.actif;
     if (!verrouille && this.camera.allumee) {

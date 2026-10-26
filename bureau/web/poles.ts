@@ -71,6 +71,10 @@ export class QG {
     });
     $("j-mails-carte").addEventListener("click", () => this.ouvrirMails());
     $("j-alarme").addEventListener("click", () => this.envoyer({ type: "pole", pole: "sante" }));
+    $("al-ok").addEventListener("click", () => this.envoyer({ type: "alarme", action: "confirmer" }));
+    setInterval(() => {
+      if (!$("alarme-ecran").hidden) $("al-heure").textContent = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    }, 1000);
   }
 
   rendre(etat: EtatBureau): void {
@@ -78,6 +82,10 @@ export class QG {
     this.rendreTuiles();
     this.rendreMails();
     const rv = etat.reveil;
+    // le réveil sonne sur le Mac : grand écran « Debout ! » (sauf verrouillé : l'écran du visage s'en charge)
+    const sonne = !!rv?.enCours && rv.mode !== "appel" && !etat.verrou?.verrouille;
+    $("alarme-ecran").hidden = !sonne;
+    if (sonne) $("al-heure").textContent = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     const pastille = $("j-alarme");
     pastille.hidden = !rv?.prochain;
     if (rv?.prochain) {
@@ -290,10 +298,16 @@ ${this.htmlReveil(e)}
     const heure = rv.prochain ? `${String(new Date(rv.prochain).getHours()).padStart(2, "0")}:${String(new Date(rv.prochain).getMinutes()).padStart(2, "0")}` : rv.heure;
     return `<div class="j-carte qf-reveil"><h3>Réveil <small>· Max t'appelle</small></h3>
 <div class="j-gros">⏰ ${rv.enCours ? "En cours…" : quandReveil(rv.prochain)}</div>
-<p class="j-petit">${rv.configure ? `D'habitude à ${rv.heure}. Décroche et écoute : sinon il rappelle toutes les 5 minutes.` : "Pas encore configuré : il faut ton numéro et un compte Twilio (README, section « Le réveil »)."}</p>
+<p class="j-petit">${
+      rv.mode === "appel"
+        ? rv.configure
+          ? `D'habitude à ${rv.heure}. Max t'appelle : décroche et écoute, sinon il rappelle toutes les 5 minutes.`
+          : "Pas encore configuré : il faut ton numéro et un compte Twilio (README, section « Le réveil »)."
+        : `D'habitude à ${rv.heure}. Max te réveille sur le Mac, de plus en plus fort : laisse-le ouvert et branché.`
+    }</p>
 <div class="qf-boutons"><button type="button" data-action="alarme-regler" data-heure="${decalerHeure(heure, -15)}">−15 min</button><button type="button" data-action="alarme-regler" data-heure="${decalerHeure(heure, 15)}">+15 min</button>${
       rv.prochain ? `<button type="button" data-action="alarme-annuler">Pas de réveil</button>` : ""
-    }${rv.configure ? `<button type="button" data-action="alarme-essayer">📞 Tester</button>` : ""}</div></div>`;
+    }${rv.configure ? `<button type="button" data-action="alarme-essayer">${rv.mode === "appel" ? "📞" : "🔔"} Tester</button>` : ""}</div></div>`;
   }
 
   private piedCorps(texte: string): void {
@@ -328,7 +342,7 @@ ${this.htmlReveil(e)}
       case "alarme-annuler":
         return this.envoyer({ type: "alarme", action: "annuler" });
       case "alarme-essayer":
-        el.textContent = "📞 Ça sonne…";
+        el.textContent = "🔔 Ça sonne…";
         return this.envoyer({ type: "alarme", action: "essayer" });
       case "main":
         this.mainVoulue = true;

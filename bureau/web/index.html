@@ -100,6 +100,16 @@
       </form>
     </section>
 
+    <div id="alarme-ecran" class="alarme-ecran" role="alertdialog" aria-label="Réveil" hidden>
+      <div class="al-boite">
+        <div class="al-icone" aria-hidden="true">⏰</div>
+        <h1>Debout !</h1>
+        <div id="al-heure" class="al-heure">--:--</div>
+        <p class="al-aide">Dis « Max, je suis réveillé », ou clique ici :</p>
+        <button type="button" id="al-ok">Je suis réveillé</button>
+      </div>
+    </div>
+
     <div id="mails-fenetre" class="mails-fenetre" role="dialog" aria-label="Tes mails" hidden>
       <div class="mails-boite">
         <button type="button" id="mf-fermer" class="v-fermer" aria-label="Fermer">×</button>

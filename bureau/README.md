@@ -130,13 +130,18 @@ Les séances sont gardées dans `~/Documents/Bureau/sport/seances.jsonl`, ta sem
 
 **Tu n'as rien à faire** : au démarrage, le Bureau cherche tout seul ton mp3 par son nom (par défaut « real gone ») dans Téléchargements, Bureau, Musique et Documents, puis avec Spotlight, et le range dans `~/Documents/Bureau/musique/max.mp3`. Il te le dit dans le Terminal (« 🎵 Musique de Max : trouvée… »), et l'intro affiche « Musique : EN LIGNE ». Pour une autre musique, change le mot cherché : `"musique": { "recherche": "mon-morceau" }`, ou mets ton MP3 à la main dans ce dossier. La même musique sert de fond à l'appel du réveil. Pour couper l'intro : `"musique": { "intro": false }` dans `bureau.config.json`.
 
-### Le réveil : Max t'appelle
+### Le réveil : Max te réveille
 
-Le matin, Max **t'appelle sur ton téléphone** : tu décroches, et tu entends sa voix sur ta musique (« Debout ! Il est 7 heures. Plus que 48 jours avant l'examen. Aujourd'hui, séance Jambes… »).
+Le matin, **Max te réveille sur le Mac**, gratuitement : sa voix sur ta musique (« Debout ! Il est 7 heures. Plus que 48 jours avant l'examen. Aujourd'hui, séance Jambes… »), **de plus en plus fort** (le volume du Mac monte de 60 à 100), toutes les 2 minutes, pendant 20 minutes au plus. Un grand écran « ⏰ Debout ! » s'affiche.
 
-- **L'heure** : 7 h par défaut. Le soir, quand tu lui dis bonne nuit, Max te propose l'heure qui garde tes 7 heures de sommeil. Tu peux aussi dire « Max, réveille-moi à 8 h demain », « pas de réveil demain », ou « mets mon réveil à 6 h 45 tous les jours ». L'heure s'affiche en haut de l'écran (⏰), et se règle aussi dans la fiche Sport & santé (−15 min, +15 min, pas de réveil, 📞 tester).
-- **Pour être considéré réveillé**, décroche et écoute au moins 20 secondes. Sinon (pas décroché, ta messagerie, ou tu raccroches tout de suite), il **rappelle toutes les 5 minutes**, 4 appels au plus. Dès que tu parles à Max, il arrête de rappeler.
-- **Le Mac doit rester allumé la nuit, ouvert et branché**, avec le Bureau ouvert : c'est lui qui passe l'appel. Le Bureau l'empêche de s'endormir la nuit d'un réveil (l'écran peut s'éteindre).
+- **Pour l'arrêter** : dis « Max, je suis réveillé », clique sur **Je suis réveillé**, ou, si Max est verrouillé, regarde la caméra (il faut être debout devant le Mac : c'est fait exprès). Le volume revient ensuite à ce qu'il était.
+- **L'heure** : 7 h par défaut. Le soir, quand tu lui dis bonne nuit, Max te propose l'heure qui garde tes 7 heures de sommeil. Tu peux aussi dire « Max, réveille-moi à 8 h demain », « pas de réveil demain », ou « mets mon réveil à 6 h 45 tous les jours ». L'heure s'affiche en haut de l'écran (⏰), et se règle aussi dans la fiche Sport & santé (−15 min, +15 min, pas de réveil, 🔔 tester).
+- **Le Mac doit rester ouvert, branché et allumé la nuit**, avec le Bureau lancé. Le Bureau l'empêche de s'endormir la nuit d'un réveil (l'écran, lui, peut s'éteindre). Par sécurité, garde aussi une alarme sur ton iPhone.
+- **Pour essayer tout de suite** : « Max, teste mon réveil », ou 🔔 Tester dans la fiche Sport & santé.
+
+#### En option : Max t'appelle sur ton téléphone
+
+Avec un compte Twilio **payant** (le compte d'essai ne permet pas le message de Max), Max peut aussi t'appeler. Mets `"mode": "les-deux"` dans la section `reveil` (le Mac d'abord, l'appel à partir de la 3e tentative), ou `"appel"` (l'appel seul). Tu décroches et tu écoutes son message (sa voix sur ta musique) ; sinon il rappelle toutes les 5 minutes, 4 appels au plus.
 
 **Le régler (une fois, 10 minutes)** : l'appel passe par **Twilio**, un service d'appels. Il faut environ 1 € par mois pour le numéro, et quelques centimes par appel.
 
@@ -148,6 +153,7 @@ Le matin, Max **t'appelle sur ton téléphone** : tu décroches, et tu entends s
 
 ```json
 "reveil": {
+  "mode": "les-deux",
   "telephone": "+33612345678",
   "heure": "07:00",
   "twilio": { "compte": "AC…", "jeton": "ton Auth Token", "numero": "+1…" }

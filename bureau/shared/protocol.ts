@@ -200,8 +200,10 @@ export interface TempsPole {
 
 /** Le réveil par appel. */
 export interface ReveilVue {
-  /** Ton numéro et Twilio sont réglés. */
+  /** Le réveil est prêt (sur le Mac, ou par appel avec ton numéro et Twilio). */
   configure: boolean;
+  /** Max te réveille sur le Mac, par appel, ou les deux. */
+  mode: "mac" | "appel" | "les-deux";
   /** L'heure habituelle (« 07:00 »). */
   heure: string;
   /** Le prochain appel (ISO), ou null. */
@@ -258,7 +260,7 @@ export type ClientMessage =
   | { type: "seance"; seance: string; jour?: string }
   | { type: "semaine-sport"; jour: number; seance: string }
   | { type: "trier-mails" }
-  | { type: "alarme"; action: "regler" | "annuler" | "essayer"; heure?: string }
+  | { type: "alarme"; action: "regler" | "annuler" | "essayer" | "confirmer"; heure?: string }
   | { type: "fin-session" }
   | { type: "vue"; vue: VueEcran }
   | { type: "visage-verifier"; descripteur: number[]; vivant: boolean }

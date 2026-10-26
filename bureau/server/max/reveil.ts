@@ -1,8 +1,9 @@
-// Le réveil : Max t'appelle sur ton téléphone à l'heure prévue (7 h par défaut ; il la règle avec toi le soir).
-// Tu décroches et tu écoutes son message (sa voix sur ta musique) : il te considère réveillé. Tu ne décroches pas,
-// c'est ton répondeur, ou tu raccroches tout de suite : il rappelle toutes les 5 minutes (4 appels au plus).
-// Un mot à Max pendant ce temps (« je suis réveillé ») arrête les rappels.
-// L'appel part du Bureau : le Mac doit rester allumé la nuit (le Bureau l'empêche de s'endormir quand il est branché).
+// Le réveil : à l'heure prévue (7 h par défaut ; Max la règle avec toi le soir), Max te réveille.
+// - Sur le Mac (mode « mac », gratuit) : sa voix sur ta musique, de plus en plus fort, toutes les 2 minutes.
+//   Tu l'arrêtes en lui parlant, avec le bouton de la page, ou en te laissant reconnaître par la caméra.
+// - Par un appel sur ton téléphone (mode « appel », Twilio payant) : tu décroches et tu écoutes son message ; sinon il
+//   rappelle toutes les 5 minutes (4 appels au plus). Mode « les-deux » : le Mac d'abord, l'appel s'il insiste.
+// Le Mac doit rester allumé la nuit (le Bureau l'empêche de s'endormir quand il est branché).
 import { spawn, type ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
@@ -50,10 +51,27 @@ export function estReveille(e: EtatAppel): boolean {
   return e.statut === "completed" && e.duree >= DUREE_REVEILLE_S && !(e.reponduPar ?? "").startsWith("machine") && e.reponduPar !== "fax";
 }
 
-/** Événements : `etat` ; `preparer` (avant l'appel) ; `reveille` ; `echec` (personne n'a répondu). */
+export type ModeReveil = "mac" | "appel" | "les-deux";
+
+/** En mode « les-deux », l'appel ne part qu'à la 3e tentative : le Mac a eu 4 minutes pour te réveiller. */
+const ESSAI_DU_PREMIER_APPEL = 3;
+
+interface EnCours {
+  cible: number;
+  essai: number;
+  appels: number;
+  prochain: number;
+  test: boolean;
+  message: Promise<string> | null;
+}
+
+/**
+ * Événements : `etat` ; `preparer` (avant l'appel) ; `sonne` ({ essai, heure, test }) : le Mac doit sonner ;
+ * `reveille` ({ parole }) ; `echec` (personne n'a répondu).
+ */
 export class Reveil extends EventEmitter {
   private tic?: NodeJS.Timeout;
-  private enCours: { cible: number; essai: number; prochain: number; message: Promise<string> | null } | null = null;
+  private enCours: EnCours | null = null;
   private appelEnCours = false;
   private caffeinate: ChildProcess | null = null;
   private preparePour = 0;
@@ -66,8 +84,13 @@ export class Reveil extends EventEmitter {
       telephone: string | null;
       appelleur: AppelleurLike | null;
       heureDefaut: string;
+      /** « mac » (gratuit), « appel » (Twilio) ou « les-deux » ; « appel » par défaut. */
+      mode?: ModeReveil;
       rappelMinutes: number;
       essais: number;
+      /** Sur le Mac : minutes entre deux tentatives (2 par défaut) et nombre de tentatives (10). */
+      rappelMacMinutes?: number;
+      essaisMac?: number;
       /** Le TwiML de l'appel (préparé : message audio sur la musique, sinon texte lu). */
       preparer: (heure: Date) => Promise<string>;
       /** Garder le Mac éveillé la nuit (`caffeinate`), seulement sur Mac. */
@@ -78,8 +101,22 @@ export class Reveil extends EventEmitter {
     super();
   }
 
+  get mode(): ModeReveil {
+    return this.o.mode ?? "appel";
+  }
+
+  /** Max te réveille sur le Mac. */
+  get macActif(): boolean {
+    return this.mode !== "appel";
+  }
+
+  /** Max t'appelle sur ton téléphone (il faut ton numéro et Twilio). */
+  get appelActif(): boolean {
+    return this.mode !== "mac" && !!this.o.telephone && !!this.o.appelleur;
+  }
+
   get configure(): boolean {
-    return !!this.o.telephone && !!this.o.appelleur;
+    return this.macActif || this.appelActif;
   }
 
   demarrer(): void {
@@ -176,13 +213,14 @@ export class Reveil extends EventEmitter {
 
   vue(): ReveilVue {
     const p = this.prochain();
-    return { configure: this.configure, heure: this.lire().heure, prochain: p ? p.toISOString() : null, enCours: !!this.enCours };
+    return { configure: this.configure, mode: this.mode, heure: this.lire().heure, prochain: p ? p.toISOString() : null, enCours: !!this.enCours };
   }
 
   /** Pour Max. */
   decrire(): string {
+    const comment = this.macActif ? (this.appelActif ? "sur le Mac puis par appel" : "sur le Mac") : "par appel";
     if (!this.configure) return `Réveil par appel : pas configuré (il faut un compte Twilio et son numéro dans bureau.config.json). Heure prévue : ${this.decrireProchain()}.`;
-    return `Réveil par appel : prochain ${this.decrireProchain()} (heure habituelle ${this.lire().heure}).${this.enCours ? " Un réveil est en cours (il n'a pas encore confirmé)." : ""}`;
+    return `Réveil ${comment} : prochain ${this.decrireProchain()} (heure habituelle ${this.lire().heure}).${this.enCours ? " Un réveil est en cours (il n'a pas encore confirmé)." : ""}`;
   }
 
   // --- l'appel ------------------------------------------------------------------------------------------
@@ -195,8 +233,16 @@ export class Reveil extends EventEmitter {
     this.emit("etat");
   }
 
-  /** Un appel d'essai, tout de suite (pour vérifier que tout marche). */
+  /** Un essai tout de suite, pour vérifier que tout marche : le Mac sonne, ou (mode appel) ton téléphone. */
   async essayer(): Promise<Reponse> {
+    if (this.enCours) return { ok: false, texte: "Un réveil est déjà en cours." };
+    if (this.macActif) {
+      const e: EnCours = { cible: Date.now(), essai: 0, appels: 0, prochain: Date.now(), test: true, message: null };
+      this.enCours = e;
+      this.emit("etat");
+      void this.tenter(e);
+      return { ok: true, texte: "Essai du réveil : le Mac sonne. Arrête-le en disant « Max, je suis réveillé », avec le bouton de la page, ou en te laissant reconnaître par la caméra." };
+    }
     if (!this.configure) return { ok: false, texte: "Le réveil par appel n'est pas configuré : il faut ton numéro et un compte Twilio dans bureau.config.json (voir le README)." };
     try {
       const twiml = await this.o.preparer(new Date());
@@ -213,8 +259,8 @@ export class Reveil extends EventEmitter {
     const p = this.prochain(new Date(maintenant - 30 * MINUTE));
     this.garderLeMacEveille(!!p && p.getTime() - maintenant < VEILLE_MS && this.configure);
     if (!this.configure) return;
-    // le message est préparé 10 minutes avant
-    if (p && p.getTime() - maintenant <= PREPARATION_MS && this.preparePour !== p.getTime()) {
+    // le message de l'appel est préparé 10 minutes avant
+    if (this.appelActif && p && p.getTime() - maintenant <= PREPARATION_MS && this.preparePour !== p.getTime()) {
       this.preparePour = p.getTime();
       this.message = this.o.preparer(p);
       this.message.catch(() => {});
@@ -222,12 +268,12 @@ export class Reveil extends EventEmitter {
     }
     // l'heure est arrivée
     if (p && maintenant >= p.getTime() && maintenant - p.getTime() < 30 * MINUTE && this.enCours?.cible !== p.getTime() && !this.dejaFait(p)) {
-      this.enCours = { cible: p.getTime(), essai: 0, prochain: maintenant, message: this.preparePour === p.getTime() ? this.message : null };
+      this.enCours = { cible: p.getTime(), essai: 0, appels: 0, prochain: maintenant, test: false, message: this.preparePour === p.getTime() ? this.message : null };
       this.marquerFait(p);
       this.emit("etat");
     }
     const e = this.enCours;
-    if (e && !this.appelEnCours && maintenant >= e.prochain) await this.appeler(e);
+    if (e && !this.appelEnCours && maintenant >= e.prochain) await this.tenter(e);
   }
 
   private dejaFait(p: Date): boolean {
@@ -243,35 +289,43 @@ export class Reveil extends EventEmitter {
     fs.writeFileSync(path.join(this.o.dossierDonnees, "reveil-fait"), String(p.getTime()));
   }
 
-  private async appeler(e: NonNullable<Reveil["enCours"]>): Promise<void> {
+  /** Une tentative : le Mac sonne (mode mac) et/ou le téléphone (mode appel), puis la suivante est programmée. */
+  private async tenter(e: EnCours): Promise<void> {
     this.appelEnCours = true;
     e.essai++;
+    if (this.macActif) this.emit("sonne", { essai: e.essai, heure: new Date(e.cible), test: e.test });
     let reveille = false;
-    try {
-      const twiml = await (e.message ?? this.o.preparer(new Date(e.cible)));
-      const sid = await this.o.appelleur!.appeler(this.o.telephone!, twiml);
-      for (let i = 0; i < 40; i++) {
-        await new Promise((r) => setTimeout(r, this.o.attentePoll ?? 5000));
-        if (this.enCours !== e) break;
-        const etat = await this.o.appelleur!.etat(sid);
-        if (STATUTS_FINAUX.has(etat.statut)) {
-          reveille = estReveille(etat);
-          break;
+    const appeler = this.appelActif && !e.test && e.appels < this.o.essais && (this.mode === "appel" || e.essai >= ESSAI_DU_PREMIER_APPEL);
+    if (appeler) {
+      e.appels++;
+      try {
+        const twiml = await (e.message ?? this.o.preparer(new Date(e.cible)));
+        const sid = await this.o.appelleur!.appeler(this.o.telephone!, twiml);
+        for (let i = 0; i < 40; i++) {
+          await new Promise((r) => setTimeout(r, this.o.attentePoll ?? 5000));
+          if (this.enCours !== e) break;
+          const etat = await this.o.appelleur!.etat(sid);
+          if (STATUTS_FINAUX.has(etat.statut)) {
+            reveille = estReveille(etat);
+            break;
+          }
         }
+      } catch {
+        // un appel raté compte comme un essai
       }
-    } catch {
-      // un appel raté compte comme un essai
     }
     this.appelEnCours = false;
     if (this.enCours !== e) return;
+    const maxEssais = this.mode === "appel" ? this.o.essais : (this.o.essaisMac ?? 10);
     if (reveille) {
       this.enCours = null;
       this.emit("reveille", { parole: false });
-    } else if (e.essai >= this.o.essais) {
+    } else if (e.essai >= maxEssais) {
       this.enCours = null;
       this.emit("echec");
     } else {
-      e.prochain = Date.now() + this.o.rappelMinutes * MINUTE;
+      const minutes = this.mode === "appel" ? this.o.rappelMinutes : (this.o.rappelMacMinutes ?? 2);
+      e.prochain = Date.now() + minutes * MINUTE;
     }
     this.emit("etat");
   }

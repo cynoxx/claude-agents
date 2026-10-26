@@ -22,6 +22,10 @@ import { Sport } from "./max/sport.ts";
 import { Musique } from "./max/musique.ts";
 import { Reveil } from "./max/reveil.ts";
 import { creerTwilio, preparateurReveil } from "./max/reveil-montage.ts";
+import { ReveilMac, type SonnerieMac } from "./max/reveil-mac.ts";
+import { texteReveil } from "./max/message-reveil.ts";
+import { echeances } from "./max/coach.ts";
+import { seance } from "../shared/sport.ts";
 import { Visage } from "./max/visage.ts";
 import { ecrireConfigMcp } from "./max/mcp-config.ts";
 import { MissionManager } from "./mission.ts";
@@ -96,6 +100,7 @@ const reveil = new Reveil({
   telephone: config.reveil.telephone,
   appelleur: twilio,
   heureDefaut: config.reveil.heure,
+  mode: config.reveil.mode,
   rappelMinutes: config.reveil.rappelMinutes,
   essais: config.reveil.essais,
   garderEveille: process.platform === "darwin",
@@ -123,8 +128,24 @@ const assistant = new Assistant({
   ...(config.musique.intro ? { intro: () => musique.jouerIntro() } : {}),
   reveil,
 });
-// réveillé par l'appel, ou il parle à Max : plus de rappels ; Max le saura à son prochain message
+// le réveil sur le Mac : sa voix sur ta musique, de plus en plus fort
+const reveilMac = new ReveilMac({
+  mac,
+  musique,
+  bouche,
+  premierMessage: (heure) =>
+    texteReveil({ prenom: verrou.vue().prenom, heure, echeance: echeances(profil(), heure)[0] ?? null, seance: seance(sport.vue(heure).prevue)?.nom ?? null }),
+  verrou,
+  ecouter: () => assistant.reveiller(false),
+  ouvrirPage: () => ouvrirDansFinder(`http://localhost:${config.port}`),
+  prenom: () => verrou.vue().prenom,
+});
+reveil.on("sonne", (s: SonnerieMac) => void reveilMac.sonner(s));
+reveil.on("reveille", () => void reveilMac.arreter());
+reveil.on("echec", () => void reveilMac.arreter());
+// réveillé : il parle à Max, ou il se laisse reconnaître par la caméra ; plus de rappels
 assistant.on("parole", () => reveil.confirmer());
+verrou.on("deverrouille", () => reveil.confirmer());
 reveil.on("reveille", (r: { parole: boolean }) => !r.parole && assistant.informer("Il vient d'être réveillé par ton appel de ce matin (il a décroché et écouté)."));
 reveil.on("echec", () => assistant.informer(`Il n'a répondu à aucun des ${config.reveil.essais} appels du réveil ce matin.`));
 // il arrive (réveil avec accueil) : ses mails sont triés pendant que Max le salue

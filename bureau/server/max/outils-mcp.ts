@@ -419,7 +419,7 @@ serveur.registerTool(
   "regler_reveil",
   {
     description:
-      "Règle l'heure à laquelle tu l'appelles sur son téléphone pour le réveiller. Par défaut, seulement le prochain réveil (« demain à 8 h ») ; tous_les_jours pour changer son heure habituelle.",
+      "Règle l'heure de son réveil (sur le Mac, et par appel si configuré). Par défaut, seulement le prochain réveil (« demain à 8 h ») ; tous_les_jours pour changer son heure habituelle.",
     inputSchema: {
       heure: z.string().describe("HH:MM, par exemple 07:00"),
       tous_les_jours: z.boolean().default(false).describe("true pour changer l'heure de tous les jours"),
@@ -429,6 +429,6 @@ serveur.registerTool(
 );
 serveur.registerTool("annuler_reveil", { description: "Pas de réveil la prochaine fois (par exemple un jour sans cours)." }, async () => appeler("POST", "/api/outils/annuler-reveil"));
 serveur.registerTool("etat_reveil", { description: "Le prochain réveil prévu, et si le réveil par appel est configuré." }, async () => appeler("GET", "/api/outils/reveil"));
-serveur.registerTool("essayer_reveil", { description: "Un appel d'essai tout de suite, quand il veut vérifier que le réveil marche." }, async () => appeler("POST", "/api/outils/essai-reveil"));
+serveur.registerTool("essayer_reveil", { description: "Un essai du réveil tout de suite (le Mac sonne, ou son téléphone en mode appel), quand il veut vérifier que ça marche." }, async () => appeler("POST", "/api/outils/essai-reveil"));
 
 await serveur.connect(new StdioServerTransport());

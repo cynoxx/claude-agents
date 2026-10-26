@@ -195,6 +195,8 @@ export function createBureauServer(o: {
         mission: null,
         verrou,
         jarvis: { meteo: o.jarvis?.vue().meteo ?? null, agenda: null },
+        // le réveil sonne : l'écran verrouillé le dit (sans rien de personnel)
+        ...(o.reveil ? { reveil: o.reveil.vue() } : {}),
         ...(a ? { assistant: { etat: "veille", phrase: a.phrase, messages: [], oreille: a.oreille, bouche: a.bouche, cerveau: a.cerveau, vue: "jarvis" } } : {}),
       };
     }
@@ -349,6 +351,10 @@ export function createBureauServer(o: {
           const rv = o.reveil;
           if (!rv) {
             r = { ok: false, erreur: "Le réveil n'est pas disponible." };
+            break;
+          }
+          if (msg.action === "confirmer") {
+            rv.confirmer();
             break;
           }
           const ra = msg.action === "annuler" ? rv.annulerProchain() : msg.action === "essayer" ? await rv.essayer() : rv.regler(String(msg.heure ?? ""));

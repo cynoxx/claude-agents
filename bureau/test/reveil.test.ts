@@ -161,6 +161,95 @@ describe("Reveil", () => {
   });
 });
 
+describe("Reveil sur le Mac", () => {
+  let d: string;
+  let tel: FauxAppelleur;
+  let r: Reveil;
+  let sonneries: { essai: number; test: boolean }[];
+  const creer = (mode: "mac" | "les-deux", o: Partial<ConstructorParameters<typeof Reveil>[0]> = {}) => {
+    const rv = new Reveil({
+      dossierDonnees: d,
+      telephone: mode === "les-deux" ? "+33612345678" : null,
+      appelleur: mode === "les-deux" ? tel : null,
+      heureDefaut: "07:00",
+      mode,
+      rappelMinutes: 5,
+      essais: 2,
+      rappelMacMinutes: 2,
+      essaisMac: 5,
+      attentePoll: 10,
+      preparer: async () => "<Response/>",
+      ...o,
+    });
+    rv.on("sonne", (s: { essai: number; test: boolean }) => sonneries.push({ essai: s.essai, test: s.test }));
+    return rv;
+  };
+  beforeEach(() => {
+    vi.useFakeTimers({ now: local("2026-10-27", "06:59") });
+    d = tmp();
+    tel = new FauxAppelleur();
+    sonneries = [];
+  });
+  afterEach(() => {
+    r.fermer();
+    vi.useRealTimers();
+  });
+
+  it("est prêt sans Twilio, sonne toutes les 2 minutes, puis abandonne", async () => {
+    r = creer("mac");
+    expect(r.vue()).toMatchObject({ configure: true, mode: "mac" });
+    let echecs = 0;
+    r.on("echec", () => echecs++);
+    r.demarrer();
+    await vi.advanceTimersByTimeAsync(90_000);
+    expect(sonneries.map((x) => x.essai)).toEqual([1]);
+    expect(r.vue().enCours).toBe(true);
+    await vi.advanceTimersByTimeAsync(2 * 60_000);
+    expect(sonneries.map((x) => x.essai)).toEqual([1, 2]);
+    await vi.advanceTimersByTimeAsync(20 * 60_000);
+    expect(sonneries).toHaveLength(5);
+    expect(echecs).toBe(1);
+    expect(tel.appels).toHaveLength(0);
+  });
+
+  it("s'arrête quand il est réveillé (il parle, clique, ou se laisse reconnaître)", async () => {
+    r = creer("mac");
+    const reveils: unknown[] = [];
+    r.on("reveille", (x) => reveils.push(x));
+    r.demarrer();
+    await vi.advanceTimersByTimeAsync(90_000);
+    r.confirmer();
+    await vi.advanceTimersByTimeAsync(20 * 60_000);
+    expect(sonneries).toHaveLength(1);
+    expect(reveils).toEqual([{ parole: true }]);
+  });
+
+  it("les deux : le Mac d'abord, l'appel seulement à partir de la 3e tentative", async () => {
+    r = creer("les-deux");
+    r.demarrer();
+    await vi.advanceTimersByTimeAsync(90_000);
+    await vi.advanceTimersByTimeAsync(2 * 60_000);
+    expect(sonneries).toHaveLength(2);
+    expect(tel.appels).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(2 * 60_000);
+    expect(tel.appels).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(20 * 60_000);
+    expect(tel.appels).toHaveLength(2); // pas plus que « essais » appels
+  });
+
+  it("un essai fait sonner le Mac tout de suite, sans appeler", async () => {
+    vi.setSystemTime(local("2026-10-26", "18:00"));
+    r = creer("les-deux");
+    expect((await r.essayer()).texte).toContain("le Mac sonne");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sonneries).toEqual([{ essai: 1, test: true }]);
+    expect((await r.essayer()).ok).toBe(false); // déjà en cours
+    r.confirmer();
+    expect(r.vue().enCours).toBe(false);
+    expect(tel.appels).toHaveLength(0);
+  });
+});
+
 describe("Twilio", () => {
   it("passe l'appel avec la détection du répondeur, et lit son état", async () => {
     const requetes: { url: string; method: string; body?: string; auth: string }[] = [];

@@ -1,7 +1,7 @@
 // La musique de Max (ton fichier, par exemple `~/Documents/Bureau/musique/max.mp3`) : l'intro jouée sur le Mac quand
 // Max se lance, et le fond musical de l'appel du réveil. ffmpeg prépare les extraits (une fois, gardés en cache) :
 // la musique démarre fort, puis baisse pour laisser parler Max, et s'éteint en fondu.
-import { execFile, spawn } from "node:child_process";
+import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import os from "node:os";
@@ -57,6 +57,7 @@ export function argsMixReveil(musique: string, voix: string, sortie: string, dur
 /** Événement : `intro` (moment, en ms) quand l'intro démarre, pour l'animation de la page. */
 export class Musique extends EventEmitter {
   private executer: Executer;
+  private lecture: ChildProcess | null = null;
 
   constructor(
     private o: {
@@ -142,6 +143,22 @@ export class Musique extends EventEmitter {
       if (f) spawn(lecteur, [f], { stdio: "ignore" }).on("error", () => {});
     });
     return PAROLE_APRES_MS;
+  }
+
+  /** Joue un fichier sur le Mac (le réveil) ; arrête la lecture précédente. false hors Mac. */
+  jouerFichier(fichier: string): boolean {
+    this.arreterLecture();
+    if (!this.o.lecteur || !fs.existsSync(fichier)) return false;
+    const p = spawn(this.o.lecteur, [fichier], { stdio: "ignore" });
+    p.on("error", () => {});
+    p.on("exit", () => this.lecture === p && (this.lecture = null));
+    this.lecture = p;
+    return true;
+  }
+
+  arreterLecture(): void {
+    this.lecture?.kill();
+    this.lecture = null;
   }
 
   /** Mixe un message (WAV) sur la musique, pour l'appel du réveil ; null sans musique ou si ffmpeg échoue. */

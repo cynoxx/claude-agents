@@ -407,6 +407,14 @@ export class Mac {
     return { ok: true, texte: n === "muet" ? "Son coupé." : `Volume à ${r.stdout.trim() || n}.` };
   }
 
+  /** Le volume actuel (0 à 100), pour le remettre après le réveil ; null hors Mac ou en cas d'erreur. */
+  async lireVolume(): Promise<number | null> {
+    if (this.horsMac()) return null;
+    const r = await this.osa(["return output volume of (get volume settings)"]);
+    const n = Number(r.stdout.trim());
+    return r.code === 0 && Number.isFinite(n) ? n : null;
+  }
+
   async luminosite(sens: "plus" | "moins", crans = 2): Promise<Reponse> {
     if (this.horsMac()) return this.horsMac()!;
     if (sens !== "plus" && sens !== "moins") return { ok: false, texte: "Dis plus ou moins." };

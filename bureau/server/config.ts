@@ -59,6 +59,8 @@ export interface BureauConfig {
 }
 
 export interface ReveilConfig {
+  /** « mac » : Max te réveille sur le Mac (gratuit) ; « appel » : il t'appelle (Twilio) ; « les-deux » : le Mac, puis l'appel. */
+  mode: "mac" | "appel" | "les-deux";
   /** Ton numéro, au format international (+33612345678) ; null = pas de réveil par appel. */
   telephone: string | null;
   /** L'heure habituelle ; Max la change avec toi le soir. */
@@ -111,7 +113,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   tempsParJour: { business: 60 },
   objectifsParJour: { etudes: 360 },
   musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true, recherche: "real.?gone" },
-  reveil: { telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "", cle: "" } },
+  reveil: { mode: "mac", telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "", cle: "" } },
 };
 
 export function expandHome(p: string): string {

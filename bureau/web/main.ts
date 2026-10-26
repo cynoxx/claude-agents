@@ -53,7 +53,7 @@ function connecter(): void {
   ws.onmessage = (e) => {
     const msg: ServerMessage = JSON.parse(e.data);
     if (msg.type === "etat") {
-      verrou.rendre(msg.etat.verrou);
+      verrou.rendre(msg.etat.verrou, !!msg.etat.reveil?.enCours && msg.etat.reveil.mode !== "appel");
       ui.rendre(msg.etat);
       hud.rendre(msg.etat.assistant?.coach);
       jarvis.rendre(msg.etat);
