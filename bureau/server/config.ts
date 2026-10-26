@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { CONSEILLERS_DEFAUT, type ConseillerDef } from "./max/conseillers.ts";
 import type { FenetreConfig } from "./fenetre.ts";
+import type { ElevenLabsConfig } from "./voix/elevenlabs.ts";
 
 export interface Projet {
   nom: string;
@@ -18,8 +19,13 @@ export interface VoixConfig {
   modele: string | null;
   /** Micro au format avfoundation (ex. ":1") ; null = choisi automatiquement. */
   micro: string | null;
-  /** « auto » : la voix Piper si elle est installée (`npm run voix`), sinon `say` ; ou imposer l'un des deux. */
-  moteur: "auto" | "piper" | "say";
+  /**
+   * « auto » : ElevenLabs si une voix est choisie (`npm run voix-humaine`), sinon Piper s'il est installé
+   * (`npm run voix`), sinon `say` ; ou imposer l'un d'eux.
+   */
+  moteur: "auto" | "elevenlabs" | "piper" | "say";
+  /** La voix humaine de Max (ElevenLabs, dans le nuage). */
+  elevenlabs: ElevenLabsConfig;
   /** La voix Piper (un nom de rhasspy/piper-voices). */
   voixPiper: string;
   /** Vitesse de la voix Piper (1 = normale, 1.1 = un peu plus rapide). */
@@ -101,6 +107,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
     modele: null,
     micro: null,
     moteur: "auto",
+    elevenlabs: { cle: "", voix: null, nomVoix: null, modele: "eleven_multilingual_v2", stabilite: 0.45, similarite: 0.8, style: 0.2, vitesse: 1 },
     voixPiper: "fr_FR-tom-medium",
     vitessePiper: 1,
     voixMac: null,
@@ -159,7 +166,7 @@ export function loadConfig(dir: string): BureauConfig {
     projets: (user.projets ?? DEFAULT_CONFIG.projets).map((p) => ({ nom: p.nom, chemin: expandHome(p.chemin) })),
     modeles: { ...DEFAULT_CONFIG.modeles, ...user.modeles },
     limites: { ...DEFAULT_CONFIG.limites, ...user.limites },
-    voix: { ...DEFAULT_CONFIG.voix, ...user.voix },
+    voix: { ...DEFAULT_CONFIG.voix, ...user.voix, elevenlabs: { ...DEFAULT_CONFIG.voix.elevenlabs, ...user.voix?.elevenlabs } },
     mac: { ...DEFAULT_CONFIG.mac, ...user.mac },
     visage: { ...DEFAULT_CONFIG.visage, ...user.visage },
     tempsParJour: { ...DEFAULT_CONFIG.tempsParJour, ...user.tempsParJour },

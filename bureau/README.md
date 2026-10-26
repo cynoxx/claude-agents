@@ -201,6 +201,26 @@ Dans `bureau.config.json` :
 
 `tempsParJour` est la limite en minutes par jour (0 = pas de limite) ; `objectifsParJour` est la barre à remplir (6 h d'études).
 
+## Une voix vraiment humaine pour Max (ElevenLabs)
+
+Piper est gratuit mais sonne un peu robot. Pour une voix qu'on ne distingue presque pas d'un vrai doubleur :
+
+```bash
+cd ~/claude-agents/bureau
+npm run voix-humaine
+```
+
+1. Crée un compte sur **https://elevenlabs.io** (le plan gratuit suffit pour essayer), puis ton profil → **API Keys** → **Create API Key** (laisse toutes les permissions). Colle la clé quand la commande la demande.
+2. La commande te fait **écouter 6 voix françaises d'homme, graves et posées**. Tape le numéro de celle que tu veux (`e3` pour réécouter la 3).
+3. Max te dit une phrase avec cette voix. **o** pour la garder.
+4. `npm run arreter`, puis « Dis Siri, Max au rapport ».
+
+**Ce que ça coûte** : chaque phrase de Max est envoyée à ElevenLabs, qui compte les caractères. Le plan gratuit donne environ 10 000 caractères par mois (une dizaine de minutes de parole : vite épuisé si tu parles beaucoup à Max) ; le plan Starter (~5 $/mois) 30 000, Creator (~22 $/mois) 100 000. Pour dépenser deux fois moins, mets `"modele": "eleven_flash_v2_5"` dans `voix.elevenlabs` (un peu moins naturel). Les phrases courtes qui reviennent (« Je t'écoute. ») sont gardées sur le Mac et ne coûtent qu'une fois.
+
+**Quand le quota est épuisé ou qu'internet coupe**, Max reprend tout seul sa voix d'avant (Piper, sinon celle du Mac), puis revient à ElevenLabs. Le terminal du Bureau et le panneau de Max disent ce qui reste ce mois-ci. Pour revenir à Piper pour de bon : `"moteur": "piper"` dans la section `voix` de `bureau.config.json`. Réglages fins dans `voix.elevenlabs` : `stabilite` (plus bas = plus expressif), `style`, `vitesse`.
+
+Ta clé reste dans `bureau.config.json`, sur ton Mac (jamais sur GitHub).
+
 ## Parler à Max
 
 Commence ta phrase par **« Max »** (ou « Dis Max », « Hé Max ») : il ne réagit qu'à ça, pour ne pas te répondre quand tu parles à quelqu'un d'autre.

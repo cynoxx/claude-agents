@@ -29,8 +29,11 @@ export interface OptionsBouche {
   voix: string | null;
   /** Mots par minute. */
   debit: number;
-  /** La voix Piper : le moteur, le lecteur de WAV (`afplay`), un dossier pour les fichiers, le nom de la voix. */
-  piper?: { moteur: PiperLike; lecteur: string; dossier: string; nom: string };
+  /**
+   * La voix « en fichiers » (Piper, ou ElevenLabs avec ses secours) : le moteur, le lecteur de WAV (`afplay`), un
+   * dossier pour les fichiers, le nom de la voix, et de quoi la décrire après le démarrage.
+   */
+  piper?: { moteur: PiperLike; lecteur: string; dossier: string; nom: string; decrire?: () => string };
 }
 
 interface Phrase {
@@ -68,7 +71,7 @@ export class Bouche extends EventEmitter {
         fs.mkdirSync(this.o.piper.dossier, { recursive: true });
         this.avecPiper = true;
         this.disponible = true;
-        return { ok: true, detail: `Voix : ${this.o.piper.nom} (Piper)` };
+        return { ok: true, detail: this.o.piper.decrire?.() ?? `Voix : ${this.o.piper.nom} (Piper)` };
       } catch (e) {
         soucisPiper = ` (la voix Piper n'a pas démarré : ${(e as Error).message})`;
       }
