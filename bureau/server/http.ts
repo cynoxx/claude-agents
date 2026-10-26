@@ -6,7 +6,10 @@ import { WebSocketServer, type WebSocket } from "ws";
 import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
 import type { BureauConfig } from "./config.ts";
 import type { MissionManager } from "./mission.ts";
+import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
 import { listMissions } from "./storage.ts";
+
+export type { AssistantApi } from "./routes-max.ts";
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -36,9 +39,13 @@ export function createBureauServer(o: {
   manager: MissionManager;
   webDir: string;
   ouvrir?: (p: string) => void;
+  /** Jeton exigé par les routes qui agissent (réveil, outils de Max). Sans jeton, elles sont refusées. */
+  jeton?: string;
+  assistant?: AssistantApi;
 }): http.Server {
   const root = path.resolve(o.config.dossierMissions);
   const ouvrir = o.ouvrir ?? ouvrirDansFinder;
+  const traiterMax = routesMax(o);
 
   const envoyerFichier = (res: http.ServerResponse, fichier: string) => {
     if (!fs.existsSync(fichier) || !fs.statSync(fichier).isFile()) return fin(res, 404, "Introuvable");
@@ -65,6 +72,11 @@ export function createBureauServer(o: {
       chemin = decodeURIComponent(url.pathname);
     } catch {
       return fin(res, 400, "Adresse invalide");
+    }
+
+    if (estRouteMax(chemin)) {
+      traiterMax(req, res, chemin, url).catch(() => fin(res, 500, "Erreur interne"));
+      return;
     }
 
     if (chemin === "/api/missions") {
@@ -97,17 +109,21 @@ export function createBureauServer(o: {
   // le WebSocketServer relaie les erreurs du serveur HTTP (ex. port pris) : c'est `server.on("error")` qui les traite
   wss.on("error", () => {});
   const envoyer = (ws: WebSocket, msg: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(msg));
-  const diffuser = (etat: ReturnType<MissionManager["snapshot"]>) => {
+  const etatComplet = () => ({ ...o.manager.snapshot(), assistant: o.assistant?.vue() });
+  const diffuser = () => {
+    const etat = etatComplet();
     for (const ws of wss.clients) envoyer(ws, { type: "etat", etat });
   };
   o.manager.on("etat", diffuser);
+  o.assistant?.on("etat", diffuser);
   server.on("close", () => {
     o.manager.off("etat", diffuser);
+    o.assistant?.off("etat", diffuser);
     wss.close();
   });
 
   wss.on("connection", (ws) => {
-    envoyer(ws, { type: "etat", etat: o.manager.snapshot() });
+    envoyer(ws, { type: "etat", etat: etatComplet() });
     ws.on("message", (data) => {
       let msg: ClientMessage;
       try {
@@ -131,6 +147,21 @@ export function createBureauServer(o: {
           const dir = nom ? dedans(root, path.basename(nom)) : root;
           fs.mkdirSync(root, { recursive: true });
           ouvrir(dir && fs.existsSync(dir) ? dir : root);
+          break;
+        }
+        case "parler-max":
+        case "reveil":
+        case "veille":
+        case "taire": {
+          const a = o.assistant;
+          if (!a) {
+            r = { ok: false, erreur: "Max n'est pas disponible." };
+            break;
+          }
+          if (msg.type === "parler-max") a.ecrire(String(msg.texte ?? ""));
+          else if (msg.type === "reveil") a.reveiller();
+          else if (msg.type === "veille") a.veille();
+          else a.taire();
           break;
         }
         default:

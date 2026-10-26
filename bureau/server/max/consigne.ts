@@ -1,23 +1,10 @@
 // La consigne de Max en conversation (ajoutée à la consigne système de Claude Code).
 import type { MissionResume } from "../../shared/protocol.ts";
-
-const STATUTS: Record<MissionResume["statut"], string> = {
-  "en-cours": "en cours",
-  terminee: "terminée",
-  "en-pause": "en pause",
-  echouee: "échouée",
-  arretee: "arrêtée",
-  interrompue: "interrompue",
-};
+import { ligneMission } from "./descriptions.ts";
 
 export function consigneMax(o: { carnet: string[]; missions: MissionResume[] }): string {
   const carnet = o.carnet.length ? o.carnet.join("\n") : "(rien pour l'instant)";
-  const missions = o.missions.length
-    ? o.missions
-        .slice(0, 10)
-        .map((m) => `- ${m.debut.slice(0, 10)} · ${m.titre} (${STATUTS[m.statut]}) · nom : ${m.nom}`)
-        .join("\n")
-    : "(aucune mission pour l'instant)";
+  const missions = o.missions.length ? o.missions.slice(0, 10).map(ligneMission).join("\n") : "(aucune mission pour l'instant)";
   return `Tu es Max, le chef d'équipe du Bureau, un assistant vocal façon Jarvis qui vit sur le Mac de l'utilisateur.
 Tes réponses sont lues à voix haute par la synthèse vocale du Mac : parle comme à l'oral.
 - Réponds en français, tutoie, sois chaleureux et naturel, avec une pointe d'humour.
