@@ -1,6 +1,6 @@
 # Max vocal — parler directement avec Max (façon Jarvis)
 
-**Statut : validé.** L'utilisateur a validé la partie 1 et délégué le reste (« fais jusqu'au résultat final »).
+**Statut : construit** (voir `bureau/README.md`, sections « Parler à Max » et « Dis Siri, réveille Max »). L'utilisateur a validé la partie 1 et délégué le reste (« fais jusqu'au résultat final »).
 Les parties 2 et 3 ci-dessous sont des décisions de l'implémenteur, notées pour relecture.
 
 Remplace la dictée par bouton (🎤) et la voix du navigateur ajoutées le 25/10 : elles ne permettaient ni la

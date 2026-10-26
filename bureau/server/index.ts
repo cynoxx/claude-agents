@@ -16,7 +16,7 @@ import { Bouche } from "./voix/bouche.ts";
 import { preparerOreille } from "./voix/diagnostic.ts";
 
 const racine = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const config = loadConfig(racine);
+const config = loadConfig(process.env.BUREAU_CONFIG_DIR ?? racine);
 const bin = process.env.CLAUDE_BIN ?? "claude";
 fs.mkdirSync(config.dossierMissions, { recursive: true });
 
@@ -62,7 +62,10 @@ server.on("error", (e: NodeJS.ErrnoException) => {
   process.exit(1);
 });
 
+const fichierPid = path.join(config.dossierDonnees, "serveur.pid");
+
 server.listen(config.port, "127.0.0.1", async () => {
+  fs.writeFileSync(fichierPid, String(process.pid));
   const url = `http://localhost:${config.port}`;
   console.log(`\n🏢 Le Bureau est ouvert : ${url}`);
   console.log(`📁 Missions rangées dans : ${config.dossierMissions}`);
@@ -73,6 +76,7 @@ server.listen(config.port, "127.0.0.1", async () => {
 
 const fermer = () => {
   console.log("\nFermeture du Bureau…");
+  fs.rmSync(fichierPid, { force: true });
   assistant.veille();
   manager.arreter();
   setTimeout(() => process.exit(0), 1500).unref();

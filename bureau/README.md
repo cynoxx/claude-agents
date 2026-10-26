@@ -2,24 +2,24 @@
 
 Une équipe d'agents Claude Code qui travaille sous tes yeux, dans un bureau en pixel art.
 
-Tu donnes une mission à **Max**, le chef. Il choisit son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te rend le résultat. Chaque robot est un vrai `claude -p` qui tourne sur ton Mac avec **ton abonnement Claude**, sans clé API.
+Tu parles à **Max**, le chef, comme à Jarvis : « Max, compare les mutuelles pour moi ». Il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
 
-> Le guide complet (à quoi ça sert, comment c'est construit) : [`docs/superpowers/specs/2026-10-25-bureau-agents-design.md`](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md)
+> Le guide complet : [le Bureau](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md) et [Max vocal](../docs/superpowers/specs/2026-10-26-max-vocal-design.md).
 
 ## Installation (une seule fois)
 
-Il te faut :
-- un Mac avec **Claude Code** installé et connecté (`claude` doit marcher dans le Terminal) ;
-- **Node.js 20 ou plus**. Vérifie avec `node --version` ; sinon installe-le avec `brew install node`.
+Il te faut un Mac avec **Claude Code** installé et connecté (`claude` doit marcher dans le Terminal), et **Homebrew** (https://brew.sh). Dans le Terminal :
 
 ```bash
+brew install node ffmpeg whisper-cpp     # Node.js, le micro (ffmpeg) et la reconnaissance vocale locale (Whisper)
 git clone https://github.com/cynoxx/claude-agents.git
 cd claude-agents/bureau
 npm install
-npm run setup
+npm run modele                           # télécharge le modèle Whisper (environ 550 Mo, une seule fois)
+npm run setup                            # crée bureau.config.json et vérifie que tout est prêt
 ```
 
-`npm run setup` crée `bureau.config.json` et vérifie que Claude Code est prêt. Ouvre ensuite ce fichier et indique où sont tes projets, pour que le Codeur puisse y travailler :
+`npm run setup` te dit ce qui marche (✔) et ce qui manque (✘). Ouvre ensuite `bureau.config.json` et indique où sont tes projets, pour que le Codeur puisse y travailler :
 
 ```json
 {
@@ -29,63 +29,83 @@ npm run setup
     { "nom": "Cynox Fitness", "chemin": "~/Code/Cynox-Fitness" },
     { "nom": "Lifforge", "chemin": "~/Code/lifforge" }
   ],
-  "modeles": { "chef": "opus", "robots": "sonnet" },
-  "limites": { "robots": 5, "etapes": 3, "minutesParRobot": 20 }
+  "modeles": { "chef": "opus", "robots": "sonnet", "conversation": "opus" },
+  "limites": { "robots": 5, "etapes": 3, "minutesParRobot": 20 },
+  "voix": { "micro": null, "voixMac": null, "debit": 185, "veilleMinutes": 30 }
 }
 ```
 
 | Réglage | À quoi il sert |
 |---|---|
-| `dossierMissions` | où sont rangées les missions (un dossier par mission) |
+| `dossierMissions` | où sont rangées les missions (un dossier par mission) et le carnet de Max |
 | `projets` | les dépôts Git sur lesquels le Codeur a le droit de travailler |
-| `modeles.chef` | le modèle de Max (planification et relecture) |
+| `modeles.chef` | le modèle de Max pour planifier et relire les missions |
+| `modeles.conversation` | le modèle de Max quand il te parle ; `sonnet` répond plus vite, `opus` est plus malin |
 | `modeles.robots` | le modèle des robots ; `sonnet` économise ton quota, `haiku` encore plus |
 | `limites` | au maximum 5 robots et 3 étapes par mission, 20 minutes par robot |
+| `voix.micro` | le micro à utiliser (`npm run micros` les liste) ; `null` = choisi tout seul |
+| `voix.voixMac` | la voix de Max (une voix de `say -v ?`) ; `null` = la meilleure voix française installée |
+| `voix.debit` | la vitesse à laquelle Max parle (mots par minute) |
+| `voix.veilleMinutes` | Max se met en veille après ce temps sans échange |
 
 ## Lancer le Bureau
 
-```bash
-cd claude-agents/bureau
-npm start
-```
+Deux façons :
 
-Ton navigateur s'ouvre sur **http://localhost:4747**. Laisse la fenêtre du Terminal ouverte pendant que tu utilises le Bureau. `Ctrl+C` le ferme.
+- **« Dis Siri, réveille Max »**, après avoir créé le raccourci une fois (voir plus bas). Le Bureau démarre en arrière-plan et la page s'ouvre.
+- **À la main** : `cd claude-agents/bureau` puis `npm start`. Ton navigateur s'ouvre sur **http://localhost:4747**. Garde la fenêtre du Terminal ouverte ; `Ctrl+C` ferme le Bureau.
 
-## Utilisation
+Dans les deux cas, Max se réveille tout seul et te dit « Salut ! Je t'écoute. ». Pour éteindre un Bureau démarré par Siri : `npm run arreter`.
 
-1. **Écris ta mission** en bas, puis appuie sur Entrée (ou clique sur 🚀 Lancer). Par exemple :
-   - « Compare 5 mutuelles pour un jeune actif à Paris et fais-moi un tableau »
-   - « Ajoute un écran de statistiques d'entraînement dans Cynox Fitness »
-   - « Écris 10 posts Instagram pour lancer Lifforge, avec un calendrier »
-2. **Max planifie** (🧠), annonce son équipe, et les robots entrent par la porte.
-3. **Les robots travaillent.** Ceux qui attendent leur tour patientent au café ☕. Les bulles montrent ce que chacun fait vraiment.
-4. **Clique sur un robot** (ou sur Max) pour voir sa tâche, tout ce qu'il a fait et son rapport.
-5. **Max relit** (🔍), corrige si besoin et écrit la synthèse, qui s'ouvre toute seule à la fin.
+## Parler à Max
 
-Les icônes au-dessus des robots :
+Commence ta phrase par **« Max »** : il ne réagit qu'à ça, pour ne pas te répondre quand tu parles à quelqu'un d'autre.
 
-| Icône | Signification |
+- « Max, compare cinq mutuelles pour un jeune actif à Paris et fais-moi un tableau. » → il lance une mission et te le dit.
+- « Max, où en est l'équipe ? » → il regarde et te raconte.
+- « Max, c'est quoi la capitale de l'Australie ? » → il répond directement, sans lancer d'équipe.
+- « Max, retiens que Cynox Fitness est mon app de fitness. » → il le note dans son carnet.
+- « Max, mets-toi en veille. » → il dit au revoir et coupe le micro.
+
+Pendant **10 secondes après sa réponse**, tu peux enchaîner sans redire « Max ». Juste « Max ? » et il te répond « Oui ? ».
+
+Sous le bureau, le **panneau de conversation** montre tout ce que vous vous dites, les outils qu'il utilise (🛠 mission, 📝 carnet, 🔎 recherche web…) et un voyant :
+
+| Voyant | Signification |
 |---|---|
-| ☕ | il attend son tour |
-| ✅ | il a fini et rendu son rapport |
-| 💤 | ton quota Claude est atteint : clique sur **▶️ Reprendre** plus tard |
-| ❗ | il a eu un problème : clique dessus pour voir lequel |
+| 😴 Max dort | micro coupé ; « Dis Siri, réveille Max » ou le bouton 👂 le réveille |
+| 👂 Max écoute | dis « Max, … » |
+| 💭 Max réfléchit | il prépare sa réponse (Opus met quelques secondes) |
+| 🗣 Max parle | le micro est coupé pendant qu'il parle, pour qu'il ne s'entende pas lui-même ; 🤫 le fait taire |
 
-Boutons du haut : **📄 Résultat**, **⏹ Arrêter**, **▶️ Reprendre** (après un quota atteint), **📜 Historique** (missions passées), **📁 Dossier** (ouvre le dossier dans le Finder).
+Tu peux aussi **lui écrire** dans le champ « Écris à Max… », par exemple quand tu n'es pas seul.
 
-## Parler à Max (micro et voix)
+Quand une mission se termine, Max te le dit tout seul et te résume le résultat. Le résultat complet s'ouvre aussi à l'écran.
 
-- **🎤 Parler** (ou **Option + Espace**) : dis ta mission, elle s'écrit dans la zone en bas. Le micro s'arrête tout seul quand tu fais une pause. Tu peux relire et corriger avant d'appuyer sur Entrée.
-- **Lancer dès que j'ai fini de parler** : coche cette case pour que la mission parte toute seule, sans toucher au clavier.
-- **Max te répond à voix haute** quand il annonce son équipe, quand la mission est finie (il lit le résumé en 3 lignes) et en cas de pause ou d'échec.
-- **🔊 / 🔇** en haut : coupe ou remet sa voix. Ton choix est retenu.
+**Mémoire.** Max tient un carnet, `~/Documents/Bureau/carnet.md`, avec ce qu'il apprend de toi. Il le relit à chaque réveil. Tu peux lui dire « oublie ça » ou modifier le fichier toi-même.
 
-À savoir :
-- Ça marche dans **Chrome ou Safari**. Firefox ne sait pas faire de dictée : les boutons n'y apparaissent pas.
-- Le navigateur te demande l'autorisation du micro la première fois. Sur Safari, la **Dictée** du Mac doit être activée (Réglages Système > Clavier).
-- Pour transcrire ta voix, le navigateur l'envoie à **Google (Chrome) ou Apple (Safari)**. Le Bureau, lui, ne l'enregistre nulle part.
-- Pour une voix de Max plus naturelle, télécharge une voix française « améliorée » ou « Premium » dans les réglages d'accessibilité du Mac (rubrique « Contenu énoncé »). Le Bureau choisit tout seul la meilleure voix française installée.
-- Si tu recharges la page pendant une mission, clique une fois n'importe où dans la page : sans ça, le navigateur peut empêcher Max de parler.
+**Le bureau pixel art** fonctionne comme avant. Clique sur un robot (ou sur Max) pour voir sa tâche, tout ce qu'il a fait et son rapport. Les icônes au-dessus des robots : ☕ attend son tour, ✅ a fini, 💤 quota atteint (**▶️ Reprendre** plus tard), ❗ problème (clique dessus). Boutons du haut : **📄 Résultat**, **⏹ Arrêter**, **▶️ Reprendre**, **📜 Historique**, **📁 Dossier**. Tu peux aussi lancer une mission **sans passer par Max**, dans « Lancer une mission directement » en bas de la page.
+
+## « Dis Siri, réveille Max »
+
+À faire une seule fois, dans l'app **Raccourcis** du Mac :
+
+1. Ouvre **Raccourcis**, puis **Fichier > Nouveau raccourci**.
+2. Cherche l'action **« Exécuter un script shell »** et ajoute-la.
+3. Dans la case du script, colle cette ligne (adapte le chemin si tu as cloné ailleurs) :
+   ```bash
+   /bin/bash ~/claude-agents/bureau/scripts/reveiller-max.sh
+   ```
+4. Nomme le raccourci **« Réveille Max »** (le nom en haut de la fenêtre). C'est la phrase que Siri reconnaîtra.
+5. La première fois, Raccourcis peut demander d'autoriser les scripts : **Raccourcis > Réglages > Avancé > « Autoriser l'exécution des scripts »**.
+
+Essaie : **« Dis Siri, réveille Max »**. Le Bureau démarre (une dizaine de secondes la première fois), la page s'ouvre et Max te salue. Si le Bureau tourne déjà, Siri réveille simplement Max.
+
+- « Dis Siri » doit être activé : **Réglages Système > Siri**.
+- La première fois, le Mac demande l'**autorisation du micro** pour Raccourcis (ou pour le Terminal si tu as fait `npm start`) : accepte. Si tu as refusé, active-la dans **Réglages Système > Confidentialité et sécurité > Micro**.
+- Évite de nommer le raccourci « Bureau » : Siri ouvrirait le Bureau du Finder.
+- Tu peux aussi glisser le raccourci dans le Dock pour le lancer en un clic.
+- Le journal du Bureau démarré par Siri est dans `~/Library/Logs/Bureau.log`.
 
 ## Où sont les fichiers
 
@@ -124,29 +144,40 @@ Pour faire le ménage une fois la branche fusionnée ou abandonnée : `git workt
 - Les écritures de fichiers sont limitées au dossier de la mission (et à la copie de travail du Codeur).
 - Les robots n'ont **pas accès à tes connecteurs** (mails, agenda, Drive…).
 
+## Ta vie privée
+
+- **Ta voix** est transcrite **sur ton Mac** par Whisper. Elle n'est envoyée nulle part, et le Bureau ne garde aucun enregistrement.
+- **Le micro** n'est ouvert que quand Max est réveillé. En veille (😴), il est vraiment coupé.
+- **Seules les phrases qui commencent par « Max »** (ou la suite d'une conversation) partent chez Claude, comme le reste de la conversation et le carnet.
+
 ## Ton quota d'abonnement
 
-Chaque robot est une vraie session Claude Code, donc une mission à 4 robots consomme ton quota environ 4 fois plus vite qu'une conversation normale. Max utilise Opus, les robots Sonnet. Si la limite est atteinte, rien n'est perdu : la mission se met en pause 💤 et tu cliques sur **▶️ Reprendre** quand ton quota est revenu. Le Bureau doit rester ouvert entre-temps ; s'il est fermé, la mission apparaît « interrompue » dans l'historique, avec les rapports déjà écrits.
+Chaque robot est une vraie session Claude Code, donc une mission à 4 robots consomme ton quota environ 4 fois plus vite qu'une conversation normale. Max utilise Opus (pour planifier, relire et te parler), les robots Sonnet. Parler avec Max consomme aussi un peu de quota à chaque réponse ; quand il dort, il ne consomme rien. Si Max n'a plus de quota, il te le dit. Si la limite est atteinte, rien n'est perdu : la mission se met en pause 💤 et tu cliques sur **▶️ Reprendre** quand ton quota est revenu. Le Bureau doit rester ouvert entre-temps ; s'il est fermé, la mission apparaît « interrompue » dans l'historique, avec les rapports déjà écrits.
 
 ## Dépannage
 
 | Problème | Solution |
 |---|---|
-| Bandeau « claude introuvable » | Installe Claude Code, puis relance `npm start`. |
-| Bandeau « pas connecté » | Lance `claude auth login` dans le Terminal, puis relance `npm start`. |
-| « Le port 4747 est déjà utilisé » | Le Bureau est sans doute déjà ouvert dans un autre Terminal. Sinon, change `port` dans `bureau.config.json`. |
+| Bandeau « claude introuvable » | Installe Claude Code, puis relance le Bureau. |
+| Bandeau « pas connecté » | Lance `claude auth login` dans le Terminal, puis relance le Bureau. |
+| « ⚠️ ffmpeg / whisper-cli introuvable » dans le panneau | `brew install ffmpeg whisper-cpp`, puis relance le Bureau. |
+| « ⚠️ Modèle Whisper absent » | `npm run modele`, puis relance le Bureau. |
+| Max ne t'entend pas | Vérifie l'autorisation du micro (Réglages Système > Confidentialité et sécurité > Micro). `npm run micros` montre le micro utilisé ; impose-en un autre avec `"voix": { "micro": ":1" }`. |
+| Max réagit à la télé | Il ne répond qu'aux phrases qui commencent par « Max » : baisse un peu le son, ou mets-le en veille. |
+| Max met du temps à répondre | Opus réfléchit quelques secondes. Pour plus de vitesse : `"modeles": { "conversation": "sonnet" }`. |
+| Siri ouvre le Bureau du Finder | Renomme le raccourci « Réveille Max » (pas « Bureau »). |
+| Siri lance le raccourci mais rien ne s'ouvre | Regarde `~/Library/Logs/Bureau.log`, et vérifie que le chemin du script est le bon. |
+| « Le port 4747 est déjà utilisé » | Le Bureau tourne déjà (peut-être démarré par Siri) : `npm run arreter`, ou change `port` dans `bureau.config.json`. |
 | Le Codeur ne démarre pas (❗) | Vérifie le `chemin` du projet dans `bureau.config.json` : ce doit être un dépôt Git. |
 | Un robot reste bloqué | Au bout de 20 minutes, il s'arrête tout seul (❗) et Max continue sans lui. Tu peux aussi cliquer sur **⏹ Arrêter**. |
 
 ## Pour les développeurs
 
 ```bash
-npm test          # tests (avec un faux « claude » : aucun quota consommé)
+npm test          # tests (faux « claude », « say » et « ffmpeg » : aucun quota consommé, aucun micro nécessaire)
 npm run build     # vérification TypeScript + construction de la page
 ```
 
-`CLAUDE_BIN=/chemin/vers/claude` change le binaire utilisé ; `BUREAU_NO_OPEN=1` évite d'ouvrir le navigateur. `test/fake-claude.mjs` imite `claude -p`, ce qui permet de voir le Bureau tourner sans rien dépenser :
-
-```bash
-CLAUDE_BIN=$PWD/test/fake-claude.mjs FAKE_DELAY=1200 npm start
-```
+- `CLAUDE_BIN=/chemin/vers/claude` change le binaire utilisé ; `BUREAU_NO_OPEN=1` évite d'ouvrir le navigateur ; `BUREAU_SANS_REVEIL=1` laisse Max endormi au démarrage ; `BUREAU_CONFIG_DIR` lit `bureau.config.json` ailleurs.
+- Test réel de l'oreille (ffmpeg + Whisper sur un vrai fichier audio français) : `WHISPER_BIN=$(which whisper-cli) WHISPER_MODELE=~/Library/Application\ Support/Bureau/modeles/ggml-large-v3-turbo-q5_0.bin npm test`.
+- Voir le Bureau tourner sans rien dépenser : `CLAUDE_BIN=$PWD/test/fake-claude.mjs FAKE_DELAY=1200 npm start`.
