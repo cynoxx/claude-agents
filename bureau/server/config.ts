@@ -38,6 +38,15 @@ export interface BureauConfig {
   voix: VoixConfig;
   /** Un conseiller par domaine de la vie (remplace la liste par défaut si présent). */
   conseillers: ConseillerDef[];
+  mac: MacConfig;
+}
+
+export interface MacConfig {
+  /** La ville de la météo ; null = devinée. */
+  ville: string | null;
+  musique: "auto" | "spotify" | "musique";
+  /** Où ranger les captures d'écran ; null = le Bureau du Mac. */
+  dossierCaptures: string | null;
 }
 
 export const CONFIG_FILE = "bureau.config.json";
@@ -65,6 +74,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
     veilleMinutes: 30,
   },
   conseillers: CONSEILLERS_DEFAUT,
+  mac: { ville: null, musique: "auto", dossierCaptures: null },
 };
 
 export function expandHome(p: string): string {
@@ -107,8 +117,10 @@ export function loadConfig(dir: string): BureauConfig {
     modeles: { ...DEFAULT_CONFIG.modeles, ...user.modeles },
     limites: { ...DEFAULT_CONFIG.limites, ...user.limites },
     voix: { ...DEFAULT_CONFIG.voix, ...user.voix },
+    mac: { ...DEFAULT_CONFIG.mac, ...user.mac },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };
+  if (c.mac.dossierCaptures) c.mac.dossierCaptures = expandHome(c.mac.dossierCaptures);
   c.voix.modele = c.voix.modele ? expandHome(c.voix.modele) : path.join(c.dossierDonnees, "modeles", MODELE_WHISPER);
   return c;
 }

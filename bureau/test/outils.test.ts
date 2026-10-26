@@ -16,6 +16,7 @@ import { ecrireConfigMcp } from "../server/max/mcp-config.ts";
 import { lireCarnet } from "../server/max/carnet.ts";
 import { Coach, lireIdees, lireJournal, lireProfil } from "../server/max/coach.ts";
 import { CONSEILLERS_DEFAUT, Conseillers } from "../server/max/conseillers.ts";
+import { Mac, type Executer } from "../server/max/mac.ts";
 import type { AssistantVue, MissionVue, ServerMessage } from "../shared/protocol.ts";
 
 const FAKE = path.join(__dirname, "fake-claude.mjs");
@@ -45,6 +46,13 @@ class FauxAssistant extends EventEmitter implements AssistantApi {
   }
   informer(texte: string) {
     this.appels.push(`informer:${texte}`);
+  }
+  dernier: { texte: string; heure: number } | null = null;
+  dernierMessageUtilisateur() {
+    return this.dernier;
+  }
+  allerA(vue: string) {
+    this.appels.push(`vue:${vue}`);
   }
 }
 
@@ -118,6 +126,7 @@ describe("routes et WebSocket de Max", () => {
   let manager: MissionManager;
   let coach: Coach;
   let conseillers: Conseillers;
+  let gestes: { bin: string; args: string[] }[];
   let server: ReturnType<typeof createBureauServer>;
   let base: string;
 
@@ -131,7 +140,16 @@ describe("routes et WebSocket de Max", () => {
     manager = new MissionManager(config, FAKE);
     coach = new Coach({ dossier: root, dossierDonnees: donnees });
     conseillers = new Conseillers({ defs: CONSEILLERS_DEFAUT, bin: FAKE, modele: "sonnet", dossier: root, timeoutMs: 10_000, profil: () => "", contexte: () => "" });
-    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers });
+    gestes = [];
+    const executer: Executer = async (bin, args) => {
+      gestes.push({ bin, args });
+      const script = args.join("\n");
+      if (script.includes('tell application "Contacts"')) return { code: 0, stdout: "Maman\t+33 6 12 34 56 78\t_$!<Mobile>!$_\n", stderr: "" };
+      if (bin === "icalBuddy") return { code: 0, stdout: "Anatomie\t2026-10-27 at 08:30\n", stderr: "" };
+      return { code: 0, stdout: "", stderr: "" };
+    };
+    const mac = new Mac({ actif: true, executer, dossierCaptures: tmp(), maintenant: () => new Date("2026-10-27T07:00:00") });
+    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac });
     await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -160,7 +178,7 @@ describe("routes et WebSocket de Max", () => {
   it("réveille Max avec le jeton", async () => {
     const r = await fetch(base + "/api/reveil", { method: "POST", headers: avecJeton() });
     expect(r.status).toBe(200);
-    expect(assistant.appels).toEqual(["reveiller"]);
+    expect(assistant.appels).toEqual(["reveiller", "vue:jarvis"]);
   });
 
   it("envoie l'état de Max avec celui du Bureau, et transmet les messages pour Max", async () => {
@@ -199,6 +217,9 @@ describe("routes et WebSocket de Max", () => {
           "arreter_mission", "etat_bureau", "historique_missions", "lancer_mission", "lire_resultat", "memoriser", "mettre_en_veille", "oublier", "reprendre_mission",
           "demarrer_session", "demarrer_pause", "arreter_session", "bilan_travail", "ajouter_echeance", "noter_idee", "lire_idees",
           "programmer_rappel", "liste_rappels", "annuler_rappel", "consulter_conseiller", "noter_pour_conseiller",
+          "ouvrir_app", "fermer_app", "ouvrir_site", "chercher_youtube", "regler_volume", "regler_luminosite", "capture_ecran", "verrouiller_ecran",
+          "musique", "chercher_contact", "preparer_message", "envoyer_message", "lire_mails", "agenda", "preparer_rdv", "creer_rdv", "meteo",
+          "aller_au_bureau", "retour_jarvis",
         ].sort(),
       );
       expect((await texte("etat_bureau")).texte).toBe("Aucune mission en cours.");
@@ -265,6 +286,72 @@ describe("routes et WebSocket de Max", () => {
       await client.close();
     }
   }, 30_000);
+
+  it("Max pilote le Mac, et n'envoie un message ou n'ajoute un rendez-vous qu'après un oui (vrai client MCP)", async () => {
+    const transport = new StdioClientTransport({
+      command: path.join(RACINE, "node_modules", ".bin", "tsx"),
+      args: [path.join(RACINE, "server", "max", "outils-mcp.ts")],
+      env: { ...(process.env as Record<string, string>), BUREAU_URL: base, BUREAU_JETON_FICHIER: path.join(donnees, "jeton") },
+      stderr: "ignore",
+    });
+    const client = new Client({ name: "test", version: "1.0.0" });
+    await client.connect(transport);
+    const texte = async (name: string, args: Record<string, unknown> = {}) => {
+      const r = (await client.callTool({ name, arguments: args })) as { content: { type: string; text: string }[]; isError?: boolean };
+      return { texte: r.content.map((c) => c.text).join("\n"), erreur: !!r.isError };
+    };
+    try {
+      expect((await texte("ouvrir_app", { nom: "Notes" })).texte).toBe("Notes est ouvert.");
+      expect(gestes.at(-1)).toEqual({ bin: "open", args: ["-a", "Notes"] });
+      expect((await texte("ouvrir_site", { url: "file:///etc/passwd" })).erreur).toBe(true);
+      expect((await texte("regler_volume", { niveau: "30" })).erreur).toBe(false);
+      expect((await texte("agenda", { jour: "aujourdhui" })).texte).toContain("08:30 Anatomie");
+
+      // message : préparé, refusé sans oui, envoyé après un oui dit après la préparation
+      assistant.dernier = { texte: "envoie à maman que je rentre à 20 h", heure: Date.now() - 1000 };
+      const prep = await texte("preparer_message", { destinataire: "maman", texte: "Je rentre à 20 h" });
+      expect(prep.texte).toContain("Message prêt pour Maman (+33612345678)");
+      expect(prep.texte).toContain("PAS encore envoyé");
+      const avant = gestes.length;
+      expect((await texte("envoyer_message")).erreur).toBe(true);
+      assistant.dernier = { texte: "non attends", heure: Date.now() + 10 };
+      expect((await texte("envoyer_message")).erreur).toBe(true);
+      expect(gestes.slice(avant).some((g) => g.args.join("\n").includes('tell application "Messages"'))).toBe(false);
+      assistant.dernier = { texte: "oui vas-y", heure: Date.now() + 20 };
+      expect((await texte("envoyer_message")).texte).toBe("Message envoyé.");
+      const envoi = gestes.at(-1)!;
+      expect(envoi.args.join("\n")).toContain('tell application "Messages"');
+      expect(envoi.args.slice(-2)).toEqual(["+33612345678", "Je rentre à 20 h"]);
+      expect((await texte("envoyer_message")).erreur).toBe(true);
+
+      // rendez-vous : pareil
+      assistant.dernier = { texte: "ajoute le dentiste mercredi à 17 h 30", heure: Date.now() - 1000 };
+      const rdv = await texte("preparer_rdv", { titre: "Dentiste", date: "2026-11-04", heure: "17:30", minutes: 45 });
+      expect(rdv.texte).toContain("PAS encore ajouté");
+      expect((await texte("creer_rdv")).erreur).toBe(true);
+      assistant.dernier = { texte: "ok", heure: Date.now() + 30 };
+      expect((await texte("creer_rdv")).texte).toContain("Rendez-vous « Dentiste » ajouté le 2026-11-04 à 17:30");
+      expect((await texte("preparer_rdv", { titre: "X", date: "bientôt", heure: "17:30" })).erreur).toBe(true);
+
+      // écran
+      expect((await texte("aller_au_bureau")).texte).toBe("Direction le bureau.");
+      expect((await texte("retour_jarvis")).texte).toBe("Retour à l'écran de Max.");
+      expect(assistant.appels.filter((a) => a.startsWith("vue:"))).toEqual(["vue:bureau", "vue:jarvis"]);
+    } finally {
+      await client.close();
+    }
+  }, 30_000);
+
+  it("change d'écran depuis la page, et revient sur Jarvis au réveil par Siri", async () => {
+    const ws = new WebSocket(base.replace("http", "ws") + "/ws");
+    await new Promise((r) => ws.on("open", r));
+    ws.send(JSON.stringify({ type: "vue", vue: "bureau" }));
+    ws.send(JSON.stringify({ type: "vue", vue: "cuisine" }));
+    for (let i = 0; i < 100 && !assistant.appels.includes("vue:bureau"); i++) await new Promise((r) => setTimeout(r, 10));
+    await fetch(base + "/api/reveil", { method: "POST", headers: avecJeton() });
+    expect(assistant.appels.filter((a) => a.startsWith("vue:") || a === "reveiller")).toEqual(["vue:bureau", "reveiller", "vue:jarvis"]);
+    ws.close();
+  });
 
   it("démarre et arrête une session depuis la page", async () => {
     const ws = new WebSocket(base.replace("http", "ws") + "/ws");

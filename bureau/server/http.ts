@@ -8,6 +8,8 @@ import type { BureauConfig } from "./config.ts";
 import type { MissionManager } from "./mission.ts";
 import type { Coach } from "./max/coach.ts";
 import type { Conseillers } from "./max/conseillers.ts";
+import type { InfosJarvis } from "./max/infos-jarvis.ts";
+import type { Mac } from "./max/mac.ts";
 import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
 import { listMissions } from "./storage.ts";
 
@@ -46,6 +48,8 @@ export function createBureauServer(o: {
   assistant?: AssistantApi;
   coach?: Coach;
   conseillers?: Conseillers;
+  mac?: Mac;
+  jarvis?: InfosJarvis;
 }): http.Server {
   const root = path.resolve(o.config.dossierMissions);
   const ouvrir = o.ouvrir ?? ouvrirDansFinder;
@@ -113,7 +117,7 @@ export function createBureauServer(o: {
   // le WebSocketServer relaie les erreurs du serveur HTTP (ex. port pris) : c'est `server.on("error")` qui les traite
   wss.on("error", () => {});
   const envoyer = (ws: WebSocket, msg: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(msg));
-  const etatComplet = () => ({ ...o.manager.snapshot(), assistant: o.assistant?.vue(), conseillers: o.conseillers?.vue() });
+  const etatComplet = () => ({ ...o.manager.snapshot(), assistant: o.assistant?.vue(), conseillers: o.conseillers?.vue(), jarvis: o.jarvis?.vue() });
   const diffuser = () => {
     const etat = etatComplet();
     for (const ws of wss.clients) envoyer(ws, { type: "etat", etat });
@@ -121,7 +125,9 @@ export function createBureauServer(o: {
   o.manager.on("etat", diffuser);
   o.assistant?.on("etat", diffuser);
   o.conseillers?.on("etat", diffuser);
+  o.jarvis?.on("etat", diffuser);
   server.on("close", () => {
+    o.jarvis?.off("etat", diffuser);
     o.manager.off("etat", diffuser);
     o.assistant?.off("etat", diffuser);
     o.conseillers?.off("etat", diffuser);
@@ -181,6 +187,9 @@ export function createBureauServer(o: {
           if (rc.ok) o.assistant?.informer?.(`Depuis la page : ${rc.texte}`);
           break;
         }
+        case "vue":
+          if (msg.vue === "jarvis" || msg.vue === "bureau") o.assistant?.allerA?.(msg.vue);
+          break;
         default:
           r = { ok: false, erreur: "Message incompréhensible." };
       }

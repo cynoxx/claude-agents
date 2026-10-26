@@ -169,4 +169,127 @@ serveur.registerTool(
   async ({ conseiller, note }) => appeler("POST", "/api/outils/noter-pour", { conseiller, note }),
 );
 
+// --- le Mac : une liste fermée de gestes (pas de commande libre) ---
+
+serveur.registerTool(
+  "ouvrir_app",
+  { description: "Ouvre une application du Mac (Safari, Notes, Spotify, WhatsApp…).", inputSchema: { nom: z.string().min(1).describe("Le nom de l'app tel qu'il apparaît dans le dossier Applications") } },
+  async ({ nom }) => appeler("POST", "/api/outils/app", { nom, action: "ouvrir" }),
+);
+serveur.registerTool(
+  "fermer_app",
+  { description: "Ferme (quitte) une application du Mac.", inputSchema: { nom: z.string().min(1).describe("Le nom de l'app") } },
+  async ({ nom }) => appeler("POST", "/api/outils/app", { nom, action: "fermer" }),
+);
+serveur.registerTool(
+  "ouvrir_site",
+  { description: "Ouvre une page web dans le navigateur (adresse http ou https).", inputSchema: { url: z.string().min(1).describe("L'adresse complète, https://…") } },
+  async ({ url }) => appeler("POST", "/api/outils/site", { url }),
+);
+serveur.registerTool(
+  "chercher_youtube",
+  {
+    description: "Ouvre une recherche YouTube. Pour une vidéo précise, trouve plutôt son adresse avec WebSearch et ouvre-la avec ouvrir_site.",
+    inputSchema: { recherche: z.string().min(1) },
+  },
+  async ({ recherche }) => appeler("POST", "/api/outils/youtube", { recherche }),
+);
+serveur.registerTool(
+  "regler_volume",
+  { description: "Règle le volume du Mac.", inputSchema: { niveau: z.string().describe("Un nombre de 0 à 100, ou « plus », « moins », « muet »") } },
+  async ({ niveau }) => appeler("POST", "/api/outils/volume", { niveau }),
+);
+serveur.registerTool(
+  "regler_luminosite",
+  {
+    description: "Monte ou baisse la luminosité de l'écran.",
+    inputSchema: { sens: z.enum(["plus", "moins"]), crans: z.number().int().min(1).max(16).default(2).describe("De combien de crans (2 par défaut)") },
+  },
+  async ({ sens, crans }) => appeler("POST", "/api/outils/luminosite", { sens, crans }),
+);
+serveur.registerTool("capture_ecran", { description: "Fait une capture de l'écran, enregistrée sur le Bureau du Mac." }, async () => appeler("POST", "/api/outils/capture"));
+serveur.registerTool("verrouiller_ecran", { description: "Met l'écran en veille et le verrouille." }, async () => appeler("POST", "/api/outils/verrouiller"));
+serveur.registerTool(
+  "musique",
+  {
+    description: "Pilote la musique (Spotify s'il est installé, sinon Musique) : jouer, pause, suivant, precedent, quoi (ce qui joue). Avec une recherche, lance ou cherche cette musique.",
+    inputSchema: {
+      action: z.enum(["jouer", "pause", "suivant", "precedent", "quoi"]),
+      recherche: z.string().optional().describe("Un artiste, un morceau, une playlist ou un style (avec l'action jouer)"),
+    },
+  },
+  async ({ action, recherche }) => appeler("POST", "/api/outils/musique", { action, recherche }),
+);
+serveur.registerTool(
+  "chercher_contact",
+  { description: "Cherche un contact dans Contacts (numéros et adresses).", inputSchema: { nom: z.string().min(1) } },
+  async ({ nom }) => appeler("POST", "/api/outils/contact", { nom }),
+);
+serveur.registerTool(
+  "preparer_message",
+  {
+    description:
+      "Prépare un iMessage (rien n'est envoyé). Lis ensuite le destinataire et le texte à l'utilisateur et demande-lui s'il confirme ; n'appelle envoyer_message qu'après son oui.",
+    inputSchema: {
+      destinataire: z.string().min(1).describe("Le nom du contact (ex. « Maman ») ou un numéro"),
+      texte: z.string().min(1).describe("Le message exact à envoyer"),
+    },
+  },
+  async ({ destinataire, texte }) => appeler("POST", "/api/outils/preparer-message", { destinataire, texte }),
+);
+serveur.registerTool(
+  "envoyer_message",
+  { description: "Envoie le message préparé, une fois que l'utilisateur a dit oui. Refusé s'il n'a pas confirmé." },
+  async () => appeler("POST", "/api/outils/envoyer-message"),
+);
+serveur.registerTool(
+  "lire_mails",
+  {
+    description: "Lit les derniers mails de la boîte de réception (app Mail) : expéditeur, sujet, début du texte.",
+    inputSchema: { nombre: z.number().int().min(1).max(20).default(5), non_lus: z.boolean().default(true).describe("Seulement les non lus (par défaut)") },
+  },
+  async ({ nombre, non_lus }) => appeler("GET", `/api/outils/mails?n=${nombre}&non_lus=${non_lus ? 1 : 0}`),
+);
+serveur.registerTool(
+  "agenda",
+  {
+    description: "Les rendez-vous d'un jour (app Calendrier, Google Agenda compris s'il y est ajouté).",
+    inputSchema: { jour: z.string().default("aujourdhui").describe("« aujourdhui », « demain », « apres-demain » ou AAAA-MM-JJ") },
+  },
+  async ({ jour }) => appeler("GET", `/api/outils/agenda?jour=${encodeURIComponent(jour)}`),
+);
+serveur.registerTool(
+  "preparer_rdv",
+  {
+    description: "Prépare un rendez-vous dans Calendrier (rien n'est ajouté). Demande ensuite confirmation ; n'appelle creer_rdv qu'après son oui.",
+    inputSchema: {
+      titre: z.string().min(1),
+      date: z.string().describe("AAAA-MM-JJ, ou « aujourdhui », « demain »"),
+      heure: z.string().describe("HH:MM"),
+      minutes: z.number().int().min(5).max(1440).default(60).describe("Durée en minutes"),
+      calendrier: z.string().optional().describe("Le nom d'un calendrier précis (sinon le premier modifiable)"),
+    },
+  },
+  async (a) => appeler("POST", "/api/outils/preparer-rdv", a),
+);
+serveur.registerTool(
+  "creer_rdv",
+  { description: "Ajoute le rendez-vous préparé, une fois que l'utilisateur a dit oui. Refusé s'il n'a pas confirmé." },
+  async () => appeler("POST", "/api/outils/creer-rdv"),
+);
+serveur.registerTool(
+  "meteo",
+  { description: "La météo du moment et du jour.", inputSchema: { ville: z.string().optional().describe("Une ville ; sinon celle de la config ou devinée") } },
+  async ({ ville }) => appeler("GET", `/api/outils/meteo${ville ? `?ville=${encodeURIComponent(ville)}` : ""}`),
+);
+
+// --- l'écran ---
+
+serveur.registerTool(
+  "aller_au_bureau",
+  { description: "Emmène l'utilisateur dans le bureau pixel art (avec les robots et les conseillers) quand il le demande." },
+  async () => appeler("POST", "/api/outils/vue", { vue: "bureau" }),
+);
+serveur.registerTool("retour_jarvis", { description: "Revient à l'écran principal de Max (la sphère)." }, async () => appeler("POST", "/api/outils/vue", { vue: "jarvis" }));
+
 await serveur.connect(new StdioServerTransport());

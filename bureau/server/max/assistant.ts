@@ -1,6 +1,6 @@
 // L'assistant : relie l'oreille, le cerveau et la bouche de Max, gère le mot-clé, la veille et les annonces de mission.
 import { EventEmitter } from "node:events";
-import type { AssistantVue, CoachVue, Dispo, EtatBureau, EtatMax, MessageConversation, MissionResume, Phase } from "../../shared/protocol.ts";
+import type { AssistantVue, CoachVue, Dispo, EtatBureau, EtatMax, MessageConversation, MissionResume, Phase, VueEcran } from "../../shared/protocol.ts";
 import { extraireResume, texteParle } from "../../shared/parole.ts";
 import { reconnaitreAppel } from "../voix/mot-cle.ts";
 import { Phraseur } from "../voix/phraseur.ts";
@@ -109,6 +109,44 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return "🔔 Max regarde les rappels";
     case "annuler_rappel":
       return `🔕 Rappel annulé : ${e("texte")}`;
+    case "ouvrir_app":
+      return `🖥 Max ouvre ${e("nom")}`;
+    case "fermer_app":
+      return `🖥 Max ferme ${e("nom")}`;
+    case "ouvrir_site":
+      return `🌐 Max ouvre ${e("url")}`;
+    case "chercher_youtube":
+      return `▶️ Max cherche sur YouTube : ${e("recherche")}`;
+    case "regler_volume":
+      return `🔊 Volume : ${e("niveau")}`;
+    case "regler_luminosite":
+      return `🔆 Luminosité : ${e("sens")}`;
+    case "capture_ecran":
+      return "📸 Max fait une capture d'écran";
+    case "verrouiller_ecran":
+      return "🔒 Max verrouille l'écran";
+    case "musique":
+      return `🎵 Musique : ${e("action")}${e("recherche") ? ` « ${e("recherche")} »` : ""}`;
+    case "chercher_contact":
+      return `👤 Max cherche le contact ${e("nom")}`;
+    case "preparer_message":
+      return `✉️ Message préparé pour ${e("destinataire")} : « ${e("texte")} » (en attente de ton oui)`;
+    case "envoyer_message":
+      return "✉️ Max envoie le message";
+    case "lire_mails":
+      return "📬 Max lit tes mails";
+    case "agenda":
+      return `📅 Max regarde ton agenda (${e("jour") || "aujourd'hui"})`;
+    case "preparer_rdv":
+      return `📅 Rendez-vous préparé : ${e("titre")} le ${e("date")} à ${e("heure")} (en attente de ton oui)`;
+    case "creer_rdv":
+      return "📅 Max ajoute le rendez-vous";
+    case "meteo":
+      return "🌤 Max regarde la météo";
+    case "aller_au_bureau":
+      return "🏢 Direction le bureau";
+    case "retour_jarvis":
+      return "🔵 Retour à l'écran de Max";
     case "WebSearch":
       return `🔎 Max cherche sur le web : ${e("query")}`;
     case "WebFetch":
@@ -140,6 +178,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private oreilleArretVolontaire = false;
   private phases = new Map<string, Phase>();
   private infos: string[] = [];
+  private dernier: { texte: string; heure: number } | null = null;
+  private ecran: VueEcran = "jarvis";
 
   constructor(private o: OptionsAssistant) {
     super();
@@ -196,6 +236,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
       bouche: this.dispoBouche,
       cerveau: this.dispoCerveau,
       ...(this.o.coach ? { coach: this.o.coach.vue() } : {}),
+      vue: this.ecran,
     };
   }
 
@@ -258,6 +299,17 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.envoyer(t, { de: "toi", texte: t });
   }
 
+  dernierMessageUtilisateur(): { texte: string; heure: number } | null {
+    return this.dernier;
+  }
+
+  allerA(vue: VueEcran): void {
+    if (vue !== "jarvis" && vue !== "bureau") return;
+    if (this.ecran === vue) return;
+    this.ecran = vue;
+    this.changer();
+  }
+
   informer(texte: string): void {
     this.infos.push(texte);
     if (this.infos.length > 10) this.infos.shift();
@@ -279,6 +331,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
 
   private envoyer(texte: string, affichage: { de: MessageConversation["de"]; texte: string }): void {
     this.noter(affichage.de, affichage.texte);
+    if (affichage.de === "toi") this.dernier = { texte, heure: Date.now() };
     this.assurerCerveau();
     const d = new Date();
     let message = this.o.horodater && affichage.de === "toi" ? `[${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}] ${texte}` : texte;

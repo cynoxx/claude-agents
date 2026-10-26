@@ -83,6 +83,16 @@ export interface AssistantVue {
   bouche: Dispo;
   cerveau: Dispo;
   coach?: CoachVue;
+  /** L'écran affiché : Jarvis (la sphère) ou le bureau pixel art. */
+  vue?: VueEcran;
+}
+
+export type VueEcran = "jarvis" | "bureau";
+
+/** Les petits panneaux de l'écran Jarvis. */
+export interface JarvisVue {
+  meteo: string | null;
+  agenda: { heure: string; titre: string }[] | null;
 }
 
 /** Le coach : minuteur en cours, travail du jour, prochaine échéance. */
@@ -113,6 +123,7 @@ export interface EtatBureau {
   mission: MissionVue | null;
   assistant?: AssistantVue;
   conseillers?: ConseillerVue[];
+  jarvis?: JarvisVue;
 }
 
 export interface EtatFichier {
@@ -138,4 +149,5 @@ export type ClientMessage =
   | { type: "veille" }
   | { type: "taire" }
   | { type: "session"; minutes?: number; sujet?: string }
-  | { type: "fin-session" };
+  | { type: "fin-session" }
+  | { type: "vue"; vue: VueEcran };

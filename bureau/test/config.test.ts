@@ -75,6 +75,13 @@ describe("loadConfig", () => {
     expect(musique).toMatchObject({ id: "musique", nom: "musique", domaine: "Musique", description: "Musique", emoji: "🤖", consigne: "" });
   });
 
+  it("règle le pilotage du Mac (ville, musique, dossier des captures)", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-cfg-"));
+    expect(loadConfig(dir).mac).toEqual({ ville: null, musique: "auto", dossierCaptures: null });
+    fs.writeFileSync(path.join(dir, "bureau.config.json"), JSON.stringify({ mac: { ville: "Lyon", dossierCaptures: "~/Captures" } }));
+    expect(loadConfig(dir).mac).toEqual({ ville: "Lyon", musique: "auto", dossierCaptures: path.join(os.homedir(), "Captures") });
+  });
+
   it("signale un JSON invalide avec un message clair", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-cfg-"));
     fs.writeFileSync(path.join(dir, "bureau.config.json"), "{ oups");

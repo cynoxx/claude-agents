@@ -3,12 +3,14 @@ import type { EventEmitter } from "node:events";
 import fs from "node:fs";
 import type http from "node:http";
 import path from "node:path";
-import type { AssistantVue } from "../shared/protocol.ts";
+import type { AssistantVue, VueEcran } from "../shared/protocol.ts";
 import type { BureauConfig } from "./config.ts";
 import { jetonValide } from "./jeton.ts";
 import { memoriser, oublier } from "./max/carnet.ts";
 import { ajouterEcheance, decrireBilan, lireIdees, noterIdee, type Coach } from "./max/coach.ts";
 import type { Conseillers } from "./max/conseillers.ts";
+import { Confirmations } from "./max/confirmations.ts";
+import type { Mac } from "./max/mac.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
 import { listMissions } from "./storage.ts";
@@ -23,6 +25,10 @@ export interface AssistantApi extends EventEmitter {
   ecrire(texte: string): void;
   /** Une information pour Max, qu'il recevra avec le prochain message (ex. une session arrêtée depuis la page). */
   informer?(texte: string): void;
+  /** Le dernier message de l'utilisateur (pour vérifier qu'il a bien dit oui). */
+  dernierMessageUtilisateur?(): { texte: string; heure: number } | null;
+  /** Change l'écran affiché : Jarvis ou le bureau. */
+  allerA?(vue: VueEcran): void;
 }
 
 const MAX_RESULTAT = 8000;
@@ -52,8 +58,10 @@ export function routesMax(o: {
   assistant?: AssistantApi;
   coach?: Coach;
   conseillers?: Conseillers;
+  mac?: Mac;
 }) {
   const root = path.resolve(o.config.dossierMissions);
+  const confirmations = new Confirmations();
 
   const resultat = (nom: string | null): { ok: boolean; texte: string } => {
     const dossier = nom ? path.join(root, path.basename(nom)) : null;
@@ -94,6 +102,7 @@ export function routesMax(o: {
       case "POST /api/reveil":
         if (!o.assistant) return repondre(res, 503, { ok: false, texte: "Max n'est pas disponible." });
         o.assistant.reveiller();
+        o.assistant.allerA?.("jarvis");
         return repondre(res, 200, { ok: true, texte: "Max est réveillé." });
       case "GET /api/outils/etat":
         return repondre(res, 200, { ok: true, texte: decrireEtat(m.snapshot().mission) });
@@ -165,6 +174,115 @@ export function routesMax(o: {
       case "POST /api/outils/noter-pour":
         if (!conseillers) return repondre(res, 503, { ok: false, texte: "Les conseillers ne sont pas disponibles." });
         return repondre(res, 200, conseillers.noterPour(texte("conseiller"), texte("note")));
+      // le Mac
+      case "POST /api/outils/app":
+      case "POST /api/outils/site":
+      case "POST /api/outils/youtube":
+      case "POST /api/outils/volume":
+      case "POST /api/outils/luminosite":
+      case "POST /api/outils/capture":
+      case "POST /api/outils/verrouiller":
+      case "POST /api/outils/musique":
+      case "POST /api/outils/contact":
+      case "POST /api/outils/preparer-message":
+      case "POST /api/outils/envoyer-message":
+      case "GET /api/outils/mails":
+      case "GET /api/outils/agenda":
+      case "POST /api/outils/preparer-rdv":
+      case "POST /api/outils/creer-rdv":
+      case "GET /api/outils/meteo": {
+        const mac = o.mac;
+        if (!mac) return repondre(res, 503, { ok: false, texte: "Le pilotage du Mac n'est pas disponible." });
+        const q = (cle: string) => (url.searchParams.get(cle) ?? "").trim();
+        const dernier = () => o.assistant?.dernierMessageUtilisateur?.() ?? null;
+        let r: { ok: boolean; texte: string };
+        switch (chemin) {
+          case "/api/outils/app":
+            r = texte("action") === "fermer" ? await mac.fermerApp(texte("nom")) : await mac.ouvrirApp(texte("nom"));
+            break;
+          case "/api/outils/site":
+            r = await mac.ouvrirSite(texte("url"));
+            break;
+          case "/api/outils/youtube":
+            r = await mac.chercherYoutube(texte("recherche"));
+            break;
+          case "/api/outils/volume":
+            r = await mac.volume(texte("niveau"));
+            break;
+          case "/api/outils/luminosite":
+            r = await mac.luminosite(texte("sens") as "plus" | "moins", nombre("crans") ?? 2);
+            break;
+          case "/api/outils/capture":
+            r = await mac.capture();
+            break;
+          case "/api/outils/verrouiller":
+            r = await mac.verrouiller();
+            break;
+          case "/api/outils/musique":
+            r = await mac.musique((texte("action") || "jouer") as "jouer", texte("recherche") || undefined);
+            break;
+          case "/api/outils/contact": {
+            const c = await mac.chercherContact(texte("nom"));
+            r = { ok: c.ok, texte: c.texte };
+            break;
+          }
+          case "/api/outils/preparer-message": {
+            const message = texte("texte");
+            if (!message) {
+              r = { ok: false, texte: "Le message est vide." };
+              break;
+            }
+            const d = await mac.trouverDestinataire(texte("destinataire"));
+            if (!d.ok) {
+              r = d;
+              break;
+            }
+            confirmations.preparer("message", `à ${d.nom} (${d.handle}) : « ${message} »`, () => mac.envoyerIMessage(d.handle, message));
+            r = {
+              ok: true,
+              texte: `Message prêt pour ${d.nom} (${d.handle}) : « ${message} ». Il n'est PAS encore envoyé. Lis-le à l'utilisateur et demande-lui s'il confirme ; quand il répond oui, appelle envoyer_message.`,
+            };
+            break;
+          }
+          case "/api/outils/envoyer-message":
+            r = await confirmations.confirmer("message", dernier());
+            break;
+          case "/api/outils/mails":
+            r = await mac.lireMails(Number(q("n")) || 5, q("non_lus") !== "0");
+            break;
+          case "/api/outils/agenda": {
+            const a = await mac.agenda(q("jour") || "aujourdhui");
+            r = { ok: a.ok, texte: a.texte };
+            break;
+          }
+          case "/api/outils/preparer-rdv": {
+            const rdv = { titre: texte("titre"), date: texte("date"), heure: texte("heure"), minutes: nombre("minutes") ?? 60, calendrier: texte("calendrier") || undefined };
+            const probleme = mac.validerRdv(rdv);
+            if (probleme) {
+              r = { ok: false, texte: probleme };
+              break;
+            }
+            const resume = `« ${rdv.titre} » le ${mac.jour(rdv.date)} à ${rdv.heure}, ${rdv.minutes} minutes${rdv.calendrier ? `, calendrier ${rdv.calendrier}` : ""}`;
+            confirmations.preparer("rdv", resume, () => mac.creerRdv(rdv));
+            r = { ok: true, texte: `Rendez-vous prêt : ${resume}. Il n'est PAS encore ajouté. Demande à l'utilisateur s'il confirme ; quand il répond oui, appelle creer_rdv.` };
+            break;
+          }
+          case "/api/outils/creer-rdv":
+            r = await confirmations.confirmer("rdv", dernier());
+            break;
+          default: {
+            const m = await mac.meteo(q("ville") || undefined);
+            r = { ok: m.ok, texte: m.texte };
+          }
+        }
+        return repondre(res, 200, r);
+      }
+      case "POST /api/outils/vue": {
+        const vue = texte("vue");
+        if (vue !== "jarvis" && vue !== "bureau") return repondre(res, 200, { ok: false, texte: "Écran inconnu : jarvis ou bureau." });
+        o.assistant?.allerA?.(vue);
+        return repondre(res, 200, { ok: true, texte: vue === "bureau" ? "Direction le bureau." : "Retour à l'écran de Max." });
+      }
       default:
         return repondre(res, 404, { ok: false, texte: "Outil inconnu." });
     }

@@ -11,6 +11,8 @@ import { lireCarnet } from "./max/carnet.ts";
 import { Cerveau } from "./max/cerveau.ts";
 import { Coach, lireProfil } from "./max/coach.ts";
 import { Conseillers } from "./max/conseillers.ts";
+import { InfosJarvis } from "./max/infos-jarvis.ts";
+import { Mac } from "./max/mac.ts";
 import { ecrireConfigMcp } from "./max/mcp-config.ts";
 import { MissionManager } from "./mission.ts";
 import { listMissions, markInterrupted } from "./storage.ts";
@@ -44,6 +46,14 @@ const conseillers = new Conseillers({
   profil,
   contexte: () => coach.contexte(),
 });
+// La télécommande du Mac et les panneaux de l'écran Jarvis (météo, agenda du jour)
+const mac = new Mac({
+  actif: process.platform === "darwin",
+  musique: config.mac.musique,
+  ville: config.mac.ville,
+  ...(config.mac.dossierCaptures ? { dossierCaptures: config.mac.dossierCaptures } : {}),
+});
+const jarvis = new InfosJarvis(mac);
 const assistant = new Assistant({
   oreille,
   bouche,
@@ -64,7 +74,7 @@ const assistant = new Assistant({
 console.log(`${dispoOreille.ok ? "🎙 " : "⚠️ "} ${dispoOreille.detail}`);
 console.log(`${dispoBouche.ok ? "🔊" : "⚠️ "} ${dispoBouche.detail}`);
 
-const server = createBureauServer({ config, manager, webDir: path.join(racine, "web", "dist"), jeton, assistant, coach, conseillers });
+const server = createBureauServer({ config, manager, webDir: path.join(racine, "web", "dist"), jeton, assistant, coach, conseillers, mac, jarvis });
 
 const claudePret = checkClaude(bin).then((etat) => {
   manager.setClaude(etat);
@@ -90,6 +100,7 @@ server.listen(config.port, "127.0.0.1", async () => {
   console.log(`📁 Missions rangées dans : ${config.dossierMissions}`);
   console.log("Laisse cette fenêtre ouverte. Ctrl+C pour fermer le Bureau.\n");
   if (!process.env.BUREAU_NO_OPEN) ouvrirDansFinder(url);
+  jarvis.demarrer();
   if ((await claudePret) && !process.env.BUREAU_SANS_REVEIL) assistant.reveiller();
 });
 
@@ -98,6 +109,7 @@ const fermer = () => {
   fs.rmSync(fichierPid, { force: true });
   assistant.veille();
   coach.fermer();
+  jarvis.arreter();
   conseillers.arreterTout();
   manager.arreter();
   setTimeout(() => process.exit(0), 1500).unref();

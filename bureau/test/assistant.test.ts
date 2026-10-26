@@ -420,6 +420,21 @@ describe("Assistant — coach", () => {
     expect(cerveau().recus.at(-1)).toBe("Et après ?");
   });
 
+  it("commence sur l'écran Jarvis, change d'écran à la demande, et retient le dernier message de l'utilisateur", () => {
+    expect(a.vue().vue).toBe("jarvis");
+    let changements = 0;
+    a.on("etat", () => changements++);
+    a.allerA("bureau");
+    a.allerA("bureau");
+    expect(a.vue().vue).toBe("bureau");
+    expect(changements).toBe(1);
+    expect(a.dernierMessageUtilisateur()).toBeNull();
+    a.ecrire("oui vas-y");
+    expect(a.dernierMessageUtilisateur()).toMatchObject({ texte: "oui vas-y" });
+    coach.emit("fin", { type: "pause", sujet: "", minutes: 5, aujourdhui: 0 });
+    expect(a.dernierMessageUtilisateur()).toMatchObject({ texte: "oui vas-y" });
+  });
+
   it("ajoute l'heure devant les messages de l'utilisateur quand on le lui demande", () => {
     creer({ horodater: true });
     a.ecrire("Bonjour");
