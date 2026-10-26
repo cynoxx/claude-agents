@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
 import { HAUTEUR, LARGEUR, OfficeScene } from "./office-scene.ts";
 import { Conversation } from "./conversation.ts";
+import { Jarvis } from "./jarvis.ts";
 import { Interface } from "./ui.ts";
 import "./style.css";
 
@@ -16,6 +17,7 @@ const envoyer = (m: ClientMessage) => {
 const ui = new Interface(envoyer);
 const scene = new OfficeScene({ onClic: (id) => ui.clicPersonnage(id) });
 const conversation = new Conversation(envoyer);
+const jarvis = new Jarvis(envoyer);
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -39,6 +41,7 @@ function connecter(): void {
     const msg: ServerMessage = JSON.parse(e.data);
     if (msg.type === "etat") {
       ui.rendre(msg.etat);
+      jarvis.rendre(msg.etat);
       conversation.rendre(msg.etat.assistant);
       scene.sync(msg.etat.mission, msg.etat.assistant);
       scene.syncConseillers(msg.etat.conseillers);

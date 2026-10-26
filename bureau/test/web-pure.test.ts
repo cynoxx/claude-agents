@@ -78,3 +78,41 @@ describe("coach à l'écran", () => {
     expect(restant("2026-10-26T14:25:00.000Z", Date.parse("2026-10-26T15:00:00.000Z"))).toBe("0:00");
   });
 });
+
+describe("écran Jarvis", () => {
+  const vue = (messages: { de: "toi" | "max" | "bureau"; texte: string }[], phrase = "") => ({
+    etat: "ecoute" as const,
+    phrase,
+    messages: messages.map((m) => ({ ...m, heure: "2026-10-27T10:00:00Z" })),
+    oreille: { ok: true },
+    bouche: { ok: true },
+    cerveau: { ok: true },
+  });
+
+  it("montre la phrase qu'il dit, sinon sa dernière réponse raccourcie", async () => {
+    const { textePrincipal } = await import("../web/jarvis.ts");
+    expect(textePrincipal(undefined)).toBe("");
+    expect(textePrincipal(vue([{ de: "max", texte: "Salut !" }], "Il fait 12 degrés."))).toBe("Il fait 12 degrés.");
+    expect(textePrincipal(vue([{ de: "max", texte: "Salut !" }, { de: "bureau", texte: "🔎 …" }]))).toBe("Salut !");
+    const long = textePrincipal(vue([{ de: "max", texte: "a".repeat(400) }]));
+    expect(long).toHaveLength(240);
+    expect(long.endsWith("…")).toBe(true);
+  });
+
+  it("montre ta dernière phrase seulement tant que Max n'a pas répondu", async () => {
+    const { texteToi } = await import("../web/jarvis.ts");
+    expect(texteToi(vue([{ de: "max", texte: "Salut" }, { de: "toi", texte: "Quelle météo ?" }]))).toBe("Quelle météo ?");
+    expect(texteToi(vue([{ de: "toi", texte: "Quelle météo ?" }, { de: "max", texte: "12 degrés" }]))).toBe("");
+  });
+
+  it("ne garde que les rendez-vous à venir (ou commencés depuis moins d'une heure)", async () => {
+    const { prochainsRdv } = await import("../web/jarvis.ts");
+    const agenda = [
+      { heure: "", titre: "Anniversaire Léa" },
+      { heure: "08:30", titre: "Anatomie" },
+      { heure: "13:30", titre: "Biochimie" },
+      { heure: "18:00", titre: "Sport" },
+    ];
+    expect(prochainsRdv(agenda, new Date("2026-10-27T14:00:00")).map((e) => e.titre)).toEqual(["Anniversaire Léa", "Biochimie", "Sport"]);
+  });
+});

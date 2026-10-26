@@ -6,7 +6,39 @@
     <title>Le Bureau</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>" />
   </head>
-  <body>
+  <body data-vue="jarvis">
+    <section id="jarvis" class="jarvis" aria-label="Max">
+      <div class="j-haut">
+        <div class="j-nom">MAX</div>
+        <div id="j-statut" class="j-statut" data-etat="veille">En veille</div>
+        <span class="espace"></span>
+        <button type="button" id="j-reveil">👂 Réveiller</button>
+        <button type="button" id="j-bureau">🏢 Le bureau</button>
+      </div>
+      <div class="j-centre">
+        <aside class="j-cote j-gauche">
+          <div class="j-carte j-horloge"><div id="j-heure" class="j-heure">--:--</div><div id="j-date" class="j-date"></div></div>
+          <div class="j-carte"><h3>Météo</h3><div id="j-meteo" class="j-meteo">—</div></div>
+          <div class="j-carte"><h3>Aujourd'hui</h3><ol id="j-agenda" class="j-agenda"></ol></div>
+        </aside>
+        <div class="j-sphere-zone">
+          <canvas id="sphere" class="j-sphere"></canvas>
+          <p id="j-toi" class="j-toi"></p>
+          <p id="j-dit" class="j-dit" aria-live="polite"></p>
+          <p id="j-soucis" class="j-soucis"></p>
+        </div>
+        <aside class="j-cote j-droite">
+          <div class="j-carte"><h3>Objectif</h3><div id="j-echeance" class="j-gros">—</div><div id="j-travail" class="j-petit"></div><div id="j-minuteur" class="j-minuteur" hidden></div></div>
+          <button type="button" id="j-mission" class="j-carte j-mission" hidden></button>
+          <div id="j-conseillers" class="j-petit"></div>
+        </aside>
+      </div>
+      <form id="j-form" class="j-form">
+        <input id="j-texte" autocomplete="off" placeholder="Parle à Max (« Max, … ») ou écris-lui ici" />
+        <button type="submit">Envoyer</button>
+      </form>
+    </section>
+
     <header class="barre">
       <div class="titre">🏢 Le Bureau</div>
       <div class="statut">
@@ -15,6 +47,7 @@
         <span id="titre-mission"></span>
       </div>
       <nav>
+        <button id="btn-jarvis" title="Revenir à l'écran de Max">🔵 Max</button>
         <button id="btn-resultat" hidden>📄 Résultat</button>
         <button id="btn-reprendre" hidden>▶️ Reprendre</button>
         <button id="btn-arreter" class="danger" hidden>⏹ Arrêter</button>
