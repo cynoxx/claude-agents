@@ -1,4 +1,5 @@
 // `npm start` (ou le script lancé par « Dis Siri, Max au rapport ») : démarre le Bureau, réveille Max et ouvre le navigateur.
+import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -82,6 +83,8 @@ const sport = new Sport({ dossier: config.dossierMissions });
 // ta musique : l'intro au lancement de Max, et le fond de l'appel du réveil
 const musique = new Musique({
   source: config.musique.fichier,
+  recherche: config.musique.recherche,
+  recherchePar: process.platform === "darwin" ? (nom) => new Promise((r) => execFile("mdfind", ["-name", nom], { timeout: 15_000 }, (_e, out) => r(String(out).split("\n").filter(Boolean)))) : undefined,
   dossier: path.join(config.dossierDonnees, "musique"),
   ffmpeg: config.voix.ffmpeg,
   lecteur: process.platform === "darwin" ? "afplay" : null,
@@ -129,6 +132,8 @@ assistant.on("arrivee", () => {
   if (process.platform === "darwin") void trieur.lancer();
 });
 trieur.on("trie", (resume: string) => assistant.informer(`Ses mails non lus ont été triés automatiquement et s'affichent dans une fenêtre sur ton écran. Résumé : ${resume}`));
+const musiqueTrouvee = await musique.chercher();
+console.log(musique.disponible ? `🎵 Musique de Max : ${musiqueTrouvee && musiqueTrouvee !== config.musique.fichier ? `trouvée (${musiqueTrouvee}) et rangée dans ${config.musique.fichier}` : config.musique.fichier}` : `⚠️  Pas de musique de Max (aucun mp3 « ${config.musique.recherche} » trouvé) : mets-le dans ${config.musique.fichier}`);
 console.log(`${dispoOreille.ok ? "🎙 " : "⚠️ "} ${dispoOreille.detail}`);
 console.log(`${dispoBouche.ok ? "🔊" : "⚠️ "} ${dispoBouche.detail}`);
 

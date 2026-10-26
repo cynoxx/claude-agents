@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { CONFIG_FILE, DEFAULT_CONFIG, loadConfig } from "./config.ts";
 import { FICHIER_PROFIL } from "./max/coach.ts";
 import { checkClaude } from "./claude-check.ts";
+import { Musique } from "./max/musique.ts";
 import { creerBouche } from "./voix/voix-config.ts";
 import { preparerOreille } from "./voix/diagnostic.ts";
 
@@ -56,8 +57,10 @@ b.arreter();
 console.log(`${bouche.ok ? "✔ Voix de Max :" : "✘ Voix de Max :"} ${bouche.detail}`);
 if (!bouche.detail?.includes("Piper")) console.log("  → Pour une voix bien plus naturelle (neuronale, locale) : npm run voix");
 
-if (fs.existsSync(config.musique.fichier)) console.log(`✔ Musique de Max : ${config.musique.fichier}`);
-else console.log(`– Pas de musique de Max (intro et fond du réveil) : mets ton MP3 ici → ${config.musique.fichier}`);
+const musiqueSetup = new Musique({ source: config.musique.fichier, recherche: config.musique.recherche, dossier: path.join(config.dossierDonnees, "musique"), ffmpeg: config.voix.ffmpeg, lecteur: null });
+const trouvee = await musiqueSetup.chercher();
+if (musiqueSetup.disponible) console.log(`✔ Musique de Max : ${trouvee && trouvee !== config.musique.fichier ? `trouvée (${trouvee}), rangée dans ` : ""}${config.musique.fichier}`);
+else console.log(`– Pas de musique de Max (intro et fond du réveil) : aucun mp3 « ${config.musique.recherche} » trouvé. Mets ton MP3 ici → ${config.musique.fichier}`);
 const tw = config.reveil.twilio;
 if (config.reveil.telephone && tw.compte && tw.jeton && tw.numero) console.log(`✔ Réveil par appel : vers ${config.reveil.telephone} (essai : npm run appel).`);
 else console.log("– Réveil par appel pas configuré : il faut ton numéro et un compte Twilio dans « reveil » (README, section « Le réveil »).");

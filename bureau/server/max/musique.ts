@@ -4,6 +4,7 @@
 import { execFile, spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 export type Executer = (bin: string, args: string[]) => Promise<{ code: number; stderr: string }>;
@@ -12,6 +13,18 @@ const executerParDefaut: Executer = (bin, args) =>
   new Promise((resolve) => {
     execFile(bin, args, { timeout: 120_000 }, (e, _stdout, stderr) => resolve({ code: e ? ((e as { code?: number }).code ?? 1) : 0, stderr: String(stderr) }));
   });
+
+/** Les mp3 d'un dossier (sans descendre dans les sous-dossiers) dont le nom correspond au motif. */
+export function chercherMp3(dossier: string, motif: RegExp): string[] {
+  try {
+    return fs
+      .readdirSync(dossier)
+      .filter((n) => /\.mp3$/i.test(n) && motif.test(n))
+      .map((n) => path.join(dossier, n));
+  } catch {
+    return [];
+  }
+}
 
 /** L'intro : 14 s, pleine puissance 5 s, puis baisse sous la voix de Max, et fondu final. */
 export const INTRO_MS = 14_000;
@@ -49,6 +62,12 @@ export class Musique extends EventEmitter {
     private o: {
       /** Ton fichier de musique ; null ou absent = pas de musique. */
       source: string | null;
+      /** Un motif (regex, sans tenir compte des majuscules) pour retrouver ton mp3 par son nom s'il n'est pas à sa place. */
+      recherche?: string;
+      /** La maison de l'utilisateur (pour les tests). */
+      maison?: string;
+      /** Recherche par Spotlight (`mdfind -name …`), pour les fichiers rangés ailleurs. */
+      recherchePar?: (nom: string) => Promise<string[]>;
       /** Où ranger les extraits préparés. */
       dossier: string;
       ffmpeg: string;
@@ -63,6 +82,36 @@ export class Musique extends EventEmitter {
 
   get disponible(): boolean {
     return !!this.o.source && fs.existsSync(this.o.source);
+  }
+
+  /**
+   * Si ta musique n'est pas encore à sa place, la cherche par son nom là où on télécharge ou range d'habitude
+   * (Téléchargements, Bureau, Musique, Documents, puis Spotlight) et la copie à sa place. Renvoie où elle est.
+   */
+  async chercher(): Promise<string | null> {
+    if (this.disponible) return this.o.source;
+    if (!this.o.source || !this.o.recherche) return null;
+    const motif = new RegExp(this.o.recherche, "i");
+    const maison = this.o.maison ?? os.homedir();
+    const lieux = ["Downloads", "Desktop", "Music", "Documents", path.join("Music", "Music", "Media.localized", "Music")].map((d) => path.join(maison, d));
+    let trouves = lieux.flatMap((d) => chercherMp3(d, motif));
+    if (!trouves.length && this.o.recherchePar) {
+      try {
+        trouves = (await this.o.recherchePar(this.o.recherche)).filter((f) => /\.mp3$/i.test(f) && motif.test(path.basename(f)) && fs.existsSync(f));
+      } catch {
+        trouves = [];
+      }
+    }
+    if (!trouves.length) return null;
+    // le plus récent d'abord
+    trouves.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+    try {
+      fs.mkdirSync(path.dirname(this.o.source), { recursive: true });
+      fs.copyFileSync(trouves[0], this.o.source);
+    } catch {
+      return null;
+    }
+    return trouves[0];
   }
 
   get source(): string | null {

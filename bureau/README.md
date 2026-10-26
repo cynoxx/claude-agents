@@ -128,14 +128,7 @@ Les séances sont gardées dans `~/Documents/Bureau/sport/seances.jsonl`, ta sem
 
 À chaque lancement (« Dis Siri, Max au rapport », puis ton visage), un éclair rouge et or traverse l'écran, les anneaux de Max s'assemblent, ses systèmes s'allument, puis il se forme en comète de particules. Ta musique démarre en même temps, puis elle baisse pour qu'il te salue par-dessus.
 
-Pour la musique, mets ton MP3 (par exemple *Real Gone*) ici, une seule fois :
-
-```bash
-mkdir -p ~/Documents/Bureau/musique
-cp ~/Downloads/Cars_1_Real_Gone.mp3 ~/Documents/Bureau/musique/max.mp3
-```
-
-(Adapte le chemin si ton fichier est ailleurs.) La même musique sert de fond à l'appel du réveil. Pour couper l'intro : `"musique": { "intro": false }` dans `bureau.config.json`.
+**Tu n'as rien à faire** : au démarrage, le Bureau cherche tout seul ton mp3 par son nom (par défaut « real gone ») dans Téléchargements, Bureau, Musique et Documents, puis avec Spotlight, et le range dans `~/Documents/Bureau/musique/max.mp3`. Il te le dit dans le Terminal (« 🎵 Musique de Max : trouvée… »), et l'intro affiche « Musique : EN LIGNE ». Pour une autre musique, change le mot cherché : `"musique": { "recherche": "mon-morceau" }`, ou mets ton MP3 à la main dans ce dossier. La même musique sert de fond à l'appel du réveil. Pour couper l'intro : `"musique": { "intro": false }` dans `bureau.config.json`.
 
 ### Le réveil : Max t'appelle
 

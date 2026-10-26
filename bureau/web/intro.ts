@@ -16,6 +16,7 @@ export function lignesIntro(e: EtatBureau): { texte: string; ok: boolean }[] {
   const a = e.assistant;
   const n = e.conseillers?.length ?? 0;
   return [
+    ...(e.musique === undefined ? [] : [{ texte: "Musique", ok: e.musique }]),
     { texte: "Voix", ok: a?.bouche.ok ?? false },
     { texte: "Oreille", ok: a?.oreille.ok ?? false },
     { texte: "Cerveau", ok: e.claude.ok },

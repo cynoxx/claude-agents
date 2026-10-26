@@ -53,7 +53,7 @@ export interface BureauConfig {
   /** Objectif de minutes par jour, par pôle (affiché comme une barre à remplir). */
   objectifsParJour: Record<string, number>;
   /** Ta musique (MP3) : l'intro quand Max se lance, et le fond de l'appel du réveil. */
-  musique: { fichier: string; intro: boolean };
+  musique: { fichier: string; intro: boolean; /** Mot du nom de ton mp3, pour que le Bureau le retrouve tout seul (Téléchargements, Musique…). */ recherche: string };
   /** Le réveil : Max t'appelle sur ton téléphone (par Twilio). */
   reveil: ReveilConfig;
 }
@@ -110,7 +110,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   visage: { actif: true },
   tempsParJour: { business: 60 },
   objectifsParJour: { etudes: 360 },
-  musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true },
+  musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true, recherche: "real.?gone" },
   reveil: { telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "", cle: "" } },
 };
 

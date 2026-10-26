@@ -2133,7 +2133,7 @@ body[data-verrou="oui"] {
 }
 .intro.joue .intro-lignes li {
   animation: intro-ligne 0.35s ease-out forwards;
-  animation-delay: calc(1.9s + var(--i) * 0.32s);
+  animation-delay: calc(1.9s + var(--i) * 0.26s);
 }
 @keyframes intro-ligne {
   from {

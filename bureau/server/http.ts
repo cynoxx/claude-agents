@@ -209,6 +209,7 @@ export function createBureauServer(o: {
       ...(o.sport ? { sport: o.sport.vue() } : {}),
       ...(o.coach && o.conseillers ? { poles: poles(), idees: lireIdees(root).slice(-8) } : {}),
       ...(intro ? { intro } : {}),
+      ...(o.musique ? { musique: o.musique.disponible } : {}),
       ...(o.reveil ? { reveil: o.reveil.vue() } : {}),
     };
   };

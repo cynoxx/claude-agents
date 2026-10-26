@@ -47,6 +47,35 @@ describe("musique de Max", () => {
     expect(appels).toHaveLength(1); // l'extrait est gardé
   });
 
+  it("retrouve ton mp3 par son nom (Téléchargements…), le copie à sa place, et prend le plus récent", async () => {
+    const maison = tmp();
+    fs.mkdirSync(path.join(maison, "Downloads"));
+    fs.mkdirSync(path.join(maison, "Desktop"));
+    fs.writeFileSync(path.join(maison, "Downloads", "Cars_1_Real_Gone.mp3"), "ancien");
+    fs.writeFileSync(path.join(maison, "Downloads", "autre-chanson.mp3"), "non");
+    fs.writeFileSync(path.join(maison, "Desktop", "Real Gone (1).mp3"), "recent");
+    fs.utimesSync(path.join(maison, "Downloads", "Cars_1_Real_Gone.mp3"), new Date("2026-01-01"), new Date("2026-01-01"));
+    const source = path.join(maison, "Documents", "Bureau", "musique", "max.mp3");
+    const m = new Musique({ source, recherche: "real.?gone", maison, dossier: tmp(), ffmpeg: "ffmpeg", lecteur: null });
+    expect(m.disponible).toBe(false);
+    expect(await m.chercher()).toBe(path.join(maison, "Desktop", "Real Gone (1).mp3"));
+    expect(fs.readFileSync(source, "utf8")).toBe("recent");
+    expect(m.disponible).toBe(true);
+    expect(await m.chercher()).toBe(source); // déjà en place : rien à refaire
+  });
+
+  it("cherche avec Spotlight quand il n'est dans aucun dossier habituel, et dit quand il ne trouve rien", async () => {
+    const maison = tmp();
+    const ailleurs = path.join(tmp(), "Cars_1_Real_Gone.mp3");
+    fs.writeFileSync(ailleurs, "mp3");
+    const source = path.join(maison, "max.mp3");
+    const rien = new Musique({ source, recherche: "real.?gone", maison, dossier: tmp(), ffmpeg: "ffmpeg", lecteur: null, recherchePar: async () => [] });
+    expect(await rien.chercher()).toBeNull();
+    const spot = new Musique({ source, recherche: "real.?gone", maison, dossier: tmp(), ffmpeg: "ffmpeg", lecteur: null, recherchePar: async () => [ailleurs, "/x/autre.mp3"] });
+    expect(await spot.chercher()).toBe(ailleurs);
+    expect(spot.disponible).toBe(true);
+  });
+
   it("sans fichier de musique : l'animation seule, et Max parle presque tout de suite", () => {
     const m = new Musique({ source: "/nexiste/pas.mp3", dossier: tmp(), ffmpeg: "ffmpeg", lecteur: "afplay" });
     const intros: number[] = [];
@@ -73,6 +102,7 @@ describe("intro de la page", () => {
       jarvis: { meteo: null, agenda: [] },
       conseillers: [{}, {}, {}, {}, {}],
     } as unknown as EtatBureau;
+    expect(lignesIntro({ ...e, musique: true })[0]).toEqual({ texte: "Musique", ok: true });
     expect(lignesIntro(e)).toEqual([
       { texte: "Voix", ok: true },
       { texte: "Oreille", ok: false },

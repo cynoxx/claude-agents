@@ -225,6 +225,8 @@ export interface EtatBureau {
   idees?: string[];
   /** Moment (ms) du dernier lancement de Max : la page joue alors l'animation d'intro. */
   intro?: number;
+  /** Sa musique (intro et réveil) est trouvée sur le Mac. */
+  musique?: boolean;
   reveil?: ReveilVue;
 }
 

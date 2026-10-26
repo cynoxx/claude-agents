@@ -20,7 +20,8 @@ if (!config.reveil.telephone || !twilio) {
 const bouche = creerBouche(config);
 console.log("… préparation de la voix de Max");
 await bouche.preparer();
-const musique = new Musique({ source: config.musique.fichier, dossier: path.join(config.dossierDonnees, "musique"), ffmpeg: config.voix.ffmpeg, lecteur: null });
+const musique = new Musique({ source: config.musique.fichier, recherche: config.musique.recherche, dossier: path.join(config.dossierDonnees, "musique"), ffmpeg: config.voix.ffmpeg, lecteur: null });
+await musique.chercher();
 console.log(musique.disponible ? `✔ Musique : ${config.musique.fichier}` : `⚠️  Pas de musique (${config.musique.fichier} introuvable) : l'appel sera lu par une voix Twilio.`);
 const preparer = preparateurReveil({ config, twilio, bouche, musique, sport: new Sport({ dossier: config.dossierMissions }), profil: () => lireProfil(config.dossierMissions), prenom: () => "" });
 console.log("… préparation du message (voix + musique, envoi chez Twilio)");
