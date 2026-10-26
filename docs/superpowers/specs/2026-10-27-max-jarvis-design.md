@@ -234,6 +234,12 @@ limite business** ; les 5 pôles actuels.
 - **Montagnes** : le niveau de la voix de Max éclaire le décor et fait courir une onde le long des crêtes.
 - **Accueil** : `complementSport` ajoute la séance du jour (ou « déjà faite, bravo ») avant « Je t'écoute ».
 
+- **Scanner d'entrée** (`web/scan-visage.ts`) : pendant `reconnaitre`, `#verrou[data-scan]` met la vidéo en plein
+  écran (filtre CSS) et un canevas dessine le maillage (68 points de face-api, `MAILLAGE`, placés par `versEcran` :
+  miroir + `object-fit: cover`), les crochets, la ligne de scan, les données et la progression (visage vu, un côté,
+  les deux, comparaison). Le serveur annonce le déverrouillage avant de répondre : l'écran reste affiché pendant la
+  vérification puis pendant `accorder()` (2,7 s), et l'intro attend qu'il soit caché.
+
 ## Hors périmètre
 
 WhatsApp (pas de façon fiable d'envoyer sans clic), lire les SMS reçus, répondre à un mail, contrôle de la maison.

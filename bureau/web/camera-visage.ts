@@ -11,6 +11,10 @@ export interface Analyse {
   descripteur?: number[];
   /** Confiance de la détection (0 à 1). */
   score: number;
+  /** Les 68 points du visage, en proportion de l'image brute (0 à 1). */
+  points: [number, number][];
+  /** La boîte du visage, en proportion de l'image brute. */
+  boite: { x: number; y: number; l: number; h: number };
 }
 
 let api: Promise<typeof FaceApi> | null = null;
@@ -77,6 +81,15 @@ export class CameraVisage {
     const r = avecDescripteur ? await base.withFaceDescriptor() : await base;
     if (!r) return null;
     const d = (r as { descriptor?: Float32Array }).descriptor;
-    return { lacet: lacet(r.landmarks.positions), score: r.detection.score, ...(d ? { descripteur: Array.from(d) } : {}) };
+    const l = this.video.videoWidth || 640;
+    const h = this.video.videoHeight || 480;
+    const b = r.detection.box;
+    return {
+      lacet: lacet(r.landmarks.positions),
+      score: r.detection.score,
+      points: r.landmarks.positions.map((p): [number, number] => [p.x / l, p.y / h]),
+      boite: { x: b.x / l, y: b.y / h, l: b.width / l, h: b.height / h },
+      ...(d ? { descripteur: Array.from(d) } : {}),
+    };
   }
 }

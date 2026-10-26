@@ -5,6 +5,7 @@
 import type { ClientMessage, ServerMessage, VerrouVue } from "../shared/protocol.ts";
 import { son } from "./sons.ts";
 import { CameraVisage } from "./camera-visage.ts";
+import { ScanVisage } from "./scan-visage.ts";
 import { MouvementTete } from "./visage-pur.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -35,11 +36,18 @@ export class EcranVerrou {
   private enGuet = false;
   private pauseGuetJusqua = 0;
   private relanceGuet?: number;
+  /** Le scanner plein écran pendant la reconnaissance, et la sortie (le grand final) en cours. */
+  private scan = new ScanVisage($<HTMLCanvasElement>("v-scan"), $<HTMLVideoElement>("v-video"));
+  private enSortie = false;
+  /** Une vérification attend la réponse du Bureau (qui annonce le déverrouillage juste avant de répondre). */
+  private verifEnCours = false;
 
   constructor(private envoyer: (m: ClientMessage) => void) {
     $("v-camera").addEventListener("click", () => {
-      if (this.enGuet) this.session++;
-      void this.reconnaitre();
+      // pendant le guet, la caméra est déjà allumée : la reconnaissance la reprend
+      const guet = this.enGuet;
+      if (guet) this.session++;
+      void this.reconnaitre(guet);
     });
     $("v-guet").addEventListener("click", () => {
       this.guetVoulu = !this.guetVoulu;
@@ -76,13 +84,15 @@ export class EcranVerrou {
   rendre(v: VerrouVue | undefined, alarme = false): void {
     this.vue = v;
     const verrouille = !!v?.verrouille;
-    $("verrou").hidden = !verrouille;
+    // reconnu : l'écran reste le temps du grand final, puis s'efface
+    const garder = this.enSortie || this.verifEnCours;
+    $("verrou").hidden = !verrouille && !garder;
     document.body.dataset.verrou = verrouille ? "oui" : "non";
     $("verrou").classList.toggle("v-alarme", alarme);
     if (v) $("v-titre").textContent = alarme ? "⏰ Debout ! Regarde la caméra pour arrêter le réveil" : v.prenom ? `Bonjour ${v.prenom} ?` : "Max est verrouillé";
     $("j-visage").textContent = v?.enregistre ? "🔐 Visage" : "🔐 Activer le visage";
     $("j-visage").hidden = !v?.actif;
-    if (!verrouille && this.camera.allumee) {
+    if (!verrouille && this.camera.allumee && !garder) {
       this.session++;
       this.camera.arreter();
       $("v-cadre").dataset.actif = "non";
@@ -163,6 +173,10 @@ export class EcranVerrou {
 
   private stopper(): void {
     this.session++;
+    if (!this.enSortie) {
+      this.scan.arreter();
+      $("verrou").dataset.scan = "non";
+    }
     this.camera.arreter();
     this.cameraInscription.arreter();
     $("v-cadre").dataset.actif = "non";
@@ -194,12 +208,17 @@ export class EcranVerrou {
     const session = ++this.session;
     $("v-cadre").dataset.actif = "oui";
     if (!cameraDejaAllumee && !(await this.allumer())) return;
+    // l'écran devient un scanner
+    $("verrou").dataset.scan = "oui";
+    this.scan.demarrer();
+    son("clic");
     const tete = new MouvementTete();
     let dernierEnvoi = 0;
     const fin = Date.now() + DUREE_MS;
     this.statut("Regarde la caméra, puis tourne doucement la tête à gauche et à droite.");
     while (session === this.session && Date.now() < fin && this.vue?.verrouille) {
       const a = await this.camera.analyser(false).catch(() => null);
+      this.scan.voir(a);
       if (!a) {
         this.statut("Je ne vois pas ton visage : mets-toi bien en face.");
         await attendre(80);
@@ -207,6 +226,7 @@ export class EcranVerrou {
       }
       tete.ajouter(a.lacet);
       const reste = tete.reste;
+      this.scan.progres(reste === "les deux" ? 0.3 : reste ? 0.55 : 0.8, reste === "les deux" ? "Visage verrouillé" : reste ? "Vivacité : un côté" : "Empreinte en cours");
       if (reste) {
         this.statut(reste === "les deux" ? "Je te vois. Tourne doucement la tête à gauche, puis à droite." : "Maintenant, tourne la tête de l'autre côté.");
         continue;
@@ -216,18 +236,41 @@ export class EcranVerrou {
       if (!net?.descripteur) continue;
       dernierEnvoi = Date.now();
       this.statut("Vérification…");
+      this.scan.progres(0.9, "Comparaison");
+      this.verifEnCours = true;
       const r = await this.demanderAuServeur({ type: "visage-verifier", descripteur: net.descripteur, vivant: true });
+      this.verifEnCours = false;
       if (r.ok) {
         this.statut("Reconnu !", true);
         son("deverrouille");
-        break;
+        await this.sortir();
+        return;
       }
+      this.scan.refuser();
+      son("ferme");
       this.statut(r.texte);
     }
     if (session === this.session) {
       if (this.vue?.verrouille) this.statut("Je ne t'ai pas reconnu. Clique sur « Me reconnaître » pour réessayer.");
       this.stopper();
     }
+  }
+
+  /** Le grand final : « Accès autorisé », ton visage s'envole en particules vers Max, puis l'écran s'efface. */
+  private async sortir(): Promise<void> {
+    this.enSortie = true;
+    $("verrou").hidden = false;
+    const ecran = $("verrou");
+    ecran.dataset.scan = "accorde";
+    await this.scan.accorder(this.vue?.prenom ?? "");
+    ecran.classList.add("v-sort");
+    await attendre(450);
+    this.enSortie = false;
+    ecran.classList.remove("v-sort");
+    this.stopper();
+    this.rendre(this.vue);
+    // Max se forme en comète sur l'écran qui apparaît
+    if (!this.vue?.verrouille) window.dispatchEvent(new Event("max-apparait"));
   }
 
   private demanderAuServeur(m: ClientMessage): Promise<{ ok: boolean; texte: string }> {

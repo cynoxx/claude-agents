@@ -42,7 +42,13 @@ export class Intro {
     if (!introAJouer(e.intro, this.jouee)) return;
     this.jouee = e.intro!;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    this.jouer(e);
+    // juste après la reconnaissance du visage, on laisse finir « Accès autorisé » avant l'intro
+    const quandLibre = (essais = 0) => {
+      const verrou = document.getElementById("verrou");
+      if (verrou && !verrou.hidden && essais < 40) window.setTimeout(() => quandLibre(essais + 1), 150);
+      else this.jouer(e);
+    };
+    quandLibre();
   }
 
   private jouer(e: EtatBureau): void {
