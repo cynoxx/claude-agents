@@ -2,7 +2,7 @@
 
 Une équipe d'agents Claude Code qui travaille sous tes yeux, dans un bureau en pixel art.
 
-Tu parles à **Max**, le chef, comme à Jarvis. Il vit sur un **écran façon Jarvis** (une sphère lumineuse qui réagit quand il écoute, réfléchit et parle) et **pilote ton Mac** : apps, sites, musique, volume, iMessage, mails, agenda, météo. « Max, emmène-moi au bureau » te fait plonger dans le bureau pixel art. Quand tu lui dis « Max, compare les mutuelles pour moi », il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et il a cinq **conseillers**, un par domaine de ta vie, assis à leur bureau : 🩺 Prof (études), 💪 Coach (santé), 💼 Associé (business), 📱 Dev (apps), 🏠 Majordome (vie perso). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
+Tu parles à **Max**, le chef, comme à Jarvis. Il vit sur un **écran façon Jarvis** (une sphère lumineuse qui réagit quand il écoute, réfléchit et parle) et **pilote ton Mac** : apps, sites, musique, volume, iMessage, mails, agenda, météo. Il te reconnaît à la **caméra**, comme Face ID, et ne se réveille que pour toi. « Max, emmène-moi au bureau » te fait plonger dans le bureau pixel art. Quand tu lui dis « Max, compare les mutuelles pour moi », il te répond à voix haute et lance son équipe : 🔎 Chercheur, 💻 Codeur, 🎨 Designer, ✍️ Rédacteur, 📊 Analyste. Les robots travaillent en même temps, chacun dans sa bulle, puis Max relit tout et te raconte le résultat. Max est aussi ton **coach** (sessions de travail minutées, bilan de tes heures, compte à rebours de tes examens, rappels) et il a cinq **conseillers**, un par domaine de ta vie, assis à leur bureau : 🩺 Prof (études), 💪 Coach (santé), 💼 Associé (business), 📱 Dev (apps), 🏠 Majordome (vie perso). Tout tourne sur ton Mac avec **ton abonnement Claude**, sans clé API, et ta voix ne quitte jamais l'ordinateur (Whisper en local).
 
 > Le guide complet : [le Bureau](../docs/superpowers/specs/2026-10-25-bureau-agents-design.md), [Max vocal](../docs/superpowers/specs/2026-10-26-max-vocal-design.md) et [Max coach et les conseillers](../docs/superpowers/specs/2026-10-26-max-coach-conseillers-design.md) et [Max façon Jarvis](../docs/superpowers/specs/2026-10-27-max-jarvis-design.md).
 
@@ -54,6 +54,7 @@ npm run setup
 | `mac.ville` | la ville de la météo (`null` = devinée) |
 | `mac.musique` | `"auto"` (Spotify s'il est installé, sinon Musique), `"spotify"` ou `"musique"` |
 | `mac.dossierCaptures` | où ranger les captures d'écran (`null` = le Bureau du Mac) |
+| `visage.actif` | `false` pour ne jamais verrouiller Max, même si un visage est enregistré |
 
 ## Lancer le Bureau
 
@@ -63,6 +64,19 @@ Deux façons :
 - **À la main** : `cd claude-agents/bureau` puis `npm start`. Ton navigateur s'ouvre sur **http://localhost:4747**. Garde la fenêtre du Terminal ouverte ; `Ctrl+C` ferme le Bureau.
 
 Dans les deux cas, Max se réveille tout seul et te dit « Salut ! Je t'écoute. » (ou combien tu as déjà travaillé aujourd'hui). Pour éteindre un Bureau démarré par Siri : `npm run arreter`.
+
+## Mettre à jour
+
+Dans le Terminal, une commande à la fois :
+
+```bash
+cd ~/claude-agents/bureau
+git pull
+npm install
+npm run arreter
+```
+
+`npm install` ajoute ce qui est nouveau (par exemple la reconnaissance du visage) ; `npm run arreter` éteint l'ancien Bureau. Ensuite, « Dis Siri, Max au rapport » relance la nouvelle version.
 
 ## Parler à Max
 
@@ -138,6 +152,24 @@ Max lit tes mails dans l'app **Mail** et ton agenda dans **Calendrier**. Pour y 
 3. Ouvre l'app Mail une fois, le temps qu'elle télécharge tes mails.
 
 Pour les rendez-vous, Max utilise le premier calendrier modifiable ; pour en imposer un : « ajoute-le dans mon calendrier Google ».
+
+## Max te reconnaît (comme Face ID)
+
+Max peut ne se réveiller **que pour toi** : il te reconnaît à la caméra du Mac.
+
+**L'activer (une fois)** : sur l'écran de Max, bouton **🔐 Activer le visage**. Écris ton prénom, clique sur **📷 Enregistrer mon visage**, puis suis les consignes : Max prend 5 images de ton visage (de face, la tête un peu tournée de chaque côté, le menton levé). Ton navigateur te demande d'autoriser la caméra : accepte.
+
+**Ensuite** :
+- Au démarrage et **à chaque fois que Max s'endort**, il se verrouille. Plus de micro, plus de conversation : l'écran affiche 🔒.
+- Dis **« Dis Siri, Max au rapport »** : la page s'ouvre, la caméra s'allume toute seule. Regarde-la et **tourne doucement la tête à gauche puis à droite**. Max te reconnaît et te dit « Salut ! ». Tu peux aussi cliquer sur **📷 Me reconnaître**.
+- La caméra ne s'allume que pendant la vérification (30 secondes au plus) et s'éteint aussitôt après.
+- Le bouton **🔐 Visage** permet aussi de **verrouiller tout de suite**, de **réenregistrer** ton visage ou de **l'effacer** (Max n'est alors plus verrouillé).
+
+**Pourquoi tourner la tête ?** Une photo de toi ne peut pas le faire : même tenue de biais, une photo garde les mêmes proportions, alors qu'un vrai visage qui tourne les change. C'est ce que Max vérifie.
+
+**Ce que ça protège, et ce que ça ne protège pas.** Personne d'autre (un ami, ta copine, un colocataire) ne peut parler à Max, lire tes mails ou ton agenda, ni voir la conversation, les missions ou les conseillers : tant qu'il est verrouillé, le Bureau n'envoie rien de tout ça à la page et refuse toutes les commandes. Mais une webcam n'est pas Face ID (qui a un capteur 3D) : quelqu'un de très déterminé, avec une vidéo de toi, pourrait la tromper. Et ça ne protège pas ton Mac lui-même : garde ton mot de passe ou Touch ID.
+
+Un rappel ou la fin d'une session de travail sont quand même dits à voix haute pendant que Max est verrouillé (« Ta session est finie, bravo ! »), sans rien révéler d'autre.
 
 ## Max, ton coach
 
@@ -263,6 +295,7 @@ Pour faire le ménage une fois la branche fusionnée ou abandonnée : `git workt
 - **Ta voix** est transcrite **sur ton Mac** par Whisper. Elle n'est envoyée nulle part, et le Bureau ne garde aucun enregistrement.
 - **Le micro** n'est ouvert que quand Max est réveillé. En veille (😴), il est vraiment coupé.
 - **Seules les phrases qui commencent par « Max »** (ou la suite d'une conversation) partent chez Claude, comme le reste de la conversation et le carnet.
+- **Ton visage** : l'image de la caméra est analysée **dans la page** (face-api), jamais enregistrée ni envoyée. Seule une empreinte (5 × 128 nombres, pas une photo) est gardée dans `~/Library/Application Support/Bureau/visage.json`, lisible par toi seul. Elle ne quitte pas ton Mac.
 - **Tes mails, ton agenda et tes contacts** ne sont lus que quand tu le demandes à Max, et seulement ce qu'il faut pour répondre (les derniers mails, la journée demandée, le contact cherché). Ce qu'il lit part chez Claude, comme le reste de la conversation.
 
 ## Ton quota d'abonnement
@@ -283,6 +316,9 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 | Siri demande « à quelle heure programmer l'alarme ? » | Le mot « réveille » déclenche l'alarme : renomme le raccourci « Max au rapport ». |
 | Siri ouvre le Bureau du Finder | Renomme le raccourci « Max au rapport » (pas « Bureau »). |
 | Un rappel n'a pas sonné | Les rappels ne sonnent que si le Bureau est ouvert. Un rappel manqué de plus d'une heure est abandonné. |
+| L'écran reste sur 🔒 et la caméra ne s'allume pas | Clique sur **📷 Me reconnaître**. Si le navigateur a refusé la caméra : clique sur l'icône de caméra dans la barre d'adresse et autorise-la pour localhost. Sur Mac, vérifie aussi **Réglages Système > Confidentialité et sécurité > Caméra** pour ton navigateur. |
+| Max ne me reconnaît pas | Mets-toi face à la lumière, assez près. Si ça arrive souvent (lunettes, barbe…), réenregistre ton visage avec **🔐 Visage**. Après 10 essais ratés, il faut attendre 30 secondes. |
+| Je ne peux plus déverrouiller (caméra cassée…) | Arrête le Bureau (`npm run arreter`), mets `"visage": { "actif": false }` dans `bureau.config.json`, relance. Ou supprime le fichier `~/Library/Application Support/Bureau/visage.json`. |
 | Max dit qu'il lui faut une autorisation | Suis la phrase qu'il te donne (voir « Les autorisations du Mac »). |
 | Max ne voit pas un cours qui se répète dans l'agenda | Installe icalBuddy : `brew install ical-buddy`, puis relance le Bureau. |
 | « Aucun contact ne s'appelle… » | Vérifie le nom dans l'app Contacts, ou donne le numéro. |

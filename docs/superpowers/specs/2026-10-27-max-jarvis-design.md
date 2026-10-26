@@ -84,7 +84,37 @@ message : il faut la voix (ou le clavier) de l'utilisateur. La consigne de Max d
 - **Non testé ici (pas de Mac)** : les vrais scripts AppleScript et les autorisations de macOS. Le premier essai réel se
   fera sur le Mac de l'utilisateur.
 
+## Le visage, comme Face ID (ajouté ensuite)
+
+Demande : « rajoute la connexion par caméra comme Face ID ». Choix de l'utilisateur : le visage protège **tout Max**,
+qui se **reverrouille à chaque mise en veille**. Prévenu avant : une webcam n'a pas de capteur 3D, elle distingue bien
+les personnes mais peut être trompée par une imitation déterminée ; garder le mot de passe ou Touch ID pour le Mac.
+
+- **Dans la page** (`web/camera-visage.ts`, `web/verrou.ts`) : face-api (@vladmandic/face-api, chargé à la demande,
+  modèles servis par le Bureau depuis `node_modules`) détecte le visage (TinyFaceDetector), ses 68 repères et son
+  descripteur (128 nombres). L'image ne quitte pas la page.
+- **Preuve que ce n'est pas une photo** : la tête doit tourner des deux côtés. Mesure : la position du nez entre les deux
+  bords de la mâchoire (0,5 de face ; il faut voir moins de 0,4 et plus de 0,6). Un clignement d'yeux était prévu, mais
+  essayé sur de vraies images, le modèle de repères de face-api ne réagit presque pas aux yeux fermés (ouverture
+  mesurée 0,345 → 0,331 sur des yeux refermés à la retouche) : on aurait risqué de ne jamais reconnaître l'utilisateur.
+  La mesure de la tête, elle, varie de 0,14 à 0,91 selon la pose sur les photos d'exemple de face-api, et reste
+  identique (0,684 → 0,685) pour une photo tenue de biais.
+- **Le serveur décide** (`server/max/visage.ts`, `server/max/verrou.ts`) : empreinte de 3 à 10 prises
+  (`visage.json`, mode 600), même personne si la distance euclidienne la plus petite est sous 0,5 (face-api conseille
+  0,6). Après 10 échecs en une minute, 30 secondes d'attente. Verrouillé :
+  - Max ne se réveille pas (micro et cerveau éteints) et n'accepte aucun message ;
+  - la page ne reçoit ni conversation, ni mission, ni agenda, ni conseillers ; toutes les commandes WebSocket et les
+    routes `/api/*` sont refusées (423), sauf la vérification du visage ;
+  - « Dis Siri, Max au rapport » ne réveille pas Max mais note une demande : la page allume alors la caméra toute
+    seule (si la demande date de moins d'une minute) ;
+  - un rappel ou la fin d'une session sont dits à voix haute sans réveiller Max.
+- Reconnu : Max se réveille et salue par le prénom enregistré. Enregistrer un nouveau visage ou l'effacer n'est
+  possible que déverrouillé.
+- **Vérifié** dans Chromium avec une fausse caméra (vidéos faites à partir des photos d'exemple de face-api) :
+  inscription en 5 prises ; une photo immobile de la bonne personne reste bloquée sur « tourne la tête » ; une autre
+  personne qui tourne la tête est refusée (distance 0,77) ; la bonne personne qui tourne la tête, après une demande
+  Siri, est reconnue sans clic et Max dit « Salut Alex ! ».
+
 ## Hors périmètre
 
-WhatsApp (pas de façon fiable d'envoyer sans clic), lire les SMS reçus, répondre à un mail, contrôle de la maison,
-reconnaissance du visage (déjà écartée).
+WhatsApp (pas de façon fiable d'envoyer sans clic), lire les SMS reçus, répondre à un mail, contrôle de la maison.
