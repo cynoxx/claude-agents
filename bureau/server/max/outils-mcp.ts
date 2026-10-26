@@ -78,4 +78,95 @@ serveur.registerTool(
   async () => appeler("POST", "/api/outils/veille"),
 );
 
+// --- coach : sessions de travail, bilan, échéances, idées, rappels ---
+
+serveur.registerTool(
+  "demarrer_session",
+  {
+    description: "Lance une session de travail minutée (le Bureau prévient à la fin et note le temps dans le journal). Une à la fois.",
+    inputSchema: {
+      sujet: z.string().describe("Ce qu'il va travailler, en quelques mots (ex. « Anatomie, chapitre 3 »)"),
+      minutes: z.number().int().min(1).max(180).default(25).describe("Durée en minutes (25 par défaut)"),
+    },
+  },
+  async ({ sujet, minutes }) => appeler("POST", "/api/outils/session", { sujet, minutes }),
+);
+serveur.registerTool(
+  "demarrer_pause",
+  {
+    description: "Lance une pause minutée (non comptée comme travail) ; le Bureau prévient à la fin.",
+    inputSchema: { minutes: z.number().int().min(1).max(60).default(5).describe("Durée en minutes (5 par défaut)") },
+  },
+  async ({ minutes }) => appeler("POST", "/api/outils/pause", { minutes }),
+);
+serveur.registerTool(
+  "arreter_session",
+  {
+    description: "Arrête la session de travail (ou la pause) en cours ; le temps réellement fait est noté.",
+    inputSchema: { note: z.string().optional().describe("Ce qu'il a fait pendant la session, s'il l'a dit") },
+  },
+  async ({ note }) => appeler("POST", "/api/outils/fin-session", { note }),
+);
+serveur.registerTool("bilan_travail", { description: "Le temps de travail noté : aujourd'hui, hier, les 7 derniers jours, la série de jours d'affilée." }, async () =>
+  appeler("GET", "/api/outils/bilan"),
+);
+serveur.registerTool(
+  "ajouter_echeance",
+  {
+    description: "Ajoute une échéance (examen, rendu, rendez-vous) dans le fichier moi.md ; le Bureau en fait le compte à rebours.",
+    inputSchema: { date: z.string().describe("Date au format AAAA-MM-JJ"), nom: z.string().min(1).describe("Ce qui a lieu ce jour-là") },
+  },
+  async ({ date, nom }) => appeler("POST", "/api/outils/echeance", { date, nom }),
+);
+serveur.registerTool(
+  "noter_idee",
+  {
+    description: "Met une idée au parking (idees.md) pour y revenir plus tard, sans s'y lancer maintenant.",
+    inputSchema: { idee: z.string().min(1).describe("L'idée, en une ou deux phrases") },
+  },
+  async ({ idee }) => appeler("POST", "/api/outils/idee", { idee }),
+);
+serveur.registerTool("lire_idees", { description: "Les idées au parking." }, async () => appeler("GET", "/api/outils/idees"));
+serveur.registerTool(
+  "programmer_rappel",
+  {
+    description: "Programme un rappel que Max dira à voix haute au moment voulu (si le Bureau est ouvert). Donne dans_minutes OU heure.",
+    inputSchema: {
+      texte: z.string().min(1).describe("La phrase exacte à dire au moment du rappel, adressée à l'utilisateur (ex. « Il est 23 heures, au lit ! »)"),
+      dans_minutes: z.number().int().min(1).optional().describe("Dans combien de minutes"),
+      heure: z.string().optional().describe("Heure au format HH:MM (demain si elle est déjà passée)"),
+    },
+  },
+  async ({ texte, dans_minutes, heure }) => appeler("POST", "/api/outils/rappel", { texte, dans_minutes, heure }),
+);
+serveur.registerTool("liste_rappels", { description: "Les rappels programmés." }, async () => appeler("GET", "/api/outils/rappels"));
+serveur.registerTool(
+  "annuler_rappel",
+  { description: "Annule les rappels qui contiennent ce texte.", inputSchema: { texte: z.string().min(1).describe("Un mot du rappel à annuler") } },
+  async ({ texte }) => appeler("POST", "/api/outils/annuler-rappel", { texte }),
+);
+
+// --- conseillers : un par domaine de la vie ---
+
+serveur.registerTool(
+  "consulter_conseiller",
+  {
+    description:
+      "Pose une question à un conseiller du Bureau (etudes, sante, business, apps, vie…). Il réfléchit à son bureau (avec recherche web si besoin) et renvoie sa réponse, en une minute environ.",
+    inputSchema: {
+      conseiller: z.string().min(1).describe("L'identifiant du conseiller (voir ta consigne), ex. « etudes »"),
+      question: z.string().min(1).describe("La question complète, avec le contexte utile"),
+    },
+  },
+  async ({ conseiller, question }) => appeler("POST", "/api/outils/consulter", { conseiller, question }),
+);
+serveur.registerTool(
+  "noter_pour_conseiller",
+  {
+    description: "Écrit une note durable dans le carnet d'un conseiller (un fait utile pour son domaine).",
+    inputSchema: { conseiller: z.string().min(1).describe("L'identifiant du conseiller"), note: z.string().min(1).describe("Le fait à retenir") },
+  },
+  async ({ conseiller, note }) => appeler("POST", "/api/outils/noter-pour", { conseiller, note }),
+);
+
 await serveur.connect(new StdioServerTransport());

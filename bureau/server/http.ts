@@ -6,6 +6,8 @@ import { WebSocketServer, type WebSocket } from "ws";
 import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
 import type { BureauConfig } from "./config.ts";
 import type { MissionManager } from "./mission.ts";
+import type { Coach } from "./max/coach.ts";
+import type { Conseillers } from "./max/conseillers.ts";
 import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
 import { listMissions } from "./storage.ts";
 
@@ -42,6 +44,8 @@ export function createBureauServer(o: {
   /** Jeton exigé par les routes qui agissent (réveil, outils de Max). Sans jeton, elles sont refusées. */
   jeton?: string;
   assistant?: AssistantApi;
+  coach?: Coach;
+  conseillers?: Conseillers;
 }): http.Server {
   const root = path.resolve(o.config.dossierMissions);
   const ouvrir = o.ouvrir ?? ouvrirDansFinder;
@@ -109,16 +113,18 @@ export function createBureauServer(o: {
   // le WebSocketServer relaie les erreurs du serveur HTTP (ex. port pris) : c'est `server.on("error")` qui les traite
   wss.on("error", () => {});
   const envoyer = (ws: WebSocket, msg: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(msg));
-  const etatComplet = () => ({ ...o.manager.snapshot(), assistant: o.assistant?.vue() });
+  const etatComplet = () => ({ ...o.manager.snapshot(), assistant: o.assistant?.vue(), conseillers: o.conseillers?.vue() });
   const diffuser = () => {
     const etat = etatComplet();
     for (const ws of wss.clients) envoyer(ws, { type: "etat", etat });
   };
   o.manager.on("etat", diffuser);
   o.assistant?.on("etat", diffuser);
+  o.conseillers?.on("etat", diffuser);
   server.on("close", () => {
     o.manager.off("etat", diffuser);
     o.assistant?.off("etat", diffuser);
+    o.conseillers?.off("etat", diffuser);
     wss.close();
   });
 
@@ -162,6 +168,16 @@ export function createBureauServer(o: {
           else if (msg.type === "reveil") a.reveiller();
           else if (msg.type === "veille") a.veille();
           else a.taire();
+          break;
+        }
+        case "session":
+        case "fin-session": {
+          if (!o.coach) {
+            r = { ok: false, erreur: "Le coach n'est pas disponible." };
+            break;
+          }
+          const rc = msg.type === "session" ? o.coach.demarrerSession(String(msg.sujet ?? ""), Number(msg.minutes ?? 25)) : o.coach.arreterSession();
+          r = rc.ok ? { ok: true } : { ok: false, erreur: rc.texte };
           break;
         }
         default:

@@ -1,12 +1,13 @@
 // L'assistant : relie l'oreille, le cerveau et la bouche de Max, gère le mot-clé, la veille et les annonces de mission.
 import { EventEmitter } from "node:events";
-import type { AssistantVue, Dispo, EtatBureau, EtatMax, MessageConversation, MissionResume, Phase } from "../../shared/protocol.ts";
+import type { AssistantVue, CoachVue, Dispo, EtatBureau, EtatMax, MessageConversation, MissionResume, Phase } from "../../shared/protocol.ts";
 import { extraireResume, texteParle } from "../../shared/parole.ts";
 import { reconnaitreAppel } from "../voix/mot-cle.ts";
 import { Phraseur } from "../voix/phraseur.ts";
 import type { AssistantApi } from "../routes-max.ts";
 import { consigneMax } from "./consigne.ts";
 import type { FinReponse } from "./cerveau.ts";
+import { dureeParlee, type FinMinuteur } from "./coach.ts";
 
 export interface OreilleLike extends EventEmitter {
   demarrer(): void;
@@ -28,6 +29,12 @@ export interface CerveauLike extends EventEmitter {
 interface ManagerLike extends EventEmitter {
   snapshot(): EtatBureau;
 }
+/** Le coach (événements `fin`, `rappel`, `etat`). */
+export interface CoachLike extends EventEmitter {
+  vue(): CoachVue;
+  contexte(): string;
+  accueil(): string;
+}
 
 export interface OptionsAssistant {
   /** null = pas de micro utilisable (la conversation écrite marche quand même). */
@@ -41,6 +48,15 @@ export interface OptionsAssistant {
   suiteMs: number;
   veilleMs: number;
   dispos: { oreille: Dispo; bouche: Dispo };
+  coach?: CoachLike;
+  /** Le fichier moi.md. */
+  profil?: () => string;
+  /** La liste des conseillers, pour la consigne. */
+  conseillers?: () => string;
+  /** Ajoute l'heure ([14:32]) devant chaque message de l'utilisateur envoyé au cerveau. */
+  horodater?: boolean;
+  /** Le nom du raccourci Siri, rappelé quand Max s'endort. */
+  phraseSiri?: string;
 }
 
 const ACCUEIL = "Salut ! Je t'écoute.";
@@ -69,6 +85,30 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return `🧽 Max efface de son carnet : ${e("texte")}`;
     case "mettre_en_veille":
       return "😴 Max se met en veille";
+    case "consulter_conseiller":
+      return `🗂 Max consulte le conseiller ${e("conseiller")} : ${e("question")}`;
+    case "noter_pour_conseiller":
+      return `📝 Max note pour le conseiller ${e("conseiller")} : ${e("note")}`;
+    case "demarrer_session":
+      return `⏱ Session de travail : ${e("sujet") || "révisions"} (${e("minutes") || "25"} min)`;
+    case "demarrer_pause":
+      return `☕ Pause de ${e("minutes") || "5"} min`;
+    case "arreter_session":
+      return "⏹ Max arrête le minuteur";
+    case "bilan_travail":
+      return "📊 Max regarde ton bilan de travail";
+    case "ajouter_echeance":
+      return `📅 Échéance ajoutée : ${e("nom")} (${e("date")})`;
+    case "noter_idee":
+      return `🅿️ Idée mise au parking : ${e("idee")}`;
+    case "lire_idees":
+      return "🅿️ Max relit les idées au parking";
+    case "programmer_rappel":
+      return `🔔 Rappel programmé : ${e("texte")}`;
+    case "liste_rappels":
+      return "🔔 Max regarde les rappels";
+    case "annuler_rappel":
+      return `🔕 Rappel annulé : ${e("texte")}`;
     case "WebSearch":
       return `🔎 Max cherche sur le web : ${e("query")}`;
     case "WebFetch":
@@ -137,6 +177,13 @@ export class Assistant extends EventEmitter implements AssistantApi {
     });
 
     o.manager.on("etat", (e: EtatBureau) => this.surMission(e));
+    o.coach?.on("etat", () => this.changer());
+    o.coach?.on("fin", (f: FinMinuteur) => this.finMinuteur(f));
+    o.coach?.on("rappel", (texte: string) => {
+      if (this.etat === "veille") this.reveiller(false);
+      this.noter("max", `🔔 ${texte}`);
+      this.parler(texte);
+    });
   }
 
   vue(): AssistantVue {
@@ -147,6 +194,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
       oreille: this.dispoOreille,
       bouche: this.dispoBouche,
       cerveau: this.dispoCerveau,
+      ...(this.o.coach ? { coach: this.o.coach.vue() } : {}),
     };
   }
 
@@ -162,8 +210,9 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.relancerMinuterie();
     this.changer();
     if (accueil) {
-      this.noter("max", ACCUEIL);
-      this.parler(ACCUEIL);
+      const bonjour = this.o.coach?.accueil() ?? ACCUEIL;
+      this.noter("max", bonjour);
+      this.parler(bonjour);
     }
   }
 
@@ -187,7 +236,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.couperReponse = false;
     this.phrase = "";
     this.etat = "veille";
-    this.noter("bureau", "😴 Max est en veille. Dis « Dis Siri, réveille Max » ou clique sur 👂 pour le réveiller.");
+    this.noter("bureau", `😴 Max est en veille. Dis « Dis Siri, ${this.o.phraseSiri ?? "Max au rapport"} » ou clique sur 👂 pour le réveiller.`);
   }
 
   veilleApresParole(): void {
@@ -225,7 +274,9 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private envoyer(texte: string, affichage: { de: MessageConversation["de"]; texte: string }): void {
     this.noter(affichage.de, affichage.texte);
     this.assurerCerveau();
-    if (!this.cerveau!.envoyer(texte)) {
+    const d = new Date();
+    const message = this.o.horodater && affichage.de === "toi" ? `[${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}] ${texte}` : texte;
+    if (!this.cerveau!.envoyer(message)) {
       this.noter("bureau", "⚠️ Max ne peut pas répondre pour l'instant.");
       return;
     }
@@ -238,7 +289,15 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private assurerCerveau(): void {
     if (this.cerveau?.actif) return;
     this.cerveau?.removeAllListeners();
-    const c = this.o.creerCerveau(consigneMax({ carnet: this.o.carnet(), missions: this.o.missions() }));
+    const c = this.o.creerCerveau(
+      consigneMax({
+        carnet: this.o.carnet(),
+        missions: this.o.missions(),
+        profil: this.o.profil?.(),
+        contexte: this.o.coach?.contexte(),
+        conseillers: this.o.conseillers?.(),
+      }),
+    );
     c.on("texte", (t: string) => {
       if (this.couperReponse) return;
       for (const p of this.phraseur.ajouter(t)) this.parler(p);
@@ -329,6 +388,19 @@ export class Assistant extends EventEmitter implements AssistantApi {
         de: "bureau",
         texte: `❌ Mission échouée : ${m.titre}`,
       });
+    }
+  }
+
+  /** Fin d'une session ou d'une pause : Max se réveille s'il dormait et l'annonce. */
+  private finMinuteur(f: FinMinuteur): void {
+    if (this.etat === "veille") this.reveiller(false);
+    if (f.type === "travail") {
+      this.envoyer(
+        `[Bureau] La session de travail de ${dureeParlee(f.minutes)} sur « ${f.sujet} » est terminée. Aujourd'hui : ${dureeParlee(f.aujourdhui)} de travail. Félicite-le en une phrase, demande-lui ce qu'il a fait, et propose une pause.`,
+        { de: "bureau", texte: `⏱ Session terminée : ${f.sujet} (${dureeParlee(f.minutes)}) · aujourd'hui ${dureeParlee(f.aujourdhui)}` },
+      );
+    } else {
+      this.envoyer("[Bureau] La pause est finie. Propose-lui en une phrase de reprendre avec une nouvelle session.", { de: "bureau", texte: "☕ Pause terminée" });
     }
   }
 

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { CONSEILLERS_DEFAUT, type ConseillerDef } from "./max/conseillers.ts";
 
 export interface Projet {
   nom: string;
@@ -20,6 +21,8 @@ export interface VoixConfig {
   voixMac: string | null;
   debit: number;
   motCle: string;
+  /** Le nom du raccourci Siri (« Dis Siri, <phrase> »), rappelé quand Max s'endort. */
+  phraseSiri: string;
   suiteSecondes: number;
   veilleMinutes: number;
 }
@@ -33,6 +36,8 @@ export interface BureauConfig {
   modeles: { chef: string; robots: string; conversation: string };
   limites: { robots: number; etapes: number; minutesParRobot: number };
   voix: VoixConfig;
+  /** Un conseiller par domaine de la vie (remplace la liste par défaut si présent). */
+  conseillers: ConseillerDef[];
 }
 
 export const CONFIG_FILE = "bureau.config.json";
@@ -55,15 +60,32 @@ export const DEFAULT_CONFIG: BureauConfig = {
     voixMac: null,
     debit: 185,
     motCle: "max",
+    phraseSiri: "Max au rapport",
     suiteSecondes: 10,
     veilleMinutes: 30,
   },
+  conseillers: CONSEILLERS_DEFAUT,
 };
 
 export function expandHome(p: string): string {
   if (p === "~") return os.homedir();
   if (p.startsWith("~/")) return path.join(os.homedir(), p.slice(2));
   return p;
+}
+
+/** Un conseiller écrit à la main : on complète ce qui manque (un défaut du même id, sinon des valeurs neutres). */
+function completerConseiller(c: Partial<ConseillerDef>, i: number): ConseillerDef {
+  const base = CONSEILLERS_DEFAUT.find((d) => d.id === c.id);
+  const id = String(c.id ?? base?.id ?? `conseiller-${i + 1}`);
+  return {
+    id,
+    nom: c.nom ?? base?.nom ?? id,
+    emoji: c.emoji ?? base?.emoji ?? "🤖",
+    couleur: c.couleur ?? base?.couleur ?? ["#e05d5d", "#3fbfa8", "#d9a441", "#6c8cff", "#b07cc6", "#7fbf3f"][i % 6],
+    domaine: c.domaine ?? base?.domaine ?? id,
+    description: c.description ?? base?.description ?? c.domaine ?? id,
+    consigne: c.consigne ?? base?.consigne ?? "",
+  };
 }
 
 /** Lit `bureau.config.json` dans `dir` (s'il existe) et le fusionne avec les valeurs par défaut. */
@@ -85,6 +107,7 @@ export function loadConfig(dir: string): BureauConfig {
     modeles: { ...DEFAULT_CONFIG.modeles, ...user.modeles },
     limites: { ...DEFAULT_CONFIG.limites, ...user.limites },
     voix: { ...DEFAULT_CONFIG.voix, ...user.voix },
+    conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };
   c.voix.modele = c.voix.modele ? expandHome(c.voix.modele) : path.join(c.dossierDonnees, "modeles", MODELE_WHISPER);
   return c;

@@ -1,4 +1,4 @@
-// `npm start` (ou le script « réveille Max ») : démarre le Bureau, réveille Max et ouvre le navigateur.
+// `npm start` (ou le script lancé par « Dis Siri, Max au rapport ») : démarre le Bureau, réveille Max et ouvre le navigateur.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +9,8 @@ import { creerJeton } from "./jeton.ts";
 import { Assistant } from "./max/assistant.ts";
 import { lireCarnet } from "./max/carnet.ts";
 import { Cerveau } from "./max/cerveau.ts";
+import { Coach, lireProfil } from "./max/coach.ts";
+import { Conseillers } from "./max/conseillers.ts";
 import { ecrireConfigMcp } from "./max/mcp-config.ts";
 import { MissionManager } from "./mission.ts";
 import { listMissions, markInterrupted } from "./storage.ts";
@@ -30,6 +32,18 @@ const jeton = creerJeton(config.dossierDonnees);
 const mcpConfig = ecrireConfigMcp({ racine, port: config.port, dossierDonnees: config.dossierDonnees });
 const bouche = new Bouche({ bin: config.voix.say, voix: config.voix.voixMac, debit: config.voix.debit });
 const [{ oreille, dispo: dispoOreille }, dispoBouche] = await Promise.all([preparerOreille(config), bouche.preparer()]);
+// Le coach (minuteur, journal de travail, rappels) et les conseillers (un par domaine de la vie)
+const coach = new Coach({ dossier: config.dossierMissions, dossierDonnees: config.dossierDonnees });
+const profil = () => lireProfil(config.dossierMissions);
+const conseillers = new Conseillers({
+  defs: config.conseillers,
+  bin,
+  modele: config.modeles.robots,
+  dossier: config.dossierMissions,
+  timeoutMs: 4 * 60_000,
+  profil,
+  contexte: () => coach.contexte(),
+});
 const assistant = new Assistant({
   oreille,
   bouche,
@@ -41,11 +55,16 @@ const assistant = new Assistant({
   suiteMs: config.voix.suiteSecondes * 1000,
   veilleMs: config.voix.veilleMinutes * 60_000,
   dispos: { oreille: dispoOreille, bouche: dispoBouche },
+  coach,
+  profil,
+  conseillers: () => conseillers.liste(),
+  horodater: true,
+  phraseSiri: config.voix.phraseSiri,
 });
 console.log(`${dispoOreille.ok ? "🎙 " : "⚠️ "} ${dispoOreille.detail}`);
 console.log(`${dispoBouche.ok ? "🔊" : "⚠️ "} ${dispoBouche.detail}`);
 
-const server = createBureauServer({ config, manager, webDir: path.join(racine, "web", "dist"), jeton, assistant });
+const server = createBureauServer({ config, manager, webDir: path.join(racine, "web", "dist"), jeton, assistant, coach, conseillers });
 
 const claudePret = checkClaude(bin).then((etat) => {
   manager.setClaude(etat);
@@ -78,6 +97,8 @@ const fermer = () => {
   console.log("\nFermeture du Bureau…");
   fs.rmSync(fichierPid, { force: true });
   assistant.veille();
+  coach.fermer();
+  conseillers.arreterTout();
   manager.arreter();
   setTimeout(() => process.exit(0), 1500).unref();
   manager.attendreFin().then(() => process.exit(0));

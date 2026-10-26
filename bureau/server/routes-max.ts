@@ -7,6 +7,8 @@ import type { AssistantVue } from "../shared/protocol.ts";
 import type { BureauConfig } from "./config.ts";
 import { jetonValide } from "./jeton.ts";
 import { memoriser, oublier } from "./max/carnet.ts";
+import { ajouterEcheance, decrireBilan, lireIdees, noterIdee, type Coach } from "./max/coach.ts";
+import type { Conseillers } from "./max/conseillers.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
 import { listMissions } from "./storage.ts";
@@ -41,7 +43,14 @@ async function lireCorps(req: http.IncomingMessage): Promise<Record<string, unkn
 
 export const estRouteMax = (chemin: string) => chemin === "/api/sante" || chemin === "/api/reveil" || chemin.startsWith("/api/outils/");
 
-export function routesMax(o: { config: BureauConfig; manager: MissionManager; jeton?: string; assistant?: AssistantApi }) {
+export function routesMax(o: {
+  config: BureauConfig;
+  manager: MissionManager;
+  jeton?: string;
+  assistant?: AssistantApi;
+  coach?: Coach;
+  conseillers?: Conseillers;
+}) {
   const root = path.resolve(o.config.dossierMissions);
 
   const resultat = (nom: string | null): { ok: boolean; texte: string } => {
@@ -66,7 +75,18 @@ export function routesMax(o: { config: BureauConfig; manager: MissionManager; je
       return repondre(res, 400, { ok: false, texte: "Requête illisible." });
     }
     const texte = (cle: string) => String(corps[cle] ?? "").trim();
+    const nombre = (cle: string) => (corps[cle] === undefined || corps[cle] === null || corps[cle] === "" ? undefined : Number(corps[cle]));
     const m = o.manager;
+    const coach = o.coach;
+    const conseillers = o.conseillers;
+    const sansCoach = () => repondre(res, 503, { ok: false, texte: "Le coach n'est pas disponible." });
+    const essayer = (f: () => string) => {
+      try {
+        return repondre(res, 200, { ok: true, texte: f() });
+      } catch (e) {
+        return repondre(res, 200, { ok: false, texte: (e as Error).message });
+      }
+    };
 
     switch (`${req.method} ${chemin}`) {
       case "POST /api/reveil":
@@ -106,6 +126,43 @@ export function routesMax(o: { config: BureauConfig; manager: MissionManager; je
       case "POST /api/outils/veille":
         o.assistant?.veilleApresParole();
         return repondre(res, 200, { ok: true, texte: "Max se met en veille après sa phrase." });
+      // coach
+      case "POST /api/outils/session":
+        if (!coach) return sansCoach();
+        return repondre(res, 200, coach.demarrerSession(texte("sujet"), nombre("minutes") ?? 25));
+      case "POST /api/outils/pause":
+        if (!coach) return sansCoach();
+        return repondre(res, 200, coach.demarrerPause(nombre("minutes") ?? 5));
+      case "POST /api/outils/fin-session":
+        if (!coach) return sansCoach();
+        return repondre(res, 200, coach.arreterSession(texte("note")));
+      case "GET /api/outils/bilan":
+        if (!coach) return sansCoach();
+        return repondre(res, 200, { ok: true, texte: decrireBilan(coach.bilan()) });
+      case "POST /api/outils/echeance":
+        return essayer(() => `Échéance ajoutée dans moi.md : ${ajouterEcheance(root, texte("date"), texte("nom"))}`);
+      case "POST /api/outils/idee":
+        return essayer(() => `Idée mise au parking : ${noterIdee(root, texte("idee"))}`);
+      case "GET /api/outils/idees": {
+        const idees = lireIdees(root);
+        return repondre(res, 200, { ok: true, texte: idees.length ? idees.join("\n") : "Aucune idée au parking." });
+      }
+      case "POST /api/outils/rappel":
+        if (!coach) return sansCoach();
+        return repondre(res, 200, coach.programmerRappel(texte("texte"), { dansMinutes: nombre("dans_minutes"), heure: texte("heure") || undefined }));
+      case "GET /api/outils/rappels":
+        if (!coach) return sansCoach();
+        return repondre(res, 200, { ok: true, texte: coach.listeRappels() });
+      case "POST /api/outils/annuler-rappel":
+        if (!coach) return sansCoach();
+        return repondre(res, 200, coach.annulerRappel(texte("texte")));
+      // conseillers
+      case "POST /api/outils/consulter":
+        if (!conseillers) return repondre(res, 503, { ok: false, texte: "Les conseillers ne sont pas disponibles." });
+        return repondre(res, 200, await conseillers.consulter(texte("conseiller"), texte("question")));
+      case "POST /api/outils/noter-pour":
+        if (!conseillers) return repondre(res, 503, { ok: false, texte: "Les conseillers ne sont pas disponibles." });
+        return repondre(res, 200, conseillers.noterPour(texte("conseiller"), texte("note")));
       default:
         return repondre(res, 404, { ok: false, texte: "Outil inconnu." });
     }

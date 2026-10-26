@@ -82,12 +82,37 @@ export interface AssistantVue {
   oreille: Dispo;
   bouche: Dispo;
   cerveau: Dispo;
+  coach?: CoachVue;
+}
+
+/** Le coach : minuteur en cours, travail du jour, prochaine échéance. */
+export interface CoachVue {
+  minuteur: { type: "travail" | "pause"; sujet: string; fin: string } | null;
+  /** Minutes de travail notées aujourd'hui. */
+  aujourdhui: number;
+  echeance: { nom: string; jours: number } | null;
+}
+
+/** Un conseiller : un robot par domaine de la vie, assis à son bureau, que Max consulte. */
+export interface ConseillerVue {
+  id: string;
+  nom: string;
+  emoji: string;
+  couleur: string;
+  domaine: string;
+  description: string;
+  statut: "libre" | "reflechit";
+  bulle: string;
+  question?: string;
+  reponse?: string;
+  heure?: string; // ISO, dernière question
 }
 
 export interface EtatBureau {
   claude: { ok: boolean; version?: string; erreur?: string };
   mission: MissionVue | null;
   assistant?: AssistantVue;
+  conseillers?: ConseillerVue[];
 }
 
 export interface EtatFichier {
@@ -111,4 +136,6 @@ export type ClientMessage =
   | { type: "parler-max"; texte: string }
   | { type: "reveil" }
   | { type: "veille" }
-  | { type: "taire" };
+  | { type: "taire" }
+  | { type: "session"; minutes?: number; sujet?: string }
+  | { type: "fin-session" };

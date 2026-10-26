@@ -63,6 +63,22 @@ if (args.includes("--input-format")) {
 
 if (mode === "slow") await sleep(10_000);
 
+// Conseiller : une question, une réponse (avec une ligne « À retenir »), sans écrire de fichier.
+const systeme = args[args.indexOf("--append-system-prompt") + 1] ?? "";
+if (systeme.includes("le conseiller «")) {
+  emit({ type: "system", subtype: "init", session_id: "fake-conseil" });
+  if (mode === "quota") {
+    emit({ type: "result", subtype: "success", is_error: true, result: "Claude AI usage limit reached|1793865600" });
+    process.exit(1);
+  }
+  emit({ type: "assistant", message: { content: [{ type: "tool_use", id: "t1", name: "WebSearch", input: { query: prompt.slice(0, 40) } }] } });
+  await sleep(delay);
+  const reponse = process.env.FAKE_REPONSE ?? `Mon conseil sur : ${prompt.split("\n").at(-1)}\nÀ retenir : préfère réviser le matin`;
+  emit({ type: "assistant", message: { content: [{ type: "text", text: reponse }] } });
+  emit({ type: "result", subtype: "success", is_error: false, result: reponse });
+  process.exit(0);
+}
+
 if (args.includes("--json-schema")) {
   const robots1 = [{ role: "chercheur", tache: "Chercher les infos" }];
   if (process.env.FAKE_PROJET) robots1.push({ role: "codeur", tache: "Coder la fonctionnalité" });

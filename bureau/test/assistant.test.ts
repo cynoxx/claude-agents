@@ -356,6 +356,70 @@ describe("Assistant — missions", () => {
   });
 });
 
+class FauxCoach extends EventEmitter {
+  vue() {
+    return { minuteur: null, aujourdhui: 50, echeance: { nom: "Examen PASS", jours: 49 } };
+  }
+  contexte() {
+    return "Nous sommes le lundi 26 octobre 2026.";
+  }
+  accueil() {
+    return "Salut ! Déjà 50 minutes de travail aujourd'hui. Je t'écoute.";
+  }
+}
+
+describe("Assistant — coach", () => {
+  let coach: FauxCoach;
+  beforeEach(() => {
+    coach = new FauxCoach();
+    creer({ coach, profil: () => "Je suis en PASS.", conseillers: () => "- etudes : 🩺 Prof (Études)", phraseSiri: "Max au rapport" });
+  });
+
+  it("met le profil, le contexte du jour et les conseillers dans sa consigne, et adapte son accueil", () => {
+    a.reveiller();
+    expect(cerveau().consigne).toContain("Je suis en PASS.");
+    expect(cerveau().consigne).toContain("Nous sommes le lundi 26 octobre 2026.");
+    expect(cerveau().consigne).toContain("- etudes : 🩺 Prof (Études)");
+    expect(bouche.dites).toEqual(["Salut ! Déjà 50 minutes de travail aujourd'hui. Je t'écoute."]);
+    expect(a.vue().coach).toEqual(coach.vue());
+  });
+
+  it("se réveille à la fin d'une session et la fait annoncer par Max", () => {
+    coach.emit("fin", { type: "travail", sujet: "Anatomie", minutes: 25, aujourdhui: 75 });
+    expect(a.vue().etat).not.toBe("veille");
+    expect(oreille.active).toBe(true);
+    expect(cerveau().recus.at(-1)).toContain("La session de travail de 25 minutes sur « Anatomie » est terminée. Aujourd'hui : 1 heure 15");
+    expect(a.vue().messages.at(-1)?.texte).toBe("⏱ Session terminée : Anatomie (25 minutes) · aujourd'hui 1 heure 15");
+    expect(bouche.dites).toEqual([]);
+  });
+
+  it("annonce la fin d'une pause", () => {
+    a.reveiller();
+    coach.emit("fin", { type: "pause", sujet: "", minutes: 5, aujourdhui: 0 });
+    expect(cerveau().recus.at(-1)).toContain("La pause est finie");
+  });
+
+  it("dit un rappel tel quel, en se réveillant s'il dormait", async () => {
+    coach.emit("rappel", "Il est 23 heures, au lit !");
+    expect(bouche.dites).toEqual(["Il est 23 heures, au lit !"]);
+    expect(a.vue().messages.at(-1)).toMatchObject({ de: "max", texte: "🔔 Il est 23 heures, au lit !" });
+    await jusqua(() => a.vue().etat === "ecoute");
+  });
+
+  it("rappelle la phrase Siri quand il s'endort", () => {
+    a.reveiller();
+    a.veille();
+    expect(a.vue().messages.at(-1)?.texte).toContain("« Dis Siri, Max au rapport »");
+  });
+
+  it("ajoute l'heure devant les messages de l'utilisateur quand on le lui demande", () => {
+    creer({ horodater: true });
+    a.ecrire("Bonjour");
+    expect(cerveau().recus[0]).toMatch(/^\[\d{2}:\d{2}\] Bonjour$/);
+    expect(a.vue().messages.at(-1)?.texte).toBe("Bonjour");
+  });
+});
+
 describe("Assistant — intégration avec un vrai cerveau et une vraie bouche (faux binaires)", () => {
   const envAvant = { ...process.env };
   afterEach(() => {

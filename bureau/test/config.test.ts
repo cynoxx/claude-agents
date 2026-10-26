@@ -42,6 +42,7 @@ describe("loadConfig", () => {
       voixMac: null,
       debit: 185,
       motCle: "max",
+      phraseSiri: "Max au rapport",
       suiteSecondes: 10,
       veilleMinutes: 30,
     });
@@ -59,6 +60,19 @@ describe("loadConfig", () => {
     expect(c.voix.modele).toBe(path.join(os.homedir(), "m.bin"));
     expect(c.voix.debit).toBe(185);
     expect(c.modeles.conversation).toBe("sonnet");
+  });
+
+  it("a cinq conseillers par défaut, et complète ceux écrits à la main", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-cfg-"));
+    expect(loadConfig(dir).conseillers.map((c) => c.id)).toEqual(["etudes", "sante", "business", "apps", "vie"]);
+    fs.writeFileSync(
+      path.join(dir, "bureau.config.json"),
+      JSON.stringify({ conseillers: [{ id: "etudes", nom: "Docteur" }, { id: "musique", domaine: "Musique" }] }),
+    );
+    const [etudes, musique] = loadConfig(dir).conseillers;
+    expect(etudes).toMatchObject({ id: "etudes", nom: "Docteur", domaine: "Études", emoji: "🩺" });
+    expect(etudes.consigne).toContain("PASS");
+    expect(musique).toMatchObject({ id: "musique", nom: "musique", domaine: "Musique", description: "Musique", emoji: "🤖", consigne: "" });
   });
 
   it("signale un JSON invalide avec un message clair", () => {

@@ -14,6 +14,8 @@ import { DEFAULT_CONFIG } from "../server/config.ts";
 import { decrireEtat, decrireHistorique } from "../server/max/descriptions.ts";
 import { ecrireConfigMcp } from "../server/max/mcp-config.ts";
 import { lireCarnet } from "../server/max/carnet.ts";
+import { Coach, lireIdees, lireJournal, lireProfil } from "../server/max/coach.ts";
+import { CONSEILLERS_DEFAUT, Conseillers } from "../server/max/conseillers.ts";
 import type { AssistantVue, MissionVue, ServerMessage } from "../shared/protocol.ts";
 
 const FAKE = path.join(__dirname, "fake-claude.mjs");
@@ -111,6 +113,8 @@ describe("routes et WebSocket de Max", () => {
   let jeton: string;
   let assistant: FauxAssistant;
   let manager: MissionManager;
+  let coach: Coach;
+  let conseillers: Conseillers;
   let server: ReturnType<typeof createBureauServer>;
   let base: string;
 
@@ -122,13 +126,17 @@ describe("routes et WebSocket de Max", () => {
     const config = { ...DEFAULT_CONFIG, dossierMissions: root, dossierDonnees: donnees };
     assistant = new FauxAssistant();
     manager = new MissionManager(config, FAKE);
-    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant });
+    coach = new Coach({ dossier: root, dossierDonnees: donnees });
+    conseillers = new Conseillers({ defs: CONSEILLERS_DEFAUT, bin: FAKE, modele: "sonnet", dossier: root, timeoutMs: 10_000, profil: () => "", contexte: () => "" });
+    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers });
     await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
   afterEach(async () => {
     process.env = { ...envAvant };
     await manager.attendreFin();
+    coach.fermer();
+    conseillers.arreterTout();
     await new Promise((r) => server.close(r));
   });
 
@@ -184,7 +192,11 @@ describe("routes et WebSocket de Max", () => {
     try {
       const outils = (await client.listTools()).tools.map((t) => t.name).sort();
       expect(outils).toEqual(
-        ["arreter_mission", "etat_bureau", "historique_missions", "lancer_mission", "lire_resultat", "memoriser", "mettre_en_veille", "oublier", "reprendre_mission"].sort(),
+        [
+          "arreter_mission", "etat_bureau", "historique_missions", "lancer_mission", "lire_resultat", "memoriser", "mettre_en_veille", "oublier", "reprendre_mission",
+          "demarrer_session", "demarrer_pause", "arreter_session", "bilan_travail", "ajouter_echeance", "noter_idee", "lire_idees",
+          "programmer_rappel", "liste_rappels", "annuler_rappel", "consulter_conseiller", "noter_pour_conseiller",
+        ].sort(),
       );
       expect((await texte("etat_bureau")).texte).toBe("Aucune mission en cours.");
       expect((await texte("memoriser", { note: "Projet Cynox Fitness : app de fitness" })).texte).toContain("Noté");
@@ -205,6 +217,67 @@ describe("routes et WebSocket de Max", () => {
       await client.close();
     }
   }, 30_000);
+
+  it("Max coache et consulte ses conseillers avec ses outils MCP (vrai client MCP)", async () => {
+    const transport = new StdioClientTransport({
+      command: path.join(RACINE, "node_modules", ".bin", "tsx"),
+      args: [path.join(RACINE, "server", "max", "outils-mcp.ts")],
+      env: { ...(process.env as Record<string, string>), BUREAU_URL: base, BUREAU_JETON_FICHIER: path.join(donnees, "jeton") },
+      stderr: "ignore",
+    });
+    const client = new Client({ name: "test", version: "1.0.0" });
+    await client.connect(transport);
+    const texte = async (name: string, args: Record<string, unknown> = {}) => {
+      const r = (await client.callTool({ name, arguments: args })) as { content: { type: string; text: string }[]; isError?: boolean };
+      return { texte: r.content.map((c) => c.text).join("\n"), erreur: !!r.isError };
+    };
+    try {
+      expect((await texte("demarrer_session", { sujet: "Anatomie" })).texte).toContain("25 minutes");
+      expect(coach.vue().minuteur?.sujet).toBe("Anatomie");
+      expect((await texte("demarrer_session", { sujet: "Chimie" })).erreur).toBe(true);
+      expect((await texte("arreter_session", { note: "chapitre 1" })).texte).toContain("Session arrêtée");
+      expect(lireJournal(root)).toEqual([]);
+      expect((await texte("demarrer_pause", {})).texte).toContain("Pause de 5 minutes");
+      expect((await texte("arreter_session")).texte).toBe("Pause arrêtée.");
+      expect((await texte("bilan_travail")).texte).toContain("Aucune session");
+
+      expect((await texte("ajouter_echeance", { date: "2026-12-14", nom: "Examen PASS" })).texte).toContain("Échéance ajoutée");
+      expect(lireProfil(root)).toContain("- 2026-12-14 : Examen PASS");
+      expect((await texte("ajouter_echeance", { date: "demain", nom: "x" })).erreur).toBe(true);
+      expect((await texte("noter_idee", { idee: "Box de fruits" })).texte).toContain("parking");
+      expect(lireIdees(root)).toHaveLength(1);
+      expect((await texte("lire_idees")).texte).toContain("Box de fruits");
+
+      expect((await texte("programmer_rappel", { texte: "Au lit !", dans_minutes: 30 })).texte).toContain("Rappel programmé");
+      expect((await texte("liste_rappels")).texte).toContain("Au lit !");
+      expect((await texte("annuler_rappel", { texte: "lit" })).texte).toContain("1 rappel");
+      expect((await texte("programmer_rappel", { texte: "x" })).erreur).toBe(true);
+
+      const conseil = await texte("consulter_conseiller", { conseiller: "etudes", question: "Comment réviser ?" });
+      expect(conseil.texte).toContain("Prof répond :");
+      expect(conseil.texte).toContain("Comment réviser ?");
+      expect((await texte("consulter_conseiller", { conseiller: "plombier", question: "?" })).erreur).toBe(true);
+      expect((await texte("noter_pour_conseiller", { conseiller: "sante", note: "Se couche à 3 h" })).texte).toContain("Noté pour Coach");
+    } finally {
+      await client.close();
+    }
+  }, 30_000);
+
+  it("démarre et arrête une session depuis la page", async () => {
+    const ws = new WebSocket(base.replace("http", "ws") + "/ws");
+    const messages: ServerMessage[] = [];
+    ws.on("message", (d) => messages.push(JSON.parse(String(d))));
+    await new Promise((r) => ws.on("open", r));
+    ws.send(JSON.stringify({ type: "session", minutes: 25 }));
+    for (let i = 0; i < 100 && !coach.vue().minuteur; i++) await new Promise((r) => setTimeout(r, 10));
+    expect(coach.vue().minuteur).toMatchObject({ type: "travail", sujet: "Révisions" });
+    ws.send(JSON.stringify({ type: "fin-session" }));
+    for (let i = 0; i < 100 && coach.vue().minuteur; i++) await new Promise((r) => setTimeout(r, 10));
+    expect(coach.vue().minuteur).toBeNull();
+    const dernier = messages.filter((m) => m.type === "etat").at(-1);
+    expect(dernier?.type === "etat" && dernier.etat.conseillers?.map((c) => c.id)).toEqual(["etudes", "sante", "business", "apps", "vie"]);
+    ws.close();
+  });
 
   it("les outils MCP sont refusés sans le bon jeton", async () => {
     const mauvais = path.join(tmp(), "jeton");
