@@ -36,6 +36,7 @@ export interface AssistantApi extends EventEmitter {
   allerA?(vue: VueEcran): void;
   /** Ouvre la fiche d'un pôle sur l'écran de Max (null : retour à l'accueil). */
   ouvrirPole?(pole: string | null, focus?: string | null): void;
+  modeObscur?(actif: boolean, dire?: boolean): string;
 }
 
 const MAX_RESULTAT = 8000;
@@ -369,6 +370,10 @@ export function routesMax(o: {
       case "POST /api/outils/ranger-mails":
         return repondre(res, 200, await confirmations.confirmer("rangement", o.assistant?.dernierMessageUtilisateur?.() ?? null));
       // les pôles et le sport
+      case "POST /api/outils/obscur": {
+        if (!o.assistant?.modeObscur) return repondre(res, 503, { ok: false, texte: "Max n'est pas disponible." });
+        return repondre(res, 200, { ok: true, texte: o.assistant.modeObscur(corps.actif !== false && corps.actif !== "false") });
+      }
       case "POST /api/outils/pole": {
         const t = texte("pole");
         if (!t || /^(accueil|aucun|fermer)$/i.test(t)) {

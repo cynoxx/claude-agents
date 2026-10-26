@@ -35,6 +35,7 @@ export function creerBouche(config: BureauConfig, journal: (m: string) => void =
         lecteur: "afplay",
         dossier,
         nom: el.nom,
+        ton: (obscur) => el.changerTon(obscur),
         decrire: () => {
           if (avec.panne) return `Voix : secours (ElevenLabs indisponible : ${avec.panne})`;
           const q = el.quota;

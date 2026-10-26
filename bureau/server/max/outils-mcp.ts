@@ -388,6 +388,15 @@ serveur.registerTool(
   async ({ pole, focus }) => appeler("POST", "/api/outils/pole", { pole, focus }),
 );
 serveur.registerTool(
+  "mode_obscur",
+  {
+    description:
+      "Max Ultime : active (actif true) ou quitte (actif false) le mode obscur, la version sombre et arrogante de Max pour se concentrer (écran rouge, session de travail sur les études). « mode obscur », « mode ultime », « Max Ultime », « mode concentration » ; « mode normal » pour sortir.",
+    inputSchema: { actif: z.boolean().describe("true pour entrer dans le mode obscur, false pour en sortir") },
+  },
+  async ({ actif }) => appeler("POST", "/api/outils/obscur", { actif }),
+);
+serveur.registerTool(
   "noter_seance",
   {
     description: "Note la séance de sport faite (une par jour ; la dernière notée l'emporte) : pec_dos, bras_epaules (biceps-triceps-épaules), jambes ou repos.",

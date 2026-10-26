@@ -22,6 +22,13 @@ const REGLAGES: Record<EtatMax, Reglage> = {
 };
 
 const BLEU = [96, 200, 255];
+const ROUGE = [255, 38, 38];
+
+/** Mélange deux couleurs (k de 0 à 1) en « rgba(…) ». */
+export function melange(a: number[], b: number[], k: number, alpha: number): string {
+  const c = a.map((x, i) => Math.round(x + (b[i] - x) * k));
+  return `rgba(${c[0]},${c[1]},${c[2]},${Math.max(0, Math.min(1, alpha))})`;
+}
 const NB_PARTICULES = 420;
 const APPARITION_S = 2.4;
 const SALUT_S = 1.8;
@@ -58,6 +65,9 @@ export class Humanoide {
   private salut = -1;
   /** Les anneaux de données (heure, état, échéance…). */
   private etiquettes: string[] = [];
+  /** Max Ultime : 0 = Max normal (bleu), 1 = Max Ultime (rouge, les yeux, le rictus). */
+  private ob = 0;
+  private obCible = 0;
   private particules = Array.from({ length: NB_PARTICULES }, () => this.nouvelleParticule(Math.random()));
   private veines: [number, number][][];
 
@@ -97,6 +107,11 @@ export class Humanoide {
   /** Grossit le visage (la plongée vers le bureau) : 1 = normal. */
   agrandir(z: number): void {
     this.zoom = z;
+  }
+
+  /** Max Ultime : il vire au rouge, ses yeux s'allument. */
+  obscur(actif: boolean): void {
+    this.obCible = actif ? 1 : 0;
   }
 
   /** Regarde vers toi (de -1 à 1, comme le pointeur), d'après la caméra. */
@@ -159,6 +174,8 @@ export class Humanoide {
     this.regard.x += (this.regardCible.x - this.regard.x) * Math.min(1, dt * 2.5);
     this.regard.y += (this.regardCible.y - this.regard.y) * Math.min(1, dt * 2.5);
     if (this.apparition >= 0) this.apparition += dt;
+    this.ob += (this.obCible - this.ob) * Math.min(1, dt * 2.2);
+    const ob = this.ob;
     if (this.salut >= 0) this.salut = this.salut + dt > SALUT_S ? -1 : this.salut + dt;
     // le salut : un éclat qui monte vite et redescend doucement
     const sal = this.salut < 0 ? 0 : Math.min(1, this.salut / 0.25) * Math.max(0, 1 - this.salut / SALUT_S);
@@ -179,7 +196,7 @@ export class Humanoide {
     ctx.scale(this.zoom, this.zoom);
     ctx.translate(-coeurX, -coeurY);
 
-    const bleu = (alpha: number) => `rgba(${BLEU[0]},${BLEU[1]},${BLEU[2]},${Math.max(0, Math.min(1, alpha))})`;
+    const bleu = (alpha: number) => melange(BLEU, ROUGE, ob, alpha);
     // la tête suit le pointeur (et se balance un peu toute seule)
     const balance = Math.sin(this.t * 0.6) * 0.15;
     const cx = ox + S * 0.5 + (this.regard.x * 0.025 + balance * 0.01) * S;
@@ -215,7 +232,7 @@ export class Humanoide {
       const p = this.salut / SALUT_S;
       for (let i = 0; i < 3; i++) {
         const q = Math.max(0, p - i * 0.08);
-        ctx.strokeStyle = `rgba(255,200,110,${(1 - q) * 0.7 * (1 - i * 0.25)})`;
+        ctx.strokeStyle = melange([255, 200, 110], [255, 60, 40], ob, (1 - q) * 0.7 * (1 - i * 0.25));
         ctx.lineWidth = Math.max(1, (S / 300) * (1 - q));
         ctx.beginPath();
         ctx.ellipse(cx, cy + ry * 0.12, rx * (0.6 + q * 4.5), ry * (0.5 + q * 3.6), 0, 0, Math.PI * 2);
@@ -291,10 +308,10 @@ export class Humanoide {
     if (!petit) {
       const pouls = 0.55 + 0.45 * Math.sin(this.t * 3) * 0.5 + this.voix * 0.4;
       ctx.lineWidth = Math.max(1, S / 650);
-      ctx.shadowColor = `rgba(255,170,60,${0.8 * L})`;
+      ctx.shadowColor = melange([255, 170, 60], [200, 0, 0], ob, 0.8 * L);
       ctx.shadowBlur = S / 80;
       for (const v of this.veines) {
-        ctx.strokeStyle = `rgba(255,${160 + 60 * a.dore},70,${0.75 * pouls * a.coeur * app})`;
+        ctx.strokeStyle = melange([255, 160 + 60 * a.dore, 70], [150, 0, 10], ob, 0.75 * pouls * a.coeur * app);
         ctx.beginPath();
         v.forEach(([x, y], i) => (i ? ctx.lineTo(ox + S * 0.5 + x * S, oy + y * S) : ctx.moveTo(ox + S * 0.5 + x * S, oy + y * S)));
         ctx.stroke();
@@ -364,10 +381,12 @@ export class Humanoide {
     const gr = rx * (1.05 + this.voix * 0.3 + sal * 0.35);
     const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
     const vert = Math.round(150 + 60 * a.dore);
-    g.addColorStop(0, `rgba(255,${Math.round(240 + 15 * a.dore)},190,${Math.min(1, eclat)})`);
-    g.addColorStop(0.3, `rgba(255,${vert},50,${Math.min(1, eclat * 0.95)})`);
-    g.addColorStop(0.65, `rgba(255,95,20,${Math.min(1, eclat * 0.4)})`);
-    g.addColorStop(1, "rgba(255,90,20,0)");
+    // Max Ultime : un cœur plus sombre et plus petit, rouge sang, pour laisser voir ses yeux
+    const sombre = 1 - 0.45 * ob;
+    g.addColorStop(0, melange([255, Math.round(240 + 15 * a.dore), 190], [255, 110, 90], ob, Math.min(1, eclat * sombre)));
+    g.addColorStop(0.3, melange([255, vert, 50], [210, 15, 15], ob, Math.min(1, eclat * 0.95 * sombre)));
+    g.addColorStop(0.65, melange([255, 95, 20], [80, 0, 0], ob, Math.min(1, eclat * 0.4 * sombre)));
+    g.addColorStop(1, melange([255, 90, 20], [40, 0, 0], ob, 0));
     ctx.fillStyle = g;
     // deux passes : le cœur, et son halo qui « brûle » les lignes du visage
     for (let passe = 0; passe < 2; passe++) {
@@ -375,6 +394,9 @@ export class Humanoide {
       ctx.ellipse(gx, gy, gr * (passe ? 1.25 : 1), gr * (passe ? 1 : 0.8), 0, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Max Ultime : deux yeux en fente, inclinés, et un rictus en coin
+    if (ob > 0.03 && !petit) this.yeux(cx + tx * 0.75, cy + ty * 0.6, rx, ry, S, ob);
 
     // les particules qui s'envolent du crâne
     if (!petit) {
@@ -404,6 +426,39 @@ export class Humanoide {
     }
   }
 
+  /** Les yeux de Max Ultime : deux fentes rouges qui brûlent, l'intérieur plus bas (un regard dur), et le rictus. */
+  private yeux(cx: number, cy: number, rx: number, ry: number, S: number, ob: number): void {
+    const ctx = this.ctx;
+    const pouls = 0.85 + 0.15 * Math.sin(this.t * 2.3) + this.voix * 0.3;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.shadowColor = `rgba(255,30,20,${ob})`;
+    ctx.shadowBlur = S / 40;
+    for (const cote of [-1, 1]) {
+      const ex = cx + cote * rx * 0.4;
+      const ey = cy - ry * 0.06;
+      const l = rx * 0.34;
+      const h = ry * 0.055;
+      ctx.fillStyle = `rgba(255,${Math.round(70 + 60 * pouls)},${Math.round(50 * pouls)},${ob * Math.min(1, pouls)})`;
+      ctx.beginPath();
+      // le coin intérieur plus bas que l'extérieur : un regard sûr de lui, un peu méprisant
+      ctx.moveTo(ex - cote * l * 0.55, ey + h * 1.4);
+      ctx.quadraticCurveTo(ex, ey - h * 1.6, ex + cote * l * 0.6, ey - h * 1.1);
+      ctx.quadraticCurveTo(ex + cote * l * 0.1, ey + h * 0.9, ex - cote * l * 0.55, ey + h * 1.4);
+      ctx.fill();
+    }
+    // le rictus : un seul coin de la bouche remonte
+    ctx.shadowBlur = S / 90;
+    ctx.strokeStyle = `rgba(255,70,60,${0.75 * ob})`;
+    ctx.lineWidth = Math.max(1, S / 420);
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(cx - rx * 0.28, cy + ry * 0.47);
+    ctx.quadraticCurveTo(cx + rx * 0.02, cy + ry * 0.55 + this.voix * ry * 0.06, cx + rx * 0.32, cy + ry * 0.36);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   /** Les anneaux de données autour de la tête (style HUD) : trois arcs qui tournent à des vitesses différentes. */
   private anneaux(cx: number, cy: number, r: number, S: number, app: number, lumiere: number): void {
     const ctx = this.ctx;
@@ -411,7 +466,8 @@ export class Humanoide {
     ctx.save();
     ctx.lineCap = "butt";
     // l'anneau fin gradué
-    ctx.strokeStyle = `rgba(96,200,255,${a(0.28)})`;
+    const ob = this.ob;
+    ctx.strokeStyle = melange(BLEU, ROUGE, ob, a(0.28));
     ctx.lineWidth = Math.max(1, S / 900);
     for (let i = 0; i < 120; i++) {
       const an = (i / 120) * Math.PI * 2 + this.t * 0.05;
@@ -428,7 +484,7 @@ export class Humanoide {
       [0.95, 0.16, 0.55, 0.22],
     ];
     for (const [k, v, long, alpha] of arcs) {
-      ctx.strokeStyle = `rgba(96,200,255,${a(alpha)})`;
+      ctx.strokeStyle = melange(BLEU, ROUGE, ob, a(alpha));
       ctx.lineWidth = Math.max(1, S / 380);
       for (let j = 0; j < 3; j++) {
         const debut = this.t * v + (j * Math.PI * 2) / 3;
@@ -439,7 +495,7 @@ export class Humanoide {
     }
     // un point orange qui fait le tour
     const ap = this.t * 0.4;
-    ctx.fillStyle = `rgba(255,170,70,${a(0.9)})`;
+    ctx.fillStyle = melange([255, 170, 70], [255, 230, 230], ob, a(0.9));
     ctx.beginPath();
     ctx.arc(cx + Math.cos(ap) * r * 1.07, cy + Math.sin(ap) * r * 1.07 * 0.92, S / 260, 0, Math.PI * 2);
     ctx.fill();
@@ -457,10 +513,10 @@ export class Humanoide {
         const x = cote ? Math.max(largeur + marge, cx + Math.cos(an) * r * 1.2) : Math.min(w - largeur - marge, cx + Math.cos(an) * r * 1.2);
         const y = Math.max(marge, Math.min(h - marge, cy + Math.sin(an) * r * 1.1));
         ctx.textAlign = cote ? "right" : "left";
-        ctx.fillStyle = `rgba(150,225,255,${a(0.85)})`;
+        ctx.fillStyle = melange([150, 225, 255], [255, 140, 130], ob, a(0.85));
         ctx.fillText(txt.toUpperCase(), x, y);
         // le petit trait qui relie le texte à l'anneau
-        ctx.strokeStyle = `rgba(96,200,255,${a(0.4)})`;
+        ctx.strokeStyle = melange(BLEU, ROUGE, ob, a(0.4));
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(cx + Math.cos(an) * r * 1.12, cy + Math.sin(an) * r * 1.03);

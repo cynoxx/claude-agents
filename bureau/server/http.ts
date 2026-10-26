@@ -335,6 +335,9 @@ export function createBureauServer(o: {
         case "vue":
           if (msg.vue === "jarvis" || msg.vue === "bureau") o.assistant?.allerA?.(msg.vue);
           break;
+        case "obscur":
+          o.assistant?.modeObscur?.(msg.actif === true, true);
+          break;
         case "pole": {
           const p = msg.pole === null ? null : String(msg.pole ?? "");
           if (p !== null && !o.conseillers?.defs.some((d) => d.id === p)) {

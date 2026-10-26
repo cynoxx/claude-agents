@@ -153,7 +153,15 @@ reveil.on("reveille", (r: { parole: boolean }) => !r.parole && assistant.informe
 reveil.on("echec", () => assistant.informer(`Il n'a répondu à aucun des ${config.reveil.essais} appels du réveil ce matin.`));
 // il arrive (réveil avec accueil) : ses mails sont triés pendant que Max le salue
 assistant.on("arrivee", () => {
-  if (process.platform === "darwin") void trieur.lancer();
+  // en mode obscur, pas de mails qui s'affichent : concentration
+  if (process.platform === "darwin" && !assistant.vue().obscur) void trieur.lancer();
+});
+// Max Ultime : la voix se fait plus sombre, et une session de concentration démarre (si rien ne tourne déjà)
+assistant.on("obscur", (actif: boolean) => {
+  bouche.ton(actif);
+  if (actif && !coach.vue().minuteur) coach.demarrerSession("Mode obscur", config.obscur.minutes, "etudes");
+  const raccourci = actif ? config.obscur.raccourciEntree : config.obscur.raccourciSortie;
+  if (raccourci && process.platform === "darwin") execFile("shortcuts", ["run", raccourci], () => {});
 });
 trieur.on("trie", (resume: string) => assistant.informer(`Ses mails non lus ont été triés automatiquement et s'affichent dans une fenêtre sur ton écran. Résumé : ${resume}`));
 const musiqueTrouvee = await musique.chercher();

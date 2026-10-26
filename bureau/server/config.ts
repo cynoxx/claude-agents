@@ -65,6 +65,11 @@ export interface BureauConfig {
   reveil: ReveilConfig;
   /** Où s'ouvre Max : une fenêtre à part (mode app de Chrome, Brave, Edge…) ou ton navigateur. */
   fenetre: FenetreConfig;
+  /**
+   * Max Ultime (le mode obscur) : la durée de la session de concentration, et des raccourcis de l'app Raccourcis à
+   * lancer en entrant et en sortant (par exemple activer puis couper la Concentration « Ne pas déranger »).
+   */
+  obscur: { minutes: number; raccourciEntree: string | null; raccourciSortie: string | null };
 }
 
 export interface ReveilConfig {
@@ -124,6 +129,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   objectifsParJour: { etudes: 360 },
   musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true, recherche: "real.?gone" },
   fenetre: { mode: "app", navigateur: null },
+  obscur: { minutes: 50, raccourciEntree: null, raccourciSortie: null },
   reveil: { mode: "mac", telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "", cle: "" } },
 };
 
@@ -174,6 +180,7 @@ export function loadConfig(dir: string): BureauConfig {
     musique: { ...DEFAULT_CONFIG.musique, ...user.musique },
     reveil: { ...DEFAULT_CONFIG.reveil, ...user.reveil, twilio: { ...DEFAULT_CONFIG.reveil.twilio, ...user.reveil?.twilio } },
     fenetre: { ...DEFAULT_CONFIG.fenetre, ...user.fenetre },
+    obscur: { ...DEFAULT_CONFIG.obscur, ...user.obscur },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };
   if (c.mac.dossierCaptures) c.mac.dossierCaptures = expandHome(c.mac.dossierCaptures);

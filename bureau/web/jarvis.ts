@@ -6,7 +6,8 @@ import { duree } from "./poles-pur.ts";
 import { Humanoide } from "./humanoide.ts";
 import { Montagnes } from "./montagnes.ts";
 import { Regard } from "./regard.ts";
-import { basculerSons, son, sonsActifs } from "./sons.ts";
+import { basculerSons, son, sonsActifs, tonnerre } from "./sons.ts";
+import { Ultime } from "./ultime.ts";
 import { SEANCES } from "../shared/sport.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -70,7 +71,7 @@ export function compteMails(m: MailsVue): { total: number; aTraiter: number } {
 
 /** Les petits textes des anneaux de données autour de Max : son état, l'échéance, la séance du jour, les études. */
 export function etiquettesAnneaux(e: EtatBureau): string[] {
-  const t: string[] = [`SYS · ${STATUTS[e.assistant?.etat ?? "veille"].split(" —")[0]}`];
+  const t: string[] = [e.assistant?.obscur ? "MAX ULTIME · OBSCUR" : `SYS · ${STATUTS[e.assistant?.etat ?? "veille"].split(" —")[0]}`];
   const ech = e.assistant?.coach?.echeance;
   if (ech) t.push(`${ech.nom.slice(0, 18)} · ${ech.jours === 0 ? "JOUR J" : `J-${ech.jours}`}`);
   const s = e.sport ? SEANCES.find((x) => x.id === (e.sport!.faite ?? e.sport!.prevue)) : null;
@@ -86,13 +87,26 @@ export class Jarvis {
   private sphere: Humanoide;
   private vue: VueEcran = "jarvis";
   private etat?: EtatBureau;
+  private ultime: Ultime;
 
   constructor(private envoyer: (m: ClientMessage) => void) {
     // Max en buste humanoïde de particules, devant ses montagnes
     this.sphere = new Humanoide($<HTMLCanvasElement>("sphere"));
     this.sphere.demarrer();
     // les montagnes vibrent avec sa voix ; sa tête suit ton visage
-    new Montagnes($<HTMLCanvasElement>("j-fond"), () => this.sphere.niveauVoix);
+    const montagnes = new Montagnes($<HTMLCanvasElement>("j-fond"), () => this.sphere.niveauVoix);
+    // Max Ultime : la transformation, puis tout passe au rouge (Max, les montagnes, l'écran)
+    this.ultime = new Ultime((actif) => {
+      document.body.dataset.obscur = actif ? "oui" : "non";
+      this.sphere.obscur(actif);
+      montagnes.obscur(actif);
+      const b = $("j-obscur");
+      b.textContent = actif ? "◇ Quitter le mode obscur" : "◆ Mode obscur";
+      b.dataset.actif = actif ? "oui" : "non";
+    });
+    $("j-obscur").addEventListener("click", () => this.envoyer({ type: "obscur", actif: !this.etat?.assistant?.obscur }));
+    // les éclairs au loin grondent doucement
+    window.addEventListener("max-eclair", () => tonnerre(0.25));
     new Regard(this.sphere);
     const sons = $("j-sons");
     const majSons = () => {
@@ -129,6 +143,7 @@ export class Jarvis {
     const e = a?.etat ?? "veille";
     this.sphere.etat(e);
     this.sphere.donnees(etiquettesAnneaux(etat));
+    this.ultime.rendre(!!a?.obscur);
     $("j-statut").textContent = STATUTS[e];
     $("j-statut").dataset.etat = e;
     $("j-reveil").textContent = e === "veille" ? "👂 Réveiller" : "😴 Veille";

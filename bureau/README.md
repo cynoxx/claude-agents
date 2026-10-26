@@ -114,6 +114,16 @@ Tout s'organise en **trois niveaux** :
 - **Les fiches s'ouvrent comme des hologrammes** : elles se déplient de haut en bas, traversées d'une ligne de lumière.
 - **Son « Salut ! »** te dit aussi ta séance du jour (« Côté sport, aujourd'hui c'est Pec-Dos »), ou te félicite si elle est déjà faite.
 
+### Max Ultime : le mode obscur
+
+Pour les grosses sessions : **« Max, mode obscur »** (ou « mode ultime », « mode concentration »), ou le bouton **◆ Mode obscur** dans la barre.
+
+- **La transformation** : l'écran glitche, un orage noir et pourpre envahit tout, des éclairs rouges frappent avec le tonnerre, « **MAX ULTIME** » s'écrase à l'écran, puis le QG réapparaît en rouge sang.
+- **Max Ultime** : ses lignes passent au rouge, ses yeux s'allument en deux fentes, un rictus en coin. Sa voix devient plus lente et plus froide (avec la voix ElevenLabs). Et surtout il change de caractère : **arrogant**, phrases courtes, il te défie (« Tu veux réussir le concours, ou regarder ton téléphone ? ») et refuse sèchement tout ce qui n'est pas ton travail. L'arrogance est un jeu : s'il sent que ça ne va pas, il redevient le Max bienveillant.
+- **La concentration** : une session de **50 minutes** sur les études démarre, avec un chrono géant sous Max. Les tuiles des pôles et la fenêtre des mails disparaissent ; derrière les montagnes, l'orage gronde de temps en temps.
+- **En sortir** : « Max, mode normal », ou **◇ Quitter le mode obscur**. La session, elle, continue jusqu'au bout.
+- **Réglages** dans `bureau.config.json` : `"obscur": { "minutes": 50 }`. Pour couper aussi les notifications du Mac, crée deux raccourcis dans l'app Raccourcis (« Activer Concentration » → Ne pas déranger, et « Désactiver Concentration »), puis mets leurs noms dans `"raccourciEntree"` et `"raccourciSortie"`.
+
 **Les deux sortes d'agents.** Les **agents des pôles** (Prof, Coach, Associé, Dev, Majordome) sont tes conseillers : chacun connaît son domaine, garde ses notes et répond à tes questions. Ils sont assis dans l'aile « Tes pôles » du bureau. Les **robots** (Chercheur, Codeur, Designer, Rédacteur, Analyste) sont l'équipe d'exécution : Max les lance sur une quête et ils produisent un résultat. Tu ne parles qu'à Max : il passe la question au bon agent, ou lance les robots.
 
 | Pôle | Son agent | Sur sa fiche |

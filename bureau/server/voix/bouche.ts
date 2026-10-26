@@ -33,7 +33,7 @@ export interface OptionsBouche {
    * La voix « en fichiers » (Piper, ou ElevenLabs avec ses secours) : le moteur, le lecteur de WAV (`afplay`), un
    * dossier pour les fichiers, le nom de la voix, et de quoi la décrire après le démarrage.
    */
-  piper?: { moteur: PiperLike; lecteur: string; dossier: string; nom: string; decrire?: () => string };
+  piper?: { moteur: PiperLike; lecteur: string; dossier: string; nom: string; decrire?: () => string; ton?: (obscur: boolean) => void };
 }
 
 interface Phrase {
@@ -97,6 +97,11 @@ export class Bouche extends EventEmitter {
     if (!this.disponible) return false;
     const args = [...(this.voix ? ["-v", this.voix] : []), "-r", String(this.o.debit), "-o", fichier, "--file-format=WAVE", "--data-format=LEI16@22050", texte];
     return new Promise((resolve) => execFile(this.o.bin, args, { timeout: 60_000 }, (e) => resolve(!e && fs.existsSync(fichier))));
+  }
+
+  /** Le ton de Max : normal, ou Max Ultime (plus grave et plus lent, quand la voix le permet). */
+  ton(obscur: boolean): void {
+    this.o.piper?.ton?.(obscur);
   }
 
   arreter(): void {

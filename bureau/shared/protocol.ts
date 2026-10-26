@@ -89,6 +89,8 @@ export interface AssistantVue {
   vue?: VueEcran;
   /** La fiche de pôle ouverte sur l'écran de Max (« sante »…), ou null. */
   pole?: string | null;
+  /** Max Ultime (le mode obscur) : depuis quand, ou null. */
+  obscur?: number | null;
   /** Ce que la fiche doit montrer en premier (« corps » pour la fiche Sport). */
   focus?: string | null;
 }
@@ -269,4 +271,5 @@ export type ClientMessage =
   | { type: "visage-enregistrer"; descripteurs: number[][]; prenom: string }
   | { type: "visage-effacer" }
   | { type: "verrouiller" }
-  | { type: "fenetre"; nee: number };
+  | { type: "fenetre"; nee: number }
+  | { type: "obscur"; actif: boolean };

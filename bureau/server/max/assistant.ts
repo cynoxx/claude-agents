@@ -171,6 +171,8 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return "🏢 Direction le bureau";
     case "retour_jarvis":
       return "🔵 Retour à l'écran de Max";
+    case "mode_obscur":
+      return entree.actif === false ? "🔵 Max redevient normal" : "🔴 MAX ULTIME";
     case "ouvrir_pole":
       return e("focus") === "corps" ? "🧍 Max affiche ton corps" : `🗂 Max ouvre la fiche ${e("pole")}`;
     case "noter_seance":
@@ -202,6 +204,22 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
   }
 }
 
+/** Ce que dit Max Ultime en arrivant, et en repartant (quand c'est le bouton qui l'appelle). */
+export const PHRASES_OBSCUR = {
+  entree: [
+    "Mode obscur. Enfin. Tu as cinquante minutes, et je ne compte pas te laisser les gaspiller.",
+    "Max Ultime en ligne. Les distractions, c'est terminé. Au travail.",
+    "Tu m'as réveillé. Alors prouve que ça en valait la peine. Cinquante minutes. Sans excuse.",
+    "Moi, je ne fatigue jamais. Toi, tu as un concours. Ouvre ton cours.",
+  ],
+  sortie: ["Mode normal. Ne t'habitue pas à la facilité.", "Je me retire. Tu sais où me trouver quand tu voudras être sérieux."],
+};
+
+export function phraseObscur(actif: boolean, hasard = Math.random()): string {
+  const l = actif ? PHRASES_OBSCUR.entree : PHRASES_OBSCUR.sortie;
+  return l[Math.floor(hasard * l.length) % l.length];
+}
+
 export class Assistant extends EventEmitter implements AssistantApi {
   private etat: EtatMax = "veille";
   private phrase = "";
@@ -224,6 +242,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private ecran: VueEcran = "jarvis";
   private minuterieIntro?: NodeJS.Timeout;
   private pole: string | null = null;
+  /** Max Ultime : depuis quand le mode obscur est actif (null : Max normal). */
+  private obscur: number | null = null;
   private focus: string | null = null;
 
   constructor(private o: OptionsAssistant) {
@@ -288,6 +308,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
       vue: this.ecran,
       pole: this.pole,
       focus: this.focus,
+      obscur: this.obscur,
     };
   }
 
@@ -393,6 +414,36 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.focus = pole ? focus : null;
     if (pole) this.ecran = "jarvis";
     this.changer();
+  }
+
+  /**
+   * Max Ultime : le mode obscur (concentration, version sombre et arrogante de Max). `dire` : il le dit lui-même
+   * (quand le bouton l'a déclenché ; par la voix, c'est le cerveau qui répond). Événement `obscur` (actif).
+   */
+  modeObscur(actif: boolean, dire = false): string {
+    if (actif === (this.obscur !== null)) return actif ? "Le mode obscur est déjà actif." : "Le mode obscur n'est pas actif.";
+    this.obscur = actif ? Date.now() : null;
+    if (actif) {
+      this.pole = this.focus = null;
+      this.ecran = "jarvis";
+    }
+    this.emit("obscur", actif);
+    this.informer(
+      actif
+        ? "Le mode obscur vient d'être activé : tu es Max Ultime (voir ta consigne). Une session de concentration sur les études est lancée."
+        : "Le mode obscur est terminé : tu redeviens le Max habituel, chaleureux.",
+    );
+    if (dire && this.etat !== "veille") {
+      // Max Ultime coupe la parole : ce qu'il disait s'arrête net
+      this.o.bouche.taire();
+      const phrase = phraseObscur(actif);
+      this.noter("max", phrase);
+      this.parler(phrase);
+    }
+    this.changer();
+    return actif
+      ? "Mode obscur activé : l'écran passe en Max Ultime et une session de concentration sur les études démarre. Réponds en Max Ultime, en une phrase courte et arrogante."
+      : "Mode obscur terminé. Réponds en une phrase, en redevenant le Max habituel.";
   }
 
   informer(texte: string): void {

@@ -2469,3 +2469,84 @@ body[data-verrou="oui"] {
     bottom: 16px;
   }
 }
+
+/* --- Max Ultime : le mode obscur -------------------------------------------------------------------------- */
+.ultime {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 90;
+  pointer-events: none;
+}
+.ultime[hidden] {
+  display: none;
+}
+body.ultime-secousse .jarvis {
+  animation: ultime-secousse 0.12s steps(2) infinite;
+}
+@keyframes ultime-secousse {
+  0% {
+    transform: translate(3px, -2px);
+    filter: hue-rotate(-30deg) saturate(1.6);
+  }
+  50% {
+    transform: translate(-4px, 2px);
+  }
+  100% {
+    transform: translate(2px, 3px);
+  }
+}
+.qg-obscur {
+  border-color: rgba(255, 60, 60, 0.55) !important;
+  color: #ffb3ad !important;
+  letter-spacing: 0.04em;
+}
+.qg-obscur[data-actif="oui"] {
+  background: rgba(255, 30, 30, 0.18) !important;
+  box-shadow: 0 0 18px rgba(255, 30, 30, 0.45) !important;
+}
+/* l'écran passe au rouge sang : le fond, et les panneaux (le cyan devient rouge, les canevas gardent leurs couleurs) */
+body[data-obscur="oui"] .jarvis {
+  background: radial-gradient(ellipse at 50% 40%, #2a0306 0%, #0a0002 68%);
+  color: #ffe0dc;
+}
+body[data-obscur="oui"] .jarvis .qg-barre > :not(.qg-obscur),
+body[data-obscur="oui"] .jarvis .j-carte,
+body[data-obscur="oui"] .jarvis #j-form,
+body[data-obscur="oui"] .jarvis .j-dit,
+body[data-obscur="oui"] .jarvis .j-statut {
+  filter: hue-rotate(170deg) saturate(1.5);
+}
+body[data-obscur="oui"] .jarvis .qg-barre {
+  border-bottom-color: rgba(255, 50, 50, 0.3);
+}
+/* la concentration : plus de tuiles, plus de mails ; le chrono en grand sous Max */
+body[data-obscur="oui"] #qg-poles,
+body[data-obscur="oui"] #mails-fenetre {
+  display: none !important;
+}
+/* la colonne de gauche s'efface mais garde sa place : Max reste au centre */
+body[data-obscur="oui"] .jarvis .j-gauche {
+  visibility: hidden;
+}
+body[data-obscur="oui"] #j-minuteur:not([hidden]) {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 10px 26px;
+  font: 700 clamp(22px, 4vw, 42px) / 1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.08em;
+  color: #ffd9d4;
+  background: rgba(30, 0, 4, 0.75);
+  border: 1px solid rgba(255, 50, 50, 0.6);
+  box-shadow: 0 0 34px rgba(255, 20, 20, 0.35), inset 0 0 18px rgba(255, 20, 20, 0.2);
+  filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.ultime-secousse .jarvis {
+    animation: none;
+  }
+}

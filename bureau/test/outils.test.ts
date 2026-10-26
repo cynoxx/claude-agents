@@ -57,6 +57,10 @@ class FauxAssistant extends EventEmitter implements AssistantApi {
   dernierMessageUtilisateur() {
     return this.dernier;
   }
+  modeObscur(actif: boolean, dire = false) {
+    this.appels.push(`obscur:${actif}:${dire}`);
+    return actif ? "Mode obscur activé" : "Mode obscur terminé";
+  }
   ouvrirPole(pole: string | null, focus?: string | null) {
     this.appels.push(`pole:${pole}${focus ? `:${focus}` : ""}`);
   }
@@ -242,7 +246,7 @@ describe("routes et WebSocket de Max", () => {
           "aller_au_bureau", "retour_jarvis",
           "enregistrer_planning", "lire_planning", "preparer_planning_calendrier", "ajouter_planning_calendrier",
           "trier_mails", "afficher_mails", "preparer_rangement", "ranger_mails",
-          "ouvrir_pole", "noter_seance", "lire_sport", "changer_semaine_sport",
+          "ouvrir_pole", "mode_obscur", "noter_seance", "lire_sport", "changer_semaine_sport",
           "regler_reveil", "annuler_reveil", "etat_reveil", "essayer_reveil",
         ].sort(),
       );
@@ -422,6 +426,10 @@ describe("routes et WebSocket de Max", () => {
       expect((await texte("ouvrir_pole", { pole: "cuisine" })).erreur).toBe(true);
       expect((await texte("ouvrir_pole", { pole: "accueil" })).texte).toBe("Retour à l'accueil.");
       expect(assistant.appels.filter((a) => a.startsWith("pole:"))).toEqual(["pole:sante:corps", "pole:business", "pole:null"]);
+      // Max Ultime, par la voix
+      expect((await texte("mode_obscur", { actif: true })).texte).toBe("Mode obscur activé");
+      expect((await texte("mode_obscur", { actif: false })).texte).toBe("Mode obscur terminé");
+      expect(assistant.appels.filter((a) => a.startsWith("obscur:"))).toEqual(["obscur:true:false", "obscur:false:false"]);
       expect((await texte("noter_seance", { seance: "jambes", note: "squat 80 kg" })).texte).toContain("Séance Jambes notée aujourd'hui");
       expect(sport.vue().faite).toBe("jambes");
       expect((await texte("noter_seance", { seance: "yoga" })).erreur).toBe(true);

@@ -42,3 +42,17 @@ describe("Max te regarde", () => {
     expect(etiquettesAnneaux({ assistant: { etat: "veille" } } as unknown as EtatBureau)).toEqual(["SYS · En veille"]);
   });
 });
+
+describe("Max Ultime", () => {
+  it("joue la transformation seulement quand le mode change, pas au chargement de la page", async () => {
+    const { changementObscur } = await import("../web/ultime.ts");
+    expect(changementObscur(null, true)).toBeNull();
+    expect(changementObscur(false, true)).toBe("entree");
+    expect(changementObscur(true, false)).toBe("sortie");
+    expect(changementObscur(true, true)).toBeNull();
+  });
+
+  it("les anneaux l'annoncent", () => {
+    expect(etiquettesAnneaux({ assistant: { etat: "ecoute", obscur: 1 } } as unknown as EtatBureau)[0]).toBe("MAX ULTIME · OBSCUR");
+  });
+});

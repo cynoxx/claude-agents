@@ -640,3 +640,33 @@ describe("Assistant — intégration avec un vrai cerveau et une vraie bouche (f
     expect(dits).toEqual(["Salut ! Je t'écoute.", "Bien reçu : bonjour.", "Autre chose ?"]);
   }, 15_000);
 });
+
+describe("Assistant — Max Ultime (mode obscur)", () => {
+  it("bascule en mode obscur, le dit (bouton), prévient son cerveau, et en ressort", async () => {
+    const { PHRASES_OBSCUR } = await import("../server/max/assistant.ts");
+    a.reveiller();
+    a.ouvrirPole("sante");
+    const evts: boolean[] = [];
+    a.on("obscur", (x: boolean) => evts.push(x));
+    expect(a.modeObscur(true, true)).toContain("Max Ultime");
+    expect(a.vue().obscur).toBeGreaterThan(0);
+    // la fiche se ferme : place à la concentration
+    expect(a.vue().pole).toBeNull();
+    expect(PHRASES_OBSCUR.entree).toContain(bouche.dites.at(-1));
+    expect(a.modeObscur(true)).toBe("Le mode obscur est déjà actif.");
+    a.modeObscur(false, true);
+    expect(a.vue().obscur).toBeNull();
+    expect(PHRASES_OBSCUR.sortie).toContain(bouche.dites.at(-1));
+    expect(evts).toEqual([true, false]);
+    // au message suivant, son cerveau sait ce qui s'est passé
+    a.ecrire("Max, on fait quoi ?");
+    expect(cerveau().recus.at(-1)).toContain("mode obscur");
+  });
+
+  it("par la voix, c'est le cerveau qui répond : Max ne dit rien de lui-même", () => {
+    a.reveiller();
+    const avant = bouche.dites.length;
+    a.modeObscur(true);
+    expect(bouche.dites).toHaveLength(avant);
+  });
+});

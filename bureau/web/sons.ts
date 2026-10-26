@@ -73,3 +73,59 @@ export function son(nom: Son, volume = 0.06): void {
     // pas de son possible (navigateur, autorisation) : tant pis, rien ne casse
   }
 }
+
+let bruitBlanc: AudioBuffer | null = null;
+
+/**
+ * Le tonnerre et le grondement de Max Ultime : un bruit filtré très grave (le roulement) et une basse qui descend.
+ * Plus fort que les petits sons d'interface, mais court ; coupé avec eux (🔈).
+ */
+export function tonnerre(force = 1, volume = 0.22): void {
+  if (!actifs) return;
+  try {
+    ctx ??= new AudioContext();
+    if (ctx.state === "suspended") void ctx.resume();
+    const c = ctx;
+    if (!bruitBlanc) {
+      bruitBlanc = c.createBuffer(1, c.sampleRate * 3, c.sampleRate);
+      const d = bruitBlanc.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const t0 = c.currentTime + 0.01;
+    const sortie = c.createGain();
+    sortie.gain.value = volume * force;
+    sortie.connect(c.destination);
+    // le roulement
+    const src = c.createBufferSource();
+    src.buffer = bruitBlanc;
+    const filtre = c.createBiquadFilter();
+    filtre.type = "lowpass";
+    filtre.frequency.setValueAtTime(900, t0);
+    filtre.frequency.exponentialRampToValueAtTime(120, t0 + 2.4);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(1, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.3, t0 + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.6);
+    src.connect(filtre).connect(g).connect(sortie);
+    src.start(t0);
+    src.stop(t0 + 2.7);
+    // la basse qui gronde
+    const o = c.createOscillator();
+    const go = c.createGain();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(70, t0);
+    o.frequency.exponentialRampToValueAtTime(32, t0 + 1.8);
+    go.gain.setValueAtTime(0, t0);
+    go.gain.linearRampToValueAtTime(0.5, t0 + 0.05);
+    go.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.9);
+    const fo = c.createBiquadFilter();
+    fo.type = "lowpass";
+    fo.frequency.value = 260;
+    o.connect(fo).connect(go).connect(sortie);
+    o.start(t0);
+    o.stop(t0 + 2);
+  } catch {
+    // pas de son : tant pis
+  }
+}

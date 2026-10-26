@@ -66,6 +66,8 @@ export class ElevenLabs implements PiperLike {
   private dernierTexte = "";
   private dernierQuand = 0;
   quota: Quota | null = null;
+  /** Max Ultime : une voix plus lente, plus froide, plus appuyée. */
+  private obscur = false;
 
   constructor(
     private c: ElevenLabsConfig,
@@ -76,6 +78,18 @@ export class ElevenLabs implements PiperLike {
 
   private get entetes(): Record<string, string> {
     return { "xi-api-key": cleElevenLabs(this.c), "content-type": "application/json" };
+  }
+
+  changerTon(obscur: boolean): void {
+    this.obscur = obscur;
+  }
+
+  /** Les réglages de la voix pour le ton du moment. */
+  private get reglages() {
+    const c = this.c;
+    return this.obscur
+      ? { stability: Math.min(1, c.stabilite + 0.2), similarity_boost: c.similarite, style: Math.min(1, c.style + 0.3), use_speaker_boost: true, speed: Math.max(0.7, c.vitesse * 0.9) }
+      : { stability: c.stabilite, similarity_boost: c.similarite, style: c.style, use_speaker_boost: true, speed: c.vitesse };
   }
 
   get nom(): string {
@@ -94,7 +108,7 @@ export class ElevenLabs implements PiperLike {
   /** La clé du cache : la même phrase, avec la même voix et les mêmes réglages. */
   private cleCache(texte: string): string {
     const c = this.c;
-    return crypto.createHash("sha1").update(JSON.stringify([c.voix, c.modele, c.stabilite, c.similarite, c.style, c.vitesse, texte])).digest("hex");
+    return crypto.createHash("sha1").update(JSON.stringify([c.voix, c.modele, this.reglages, texte])).digest("hex");
   }
 
   async synthetiser(texte: string, fichier: string): Promise<void> {
@@ -111,7 +125,7 @@ export class ElevenLabs implements PiperLike {
       model_id: c.modele,
       ...(c.modele.includes("multilingual_v2") ? {} : { language_code: "fr" }),
       ...(avant ? { previous_text: avant } : {}),
-      voice_settings: { stability: c.stabilite, similarity_boost: c.similarite, style: c.style, use_speaker_boost: true, speed: c.vitesse },
+      voice_settings: this.reglages,
     };
     const r = await this.recuperer(`${API_ELEVENLABS}/v1/text-to-speech/${encodeURIComponent(c.voix ?? "")}?output_format=pcm_${TAUX}`, {
       method: "POST",
