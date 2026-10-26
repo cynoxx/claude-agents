@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { CONSEILLERS_DEFAUT, type ConseillerDef } from "./max/conseillers.ts";
+import type { FenetreConfig } from "./fenetre.ts";
 
 export interface Projet {
   nom: string;
@@ -56,6 +57,8 @@ export interface BureauConfig {
   musique: { fichier: string; intro: boolean; /** Mot du nom de ton mp3, pour que le Bureau le retrouve tout seul (Téléchargements, Musique…). */ recherche: string };
   /** Le réveil : Max t'appelle sur ton téléphone (par Twilio). */
   reveil: ReveilConfig;
+  /** Où s'ouvre Max : une fenêtre à part (mode app de Chrome, Brave, Edge…) ou ton navigateur. */
+  fenetre: FenetreConfig;
 }
 
 export interface ReveilConfig {
@@ -113,6 +116,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   tempsParJour: { business: 60 },
   objectifsParJour: { etudes: 360 },
   musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true, recherche: "real.?gone" },
+  fenetre: { mode: "app", navigateur: null },
   reveil: { mode: "mac", telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "", cle: "" } },
 };
 
@@ -162,6 +166,7 @@ export function loadConfig(dir: string): BureauConfig {
     objectifsParJour: { ...DEFAULT_CONFIG.objectifsParJour, ...user.objectifsParJour },
     musique: { ...DEFAULT_CONFIG.musique, ...user.musique },
     reveil: { ...DEFAULT_CONFIG.reveil, ...user.reveil, twilio: { ...DEFAULT_CONFIG.reveil.twilio, ...user.reveil?.twilio } },
+    fenetre: { ...DEFAULT_CONFIG.fenetre, ...user.fenetre },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };
   if (c.mac.dossierCaptures) c.mac.dossierCaptures = expandHome(c.mac.dossierCaptures);

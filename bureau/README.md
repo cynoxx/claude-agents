@@ -70,6 +70,20 @@ Deux façons :
 
 Dans les deux cas, Max se réveille tout seul et te dit « Salut ! Je t'écoute. » (ou combien tu as déjà travaillé aujourd'hui). Pour éteindre un Bureau démarré par Siri : `npm run arreter`.
 
+### Max dans sa propre fenêtre (pas un onglet de Safari)
+
+Max s'ouvre dans **une vraie fenêtre à part**, comme une app : pas d'onglets, pas de barre d'adresse. Il faut pour ça **Google Chrome** (ou Brave, Edge) installé sur le Mac ; tu n'as pas besoin de t'en servir pour naviguer, le Bureau l'utilise seulement pour la fenêtre de Max, avec son propre profil (la caméra n'est autorisée qu'une fois, et ça ne touche pas à ta navigation). Pas de Chrome : `brew install --cask google-chrome`, ou Max s'ouvre dans Safari comme avant.
+
+- **Une seule fenêtre de Max à la fois** : si tu redis « Max au rapport », la nouvelle fenêtre prend la place et l'ancienne se ferme toute seule.
+- **Dans le Dock** : quand la fenêtre est ouverte, clic droit sur son icône dans le Dock → Options → **Garder dans le Dock**.
+- **Réglage** dans `bureau.config.json` :
+
+```json
+"fenetre": { "mode": "app" }
+```
+
+`"app"` (fenêtre à part, par défaut), `"plein-ecran"` (fenêtre à part, plein écran, le plus spectaculaire) ou `"navigateur"` (un onglet de ton navigateur habituel, comme avant). Pour forcer un navigateur : `"navigateur": "Brave Browser"`.
+
 ## Mettre à jour
 
 Dans le Terminal, une commande à la fois :
@@ -279,6 +293,7 @@ Max peut ne se réveiller **que pour toi** : il te reconnaît à la caméra du M
 - Au démarrage et **à chaque fois que Max s'endort**, il se verrouille. Plus de micro, plus de conversation : l'écran affiche 🔒.
 - Dis **« Dis Siri, Max au rapport »** : la page s'ouvre, la caméra s'allume toute seule. Regarde-la et **tourne doucement la tête à gauche puis à droite**. Max te reconnaît et te dit « Salut ! ». Tu peux aussi cliquer sur **📷 Me reconnaître**.
 - La caméra ne s'allume que pendant la vérification (30 secondes au plus) et s'éteint aussitôt après.
+- **👁 Max te guette** (bouton sur l'écran verrouillé, activé par défaut) : quand la page est ouverte et verrouillée, Max jette un œil à la caméra moins de deux fois par seconde, en toute petite image. Dès qu'il voit un visage, il lance la reconnaissance tout seul : tu t'assieds devant le Mac et il te dit « Salut ! » sans que tu touches à rien. Rien n'est enregistré ni envoyé ; il arrête de guetter si la fenêtre est cachée ou si tu recliques sur 👁.
 - Le bouton **🔐 Visage** permet aussi de **verrouiller tout de suite**, de **réenregistrer** ton visage ou de **l'effacer** (Max n'est alors plus verrouillé).
 
 **Pourquoi tourner la tête ?** Une photo de toi ne peut pas le faire : même tenue de biais, une photo garde les mêmes proportions, alors qu'un vrai visage qui tourne les change. C'est ce que Max vérifie.
@@ -424,6 +439,8 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 
 | Problème | Solution |
 |---|---|
+| Max s'ouvre dans Safari, pas dans sa fenêtre | Installe Google Chrome (`brew install --cask google-chrome`), puis `npm run arreter` et « Max au rapport ». |
+| « Max est ouvert ailleurs » | Une autre fenêtre de Max est ouverte : utilise-la, ou clique sur « Ramener Max ici ». |
 | Bandeau « claude introuvable » | Installe Claude Code, puis relance le Bureau. |
 | Bandeau « pas connecté » | Lance `claude auth login` dans le Terminal, puis relance le Bureau. |
 | « ⚠️ ffmpeg / whisper-cli introuvable » dans le panneau | `brew install ffmpeg whisper-cpp`, puis relance le Bureau. |

@@ -5,7 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig } from "./config.ts";
 import { checkClaude } from "./claude-check.ts";
-import { createBureauServer, ouvrirDansFinder } from "./http.ts";
+import { createBureauServer } from "./http.ts";
+import { ouvrirFenetre } from "./fenetre.ts";
 import { creerJeton } from "./jeton.ts";
 import { Assistant } from "./max/assistant.ts";
 import { lireCarnet } from "./max/carnet.ts";
@@ -128,6 +129,8 @@ const assistant = new Assistant({
   ...(config.musique.intro ? { intro: () => musique.jouerIntro() } : {}),
   reveil,
 });
+// la page de Max, dans sa propre fenêtre (mode app de Chrome & co) ou dans le navigateur
+const ouvrirMax = () => ouvrirFenetre(`http://localhost:${config.port}`, { config: config.fenetre, dossierDonnees: config.dossierDonnees });
 // le réveil sur le Mac : sa voix sur ta musique, de plus en plus fort
 const reveilMac = new ReveilMac({
   mac,
@@ -137,7 +140,7 @@ const reveilMac = new ReveilMac({
     texteReveil({ prenom: verrou.vue().prenom, heure, echeance: echeances(profil(), heure)[0] ?? null, seance: seance(sport.vue(heure).prevue)?.nom ?? null }),
   verrou,
   ecouter: () => assistant.reveiller(false),
-  ouvrirPage: () => ouvrirDansFinder(`http://localhost:${config.port}`),
+  ouvrirPage: () => ouvrirMax(),
   prenom: () => verrou.vue().prenom,
 });
 reveil.on("sonne", (s: SonnerieMac) => void reveilMac.sonner(s));
@@ -175,6 +178,7 @@ const server = createBureauServer({
   sport,
   musique,
   reveil,
+  ouvrirPage: ouvrirMax,
   modelesVisage: path.join(racine, "node_modules", "@vladmandic", "face-api", "model"),
   mediapipe: { wasm: path.join(racine, "node_modules", "@mediapipe", "tasks-vision", "wasm"), dossierModele: path.join(config.dossierDonnees, "modeles") },
 });
@@ -202,7 +206,7 @@ server.listen(config.port, "127.0.0.1", async () => {
   console.log(`\n🏢 Le Bureau est ouvert : ${url}`);
   console.log(`📁 Missions rangées dans : ${config.dossierMissions}`);
   console.log("Laisse cette fenêtre ouverte. Ctrl+C pour fermer le Bureau.\n");
-  if (!process.env.BUREAU_NO_OPEN) ouvrirDansFinder(url);
+  if (!process.env.BUREAU_NO_OPEN) console.log(`🪟 Max s'ouvre ${ouvrirMax() === "navigateur" ? "dans ton navigateur" : "dans sa propre fenêtre"}.`);
   jarvis.demarrer();
   reveil.demarrer();
   if (verrou.verrouille) {

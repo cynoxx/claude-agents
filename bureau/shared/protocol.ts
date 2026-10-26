@@ -244,7 +244,9 @@ export interface EtatFichier {
 export type ServerMessage =
   | { type: "etat"; etat: EtatBureau }
   | { type: "erreur"; message: string }
-  | { type: "visage"; ok: boolean; texte: string };
+  | { type: "visage"; ok: boolean; texte: string }
+  /** Une page de Max plus récente s'est ouverte (`nee` = son heure d'ouverture) : les plus anciennes lui cèdent la place. */
+  | { type: "fenetre"; nee: number };
 
 export type ClientMessage =
   | { type: "lancer"; texte: string }
@@ -266,4 +268,5 @@ export type ClientMessage =
   | { type: "visage-verifier"; descripteur: number[]; vivant: boolean }
   | { type: "visage-enregistrer"; descripteurs: number[][]; prenom: string }
   | { type: "visage-effacer" }
-  | { type: "verrouiller" };
+  | { type: "verrouiller" }
+  | { type: "fenetre"; nee: number };

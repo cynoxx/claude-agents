@@ -52,6 +52,8 @@ export function createBureauServer(o: {
   manager: MissionManager;
   webDir: string;
   ouvrir?: (p: string) => void;
+  /** Ouvre la page de Max (sa fenêtre), quand le raccourci Siri le demande. */
+  ouvrirPage?: () => string;
   /** Jeton exigé par les routes qui agissent (réveil, outils de Max). Sans jeton, elles sont refusées. */
   jeton?: string;
   assistant?: AssistantApi;
@@ -256,6 +258,12 @@ export function createBureauServer(o: {
         msg = JSON.parse(String(data));
       } catch {
         return envoyer(ws, { type: "erreur", message: "Message incompréhensible." });
+      }
+      // une seule fenêtre de Max : la nouvelle page le dit aux autres, qui lui cèdent la place (même verrouillé)
+      if (msg.type === "fenetre") {
+        const nee = Number(msg.nee);
+        if (Number.isFinite(nee)) for (const c of wss.clients) if (c !== ws) envoyer(c, { type: "fenetre", nee });
+        return;
       }
       let r: { ok: boolean; erreur?: string } = { ok: true };
       const v = o.verrou;

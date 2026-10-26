@@ -36,5 +36,14 @@ if ! curl -fs "$URL/api/sante" > /dev/null 2>&1; then
 fi
 
 JETON="$(cat "$DONNEES/jeton" 2> /dev/null)"
-curl -fs -X POST -H "x-bureau-jeton: $JETON" "$URL/api/reveil" > /dev/null 2>&1
-"${BUREAU_OUVRIR:-open}" "http://localhost:$PORT"
+if [ -n "${BUREAU_OUVRIR:-}" ]; then
+  curl -fs -X POST -H "x-bureau-jeton: $JETON" "$URL/api/reveil" > /dev/null 2>&1
+  "$BUREAU_OUVRIR" "http://localhost:$PORT"
+else
+  # Le Bureau ouvre Max dans sa propre fenêtre (réglage « fenetre ») ; un ancien Bureau ne sait pas : on ouvre la page.
+  REPONSE="$(curl -fs -X POST -H "x-bureau-jeton: $JETON" -H "content-type: application/json" -d '{"ouvrir":true}' "$URL/api/reveil" 2> /dev/null)"
+  case "$REPONSE" in
+    *'"fenetre"'*) ;;
+    *) open "http://localhost:$PORT" ;;
+  esac
+fi

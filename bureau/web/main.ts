@@ -44,11 +44,20 @@ Promise.all(['16px "Pixelify Sans"', '8px "Press Start 2P"'].map((f) => document
   banner: false,
 }));
 
+// Une seule fenêtre de Max à la fois : la plus récente garde la main, les autres se ferment (ou, si le navigateur
+// refuse de les fermer, passent sur une page « Max est ouvert ailleurs », qui libère la caméra).
+const NEE = Date.now();
+function ceder(): void {
+  window.close();
+  setTimeout(() => location.replace("/ailleurs.html"), 300);
+}
+
 function connecter(): void {
   ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
   ws.onopen = () => {
     attente = 1000;
     document.getElementById("connexion")!.hidden = true;
+    ws?.send(JSON.stringify({ type: "fenetre", nee: NEE }));
   };
   ws.onmessage = (e) => {
     const msg: ServerMessage = JSON.parse(e.data);
@@ -64,6 +73,8 @@ function connecter(): void {
       scene.syncConseillers(msg.etat.conseillers);
     } else if (msg.type === "visage") {
       verrou.recevoir(msg);
+    } else if (msg.type === "fenetre") {
+      if (msg.nee > NEE) ceder();
     } else if (document.body.dataset.verrou !== "oui") {
       ui.toast(msg.message);
     }

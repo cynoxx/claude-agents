@@ -8,6 +8,16 @@ import { MouvementTete } from "./visage-pur.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const DUREE_MS = 30_000;
+/** Après une reconnaissance ratée, le guet reprend au bout de 15 secondes. */
+const PAUSE_GUET_MS = 15_000;
+const PREF_GUET = "max-guet";
+const lirePref = (cle: string) => {
+  try {
+    return localStorage.getItem(cle) !== "non";
+  } catch {
+    return true;
+  }
+};
 const DEMANDE_RECENTE_MS = 60_000;
 const PRISES = 5;
 const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -19,9 +29,28 @@ export class EcranVerrou {
   private session = 0; // une recherche en cours (pour pouvoir l'arrêter)
   private derniereDemandeVue = 0;
   private reponse?: (r: { ok: boolean; texte: string }) => void;
+  /** Le guet : verrouillé, la caméra repère ton arrivée et lance la reconnaissance toute seule. */
+  private guetVoulu = lirePref(PREF_GUET);
+  private enGuet = false;
+  private pauseGuetJusqua = 0;
+  private relanceGuet?: number;
 
   constructor(private envoyer: (m: ClientMessage) => void) {
-    $("v-camera").addEventListener("click", () => this.reconnaitre());
+    $("v-camera").addEventListener("click", () => {
+      if (this.enGuet) this.session++;
+      void this.reconnaitre();
+    });
+    $("v-guet").addEventListener("click", () => {
+      this.guetVoulu = !this.guetVoulu;
+      try {
+        localStorage.setItem(PREF_GUET, this.guetVoulu ? "oui" : "non");
+      } catch {
+        // pas de mémoire du navigateur : le choix vaut pour cette page
+      }
+      if (!this.guetVoulu && this.enGuet) this.stopper();
+      this.majGuet();
+      this.peutEtreAutomatique();
+    });
     $("j-visage").addEventListener("click", () => this.ouvrirReglages());
     $("vr-fermer").addEventListener("click", () => this.fermerReglages());
     $("vr-enregistrer").addEventListener("click", () => this.inscrire());
@@ -58,17 +87,71 @@ export class EcranVerrou {
       $("v-cadre").dataset.actif = "non";
     }
     this.majReglages();
+    this.majGuet();
     this.peutEtreAutomatique();
   }
 
-  /** Une demande de réveil récente (Siri) allume la caméra toute seule, si la page est visible. */
+  /** Une demande de réveil récente (Siri) allume la caméra toute seule, si la page est visible ; sinon, le guet. */
   private peutEtreAutomatique(): void {
     const v = this.vue;
-    if (!v?.verrouille || document.hidden || this.camera.allumee) return;
+    if (!v?.verrouille || document.hidden) return;
     if (v.demande && v.demande !== this.derniereDemandeVue && Date.now() - v.demande < DEMANDE_RECENTE_MS) {
       this.derniereDemandeVue = v.demande;
-      void this.reconnaitre();
+      if (this.enGuet) this.session++;
+      if (!this.camera.allumee || this.enGuet) void this.reconnaitre(this.camera.allumee);
+      return;
     }
+    void this.guetter();
+  }
+
+  private majGuet(): void {
+    const b = $("v-guet");
+    b.hidden = !this.vue?.enregistre;
+    b.textContent = this.guetVoulu ? "👁 Max guette ton arrivée · arrêter" : "👁 Guetter mon arrivée";
+    b.dataset.actif = this.guetVoulu ? "oui" : "non";
+  }
+
+  /**
+   * Le guet : la caméra regarde, en petit et doucement (une image toutes les 0,6 s, sans l'afficher). Dès qu'un
+   * visage apparaît deux fois de suite, la reconnaissance démarre toute seule. Rien ne sort de la page.
+   */
+  private async guetter(): Promise<void> {
+    const v = this.vue;
+    if (!this.guetVoulu || !v?.verrouille || !v.enregistre || document.hidden || this.camera.allumee || this.enGuet) return;
+    const attente = this.pauseGuetJusqua - Date.now();
+    if (attente > 0) {
+      clearTimeout(this.relanceGuet);
+      this.relanceGuet = window.setTimeout(() => void this.guetter(), attente + 50);
+      return;
+    }
+    this.enGuet = true;
+    const session = ++this.session;
+    $("verrou").dataset.guet = "oui";
+    this.statut("👁 Max guette ton arrivée…");
+    try {
+      await this.camera.demarrer();
+    } catch {
+      this.enGuet = false;
+      $("verrou").dataset.guet = "non";
+      this.statut("Passe devant la caméra pour que Max te reconnaisse.");
+      return;
+    }
+    let vus = 0;
+    while (session === this.session && this.vue?.verrouille && !document.hidden && this.guetVoulu) {
+      const d = await this.camera.detecter().catch(() => null);
+      vus = d && d.score > 0.6 ? vus + 1 : 0;
+      if (vus >= 2) break;
+      await attendre(600);
+    }
+    this.enGuet = false;
+    $("verrou").dataset.guet = "non";
+    if (session !== this.session) return;
+    if (vus >= 2 && this.vue?.verrouille) {
+      // te voilà : la reconnaissance démarre, avec la caméra déjà allumée
+      await this.reconnaitre(true);
+      this.pauseGuetJusqua = Date.now() + PAUSE_GUET_MS;
+      void this.guetter();
+    } else this.stopper();
   }
 
   private statut(texte: string, ok = false): void {
@@ -105,11 +188,11 @@ export class EcranVerrou {
   }
 
   /** Verrouillé : cherche ton visage qui tourne à gauche et à droite, et l'envoie au Bureau pour vérification. */
-  async reconnaitre(): Promise<void> {
-    if (this.camera.allumee) return;
+  async reconnaitre(cameraDejaAllumee = false): Promise<void> {
+    if (this.camera.allumee && !cameraDejaAllumee) return;
     const session = ++this.session;
     $("v-cadre").dataset.actif = "oui";
-    if (!(await this.allumer())) return;
+    if (!cameraDejaAllumee && !(await this.allumer())) return;
     const tete = new MouvementTete();
     let dernierEnvoi = 0;
     const fin = Date.now() + DUREE_MS;

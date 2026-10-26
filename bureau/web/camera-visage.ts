@@ -53,6 +53,21 @@ export class CameraVisage {
     this.video.srcObject = null;
   }
 
+  /**
+   * Un visage est-il là ? Détection seule, petite et rapide (pour guetter ton arrivée, ou que Max te suive du
+   * regard) : sa confiance et le centre de sa boîte, en proportion de l'image (x de 0 à 1, dans l'image brute).
+   */
+  async detecter(): Promise<{ score: number; x: number; y: number; taille: number } | null> {
+    if (!this.flux || this.video.readyState < 2) return null;
+    const f = await chargerApi();
+    const r = await f.detectSingleFace(this.video, new f.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.45 }));
+    if (!r) return null;
+    const l = this.video.videoWidth || 640;
+    const h = this.video.videoHeight || 480;
+    const b = r.box;
+    return { score: r.score, x: (b.x + b.width / 2) / l, y: (b.y + b.height / 2) / h, taille: b.width / l };
+  }
+
   /** Cherche un visage dans l'image ; null s'il n'y en a pas exactement un de net. */
   async analyser(avecDescripteur: boolean): Promise<Analyse | null> {
     if (!this.flux || this.video.readyState < 2) return null;

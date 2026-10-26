@@ -71,6 +71,7 @@ export function routesMax(o: {
   triMails?: TriMails;
   sport?: Sport;
   reveil?: Reveil;
+  ouvrirPage?: () => string;
 }) {
   const root = path.resolve(o.config.dossierMissions);
   const confirmations = new Confirmations();
@@ -112,10 +113,12 @@ export function routesMax(o: {
       }
     };
 
+    // « Max au rapport » : la page s'ouvre (dans sa fenêtre), verrouillée ou non
+    const fenetre = `${req.method} ${chemin}` === "POST /api/reveil" && corps.ouvrir === true && o.ouvrirPage ? o.ouvrirPage() : undefined;
     if (o.verrou?.verrouille) {
       if (`${req.method} ${chemin}` === "POST /api/reveil") {
         o.verrou.demander();
-        return repondre(res, 200, { ok: true, texte: "Max est verrouillé : regarde la caméra." });
+        return repondre(res, 200, { ok: true, texte: "Max est verrouillé : regarde la caméra.", fenetre });
       }
       return repondre(res, 423, { ok: false, texte: "Max est verrouillé : il faut d'abord te reconnaître à la caméra." });
     }
@@ -125,7 +128,7 @@ export function routesMax(o: {
         if (!o.assistant) return repondre(res, 503, { ok: false, texte: "Max n'est pas disponible." });
         o.assistant.reveiller();
         o.assistant.allerA?.("jarvis");
-        return repondre(res, 200, { ok: true, texte: "Max est réveillé." });
+        return repondre(res, 200, { ok: true, texte: "Max est réveillé.", fenetre });
       case "GET /api/outils/etat":
         return repondre(res, 200, { ok: true, texte: decrireEtat(m.snapshot().mission) });
       case "POST /api/outils/lancer": {

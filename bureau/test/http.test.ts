@@ -53,6 +53,18 @@ const attendre = async (cond: () => boolean, ms = 10_000) => {
 };
 
 describe("serveur HTTP", () => {
+  it("une seule fenêtre de Max : la nouvelle page prévient les autres, pas elle-même", async () => {
+    const a = await connecter();
+    const b = await connecter();
+    b.ws.send(JSON.stringify({ type: "fenetre", nee: 1234 }));
+    await attendre(() => a.messages.some((m) => m.type === "fenetre"));
+    expect(a.messages.find((m) => m.type === "fenetre")).toEqual({ type: "fenetre", nee: 1234 });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(b.messages.some((m) => m.type === "fenetre")).toBe(false);
+    a.ws.close();
+    b.ws.close();
+  });
+
   it("sert la page", async () => {
     const r = await fetch(base + "/");
     expect(r.headers.get("content-type")).toContain("text/html");

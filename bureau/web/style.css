@@ -2287,3 +2287,45 @@ body[data-verrou="oui"] {
   color: #ffd23f;
   animation: qg-clignote 1.2s infinite;
 }
+
+/* --- le guet : verrouillé, Max repère ton arrivée -------------------------------------------------- */
+.verrou[data-guet="oui"] .v-cadre {
+  display: block;
+  position: relative;
+  background: radial-gradient(circle, rgba(125, 249, 255, 0.08), #02060c 70%);
+  animation: none;
+}
+.verrou[data-guet="oui"] .v-cadre video {
+  opacity: 0;
+}
+/* le radar : un balayage qui tourne, et des cercles */
+.verrou[data-guet="oui"] .v-cadre::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(125, 249, 255, 0.45), transparent 22%, transparent);
+  animation: v-radar 2.4s linear infinite;
+}
+.verrou[data-guet="oui"] .v-cadre::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0 26px, rgba(125, 249, 255, 0.18) 27px 28px);
+}
+@keyframes v-radar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.verrou .v-guet {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  opacity: 0.8;
+}
+.verrou .v-guet[data-actif="oui"] {
+  border-color: var(--j-cyan, #7df9ff);
+  color: #7df9ff;
+}
