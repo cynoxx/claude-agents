@@ -109,8 +109,8 @@ donné à la fin de la mission (par exemple `bureau/ecran-stats`). Pour voir et 
 
 ```bash
 cd ~/Code/Cynox-Fitness
-git diff main...bureau/ecran-stats   # voir les changements
-git merge bureau/ecran-stats         # les garder si ça te plaît
+git diff main...bureau/ecran-stats
+git merge bureau/ecran-stats
 ```
 
 ### Les petites icônes au-dessus des robots

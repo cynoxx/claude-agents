@@ -327,7 +327,7 @@ export class MissionManager extends EventEmitter {
       const b = this.worktree.branche;
       fs.appendFileSync(
         fichier,
-        `\n\n## Branche Git\n\nLe Codeur a travaillé sur la branche \`${b}\` du projet ${projet.nom}. Ta branche principale n'a pas été modifiée.\n\n\`\`\`bash\ncd "${projet.chemin}"\ngit diff HEAD...${b}   # voir les changements\ngit merge ${b}         # les garder\n\`\`\`\n`,
+        `\n\n## Branche Git\n\nLe Codeur a travaillé sur la branche \`${b}\` du projet ${projet.nom}. Ta branche principale n'a pas été modifiée. Pour voir les changements, puis les garder :\n\n\`\`\`bash\ncd "${projet.chemin}"\ngit diff HEAD...${b}\ngit merge ${b}\n\`\`\`\n`,
       );
     }
     this.mission!.resultat = fs.readFileSync(fichier, "utf8");

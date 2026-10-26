@@ -8,18 +8,20 @@ Tu parles à **Max**, le chef, comme à Jarvis : « Max, compare les mutuelles p
 
 ## Installation (une seule fois)
 
-Il te faut un Mac avec **Claude Code** installé et connecté (`claude` doit marcher dans le Terminal), et **Homebrew** (https://brew.sh). Dans le Terminal :
+Il te faut un Mac avec **Claude Code** installé et connecté (`claude` doit marcher dans le Terminal), et **Homebrew** (https://brew.sh). Dans le Terminal, colle ces lignes **une par une** (Entrée après chacune) :
 
 ```bash
-brew install node ffmpeg whisper-cpp     # Node.js, le micro (ffmpeg) et la reconnaissance vocale locale (Whisper)
-git clone https://github.com/cynoxx/claude-agents.git
-cd claude-agents/bureau
+brew install node ffmpeg whisper-cpp
+git clone https://github.com/cynoxx/claude-agents.git ~/claude-agents
+cd ~/claude-agents/bureau
 npm install
-npm run modele                           # télécharge le modèle Whisper (environ 550 Mo, une seule fois)
-npm run setup                            # crée bureau.config.json et vérifie que tout est prêt
+npm run modele
+npm run setup
 ```
 
-`npm run setup` te dit ce qui marche (✔) et ce qui manque (✘). Ouvre ensuite `bureau.config.json` et indique où sont tes projets, pour que le Codeur puisse y travailler :
+- `brew install` installe Node.js, ffmpeg (pour le micro) et Whisper (la reconnaissance vocale locale).
+- `npm run modele` télécharge le modèle Whisper (environ 550 Mo, une seule fois).
+- `npm run setup` crée `bureau.config.json` et te dit ce qui marche (✔) et ce qui manque (✘). Ouvre ensuite `bureau.config.json` et indique où sont tes projets, pour que le Codeur puisse y travailler :
 
 ```json
 {
@@ -128,10 +130,12 @@ Essaie : **« Dis Siri, réveille Max »**. Le Bureau démarre (une dizaine de s
 
 Ta branche principale n'est jamais modifiée. Le Codeur travaille sur une branche à part (par exemple `bureau/ecran-stats`), dans une copie de travail rangée dans le dossier de la mission (`code/`). Il ne fait jamais de `git push`. La fin de `RESULTAT.md` donne les commandes à lancer :
 
+Pour voir les changements, puis les garder s'ils te plaisent :
+
 ```bash
 cd ~/Code/Cynox-Fitness
-git diff HEAD...bureau/ecran-stats   # voir les changements
-git merge bureau/ecran-stats         # les garder si ça te plaît
+git diff HEAD...bureau/ecran-stats
+git merge bureau/ecran-stats
 ```
 
 Pour faire le ménage une fois la branche fusionnée ou abandonnée : `git worktree prune`, puis `git branch -D bureau/ecran-stats`.
@@ -174,9 +178,11 @@ Chaque robot est une vraie session Claude Code, donc une mission à 4 robots con
 ## Pour les développeurs
 
 ```bash
-npm test          # tests (faux « claude », « say » et « ffmpeg » : aucun quota consommé, aucun micro nécessaire)
-npm run build     # vérification TypeScript + construction de la page
+npm test
+npm run build
 ```
+
+`npm test` utilise de faux « claude », « say » et « ffmpeg » : aucun quota consommé, aucun micro nécessaire. `npm run build` vérifie le TypeScript et construit la page.
 
 - `CLAUDE_BIN=/chemin/vers/claude` change le binaire utilisé ; `BUREAU_NO_OPEN=1` évite d'ouvrir le navigateur ; `BUREAU_SANS_REVEIL=1` laisse Max endormi au démarrage ; `BUREAU_CONFIG_DIR` lit `bureau.config.json` ailleurs.
 - Test réel de l'oreille (ffmpeg + Whisper sur un vrai fichier audio français) : `WHISPER_BIN=$(which whisper-cli) WHISPER_MODELE=~/Library/Application\ Support/Bureau/modeles/ggml-large-v3-turbo-q5_0.bin npm test`.
