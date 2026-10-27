@@ -1,3 +1,4 @@
+import { Gestes } from "./gestes.ts";
 import Phaser from "phaser";
 import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
 import { HAUTEUR, LARGEUR, OfficeScene } from "./office-scene.ts";
@@ -52,6 +53,8 @@ function ceder(): void {
   setTimeout(() => location.replace("/ailleurs.html"), 300);
 }
 
+const gestes = new Gestes((m) => ws?.send(JSON.stringify(m)));
+
 function connecter(): void {
   ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
   ws.onopen = () => {
@@ -66,6 +69,7 @@ function connecter(): void {
       ui.rendre(msg.etat);
       hud.rendre(msg.etat.assistant?.coach);
       jarvis.rendre(msg.etat);
+      gestes.rendre(msg.etat);
       qg.rendre(msg.etat);
       intro.rendre(msg.etat);
       conversation.rendre(msg.etat.assistant);

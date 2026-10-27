@@ -114,6 +114,21 @@ Tout s'organise en **trois niveaux** :
 - **Les fiches s'ouvrent comme des hologrammes** : elles se déplient de haut en bas, traversées d'une ligne de lumière.
 - **Son « Salut ! »** te dit aussi ta séance du jour (« Côté sport, aujourd'hui c'est Pec-Dos »), ou te félicite si elle est déjà faite.
 
+### Contrôler Max avec la main
+
+Clique sur le bouton **🖐** de la barre (une fois : le choix est retenu). La caméra regarde ta main quelques fois par seconde, **dans la page seulement** : rien n'est enregistré ni envoyé. Le bouton affiche la pose reconnue et une jauge qui se remplit pendant que tu la tiens.
+
+| Geste | Ce que ça fait |
+|---|---|
+| ✋ **balayer** la main ouverte vers la droite / la gauche | le pôle suivant / précédent (le tour passe aussi par l'accueil) |
+| ✋ main ouverte **tenue** 1 s | réveille Max s'il dort |
+| ☝️ un doigt, tenu 1 s | retour à l'accueil (ou depuis le bureau) |
+| ✌️ deux doigts, tenus 1 s | active ou quitte le **mode obscur** |
+| 🤟 trois doigts, tenus 1 s | va au bureau des robots, et revient |
+| ✊ poing tenu 1 s | Max se tait |
+
+Les gestes se mettent en pause tout seuls (bouton grisé, caméra rendue) quand Max est verrouillé, quand la page est cachée, et **sur la fiche Sport & santé**, où ta main sert à tourner le corps 3D. Tiens ta main bien en face de la caméra, à 30–60 cm, avec de la lumière.
+
 ### Max Ultime : le mode obscur
 
 Pour les grosses sessions : **« Max, mode obscur »** (ou « mode ultime », « mode concentration »), ou le bouton **◆ Mode obscur** dans la barre.

@@ -36,6 +36,7 @@
         <p class="v-note">Max garde seulement une « empreinte » de ton visage (des nombres, pas de photo), sur ce Mac. Une photo peut parfois tromper une webcam : c'est pour ça que Max te demande aussi de tourner la tête, ce qu'une photo ne sait pas faire. Garde ton mot de passe ou Touch ID pour protéger le Mac lui-même.</p>
       </div>
     </div>
+    <div id="j-gestes-msg" class="j-gestes-msg" role="status" aria-live="polite" hidden></div>
     <section id="jarvis" class="jarvis" data-mode="accueil" aria-label="Max">
       <canvas id="j-fond" class="j-fond" aria-hidden="true"></canvas>
       <header class="qg-barre">
@@ -51,6 +52,7 @@
         <button type="button" id="j-alarme" class="qg-pastille qg-alarme" title="Ton réveil : Max t'appelle" hidden></button>
         <span class="espace"></span>
         <button type="button" id="j-obscur" class="qg-obscur" title="Max Ultime : le mode obscur, pour se concentrer (ou dis « Max, mode obscur »)">◆ Mode obscur</button>
+        <button type="button" id="j-gestes" class="qg-icone qg-gestes" aria-label="Contrôler Max avec la main">🖐</button>
         <button type="button" id="j-regard" class="qg-icone" aria-label="Max te suit du regard">👁</button>
         <button type="button" id="j-sons" class="qg-icone" aria-label="Sons de l'interface">🔈</button>
         <button type="button" id="j-visage" hidden>🔐 Visage</button>

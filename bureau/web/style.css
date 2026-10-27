@@ -2562,3 +2562,41 @@ body[data-obscur="oui"] #j-minuteur:not([hidden]) {
     animation: none;
   }
 }
+
+/* --- le contrôle de Max par la main (bouton 🖐) ------------------------------------------------------------- */
+.qg-gestes {
+  position: relative;
+  --progres: 0;
+}
+.qg-gestes[data-actif="oui"] {
+  border-color: var(--j-cyan, #7df9ff);
+  background: conic-gradient(rgba(125, 249, 255, 0.55) calc(var(--progres) * 1%), rgba(125, 249, 255, 0.06) 0);
+}
+.qg-gestes[data-pause="oui"] {
+  opacity: 0.45;
+}
+.j-gestes-msg {
+  position: fixed;
+  left: 50%;
+  top: 74px;
+  transform: translateX(-50%);
+  z-index: 80;
+  max-width: calc(100% - 32px);
+  padding: 8px 18px;
+  border: 1px solid rgba(125, 249, 255, 0.5);
+  border-radius: 999px;
+  background: rgba(3, 12, 22, 0.88);
+  color: #dff9ff;
+  font: 600 14px ui-monospace, "SF Mono", Menlo, monospace;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 0 22px rgba(125, 249, 255, 0.25);
+}
+.j-gestes-msg[hidden] {
+  display: none;
+}
+body[data-obscur="oui"] .j-gestes-msg {
+  border-color: rgba(255, 60, 60, 0.6);
+  color: #ffd9d4;
+  box-shadow: 0 0 22px rgba(255, 30, 30, 0.3);
+}
