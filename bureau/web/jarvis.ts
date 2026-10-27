@@ -108,16 +108,12 @@ export class Jarvis {
     // les éclairs au loin grondent doucement
     window.addEventListener("max-eclair", () => tonnerre(0.25));
     new Regard(this.sphere);
-    const sons = $("j-sons");
-    const majSons = () => {
-      sons.textContent = sonsActifs() ? "🔈" : "🔇";
-      sons.dataset.actif = sonsActifs() ? "oui" : "non";
-      sons.title = sonsActifs() ? "Sons de l'interface : clique pour les couper" : "Sons coupés : clique pour les remettre";
-    };
-    majSons();
-    sons.addEventListener("click", () => {
+    // les sons se coupent d'un clic sur le nom de Max (l'option n'encombre plus la barre)
+    const nom = document.querySelector<HTMLElement>(".j-nom");
+    nom?.addEventListener("click", () => {
       basculerSons();
-      majSons();
+      nom.dataset.muet = sonsActifs() ? "non" : "oui";
+      nom.title = sonsActifs() ? "Sons de l'interface : clique pour les couper" : "Sons coupés : clique pour les remettre";
       son("clic");
     });
     $<HTMLFormElement>("j-form").addEventListener("submit", (e) => {

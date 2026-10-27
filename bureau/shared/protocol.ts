@@ -338,4 +338,7 @@ export type ClientMessage =
   | { type: "visage-effacer" }
   | { type: "verrouiller" }
   | { type: "fenetre"; nee: number }
-  | { type: "obscur"; actif: boolean };
+  | { type: "obscur"; actif: boolean }
+  | { type: "journal"; texte: string }
+  | { type: "publier"; video: string; plateforme: Plateforme }
+  | { type: "publiee"; video: string; plateforme: Plateforme };

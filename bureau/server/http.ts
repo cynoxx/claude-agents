@@ -3,7 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { WebSocketServer, type WebSocket } from "ws";
-import type { ClientMessage, EtatBureau, ServerMessage, TempsPole } from "../shared/protocol.ts";
+import type { ClientMessage, EtatBureau, Plateforme, ServerMessage, TempsPole } from "../shared/protocol.ts";
 import type { BureauConfig } from "./config.ts";
 import type { MissionManager } from "./mission.ts";
 import type { Coach } from "./max/coach.ts";
@@ -366,6 +366,29 @@ export function createBureauServer(o: {
           const rs = msg.type === "seance" ? o.sport.noter(String(msg.seance ?? ""), { jour: msg.jour ? String(msg.jour) : undefined }) : o.sport.changerSemaine([{ jour: Number(msg.jour), seance: String(msg.seance ?? "") }]);
           r = rs.ok ? { ok: true } : { ok: false, erreur: rs.texte };
           if (rs.ok) o.assistant?.informer?.(`Depuis la page : ${rs.texte}`);
+          break;
+        }
+        case "journal": {
+          if (!o.vie) {
+            r = { ok: false, erreur: "Le journal n'est pas disponible." };
+            break;
+          }
+          const rj = o.vie.ecrire(String(msg.texte ?? ""));
+          r = rj.ok ? { ok: true } : { ok: false, erreur: rj.texte };
+          if (rj.ok) o.assistant?.informer?.(`Depuis la page, il a écrit dans son journal : « ${String(msg.texte).slice(0, 300)} »`);
+          break;
+        }
+        case "publier":
+        case "publiee": {
+          const st = o.studio;
+          const pf = String(msg.plateforme ?? "");
+          if (!st || !["tiktok", "youtube", "instagram"].includes(pf)) {
+            r = { ok: false, erreur: "Le Studio n'est pas disponible." };
+            break;
+          }
+          const rp = msg.type === "publier" ? await st.publier(String(msg.video ?? ""), pf as Plateforme) : st.marquerPubliee(String(msg.video ?? ""), pf as Plateforme);
+          r = rp.ok ? { ok: true } : { ok: false, erreur: rp.texte };
+          if (rp.ok) o.assistant?.informer?.(`Depuis la page : ${rp.texte}`);
           break;
         }
         case "alarme": {

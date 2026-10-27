@@ -2615,3 +2615,210 @@ body[data-obscur="oui"] .j-gestes-msg {
 .j-entendu[data-pour-max="oui"] {
   color: rgba(150, 230, 255, 0.95);
 }
+
+/* --- Ta vie : cap du jour, projets, Studio, journal --------------------------------------------- */
+.j-nom {
+  cursor: pointer;
+}
+.j-nom[data-muet="oui"]::after {
+  content: " 🔇";
+  font-size: 0.7em;
+}
+.j-cap {
+  position: relative;
+  border-color: rgba(125, 249, 255, 0.45);
+  background: linear-gradient(135deg, rgba(125, 249, 255, 0.1), rgba(125, 249, 255, 0.02) 60%);
+}
+/* coins de visée, façon HUD */
+.j-cap::before,
+.j-cap::after,
+.qf-projets::before,
+.qf-studio::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--j-cyan);
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px var(--j-cyan));
+}
+.j-cap::before,
+.qf-projets::before,
+.qf-studio::before {
+  top: -1px;
+  left: -1px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.j-cap::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: 0;
+  border-top: 0;
+}
+.qf-projets,
+.qf-studio {
+  position: relative;
+}
+.vp-cap {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: cap;
+}
+.vp-cap li {
+  counter-increment: cap;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  padding: 5px 0;
+  border-bottom: 1px dashed rgba(125, 249, 255, 0.14);
+}
+.vp-cap li::before {
+  content: counter(cap, decimal-leading-zero);
+  grid-row: span 2;
+  font: 600 11px/1.6 var(--mono);
+  color: var(--j-cyan);
+}
+.vp-cap-action {
+  color: #eaf6ff;
+  font-size: 14px;
+}
+.vp-cap small,
+.vp-pub {
+  color: rgba(200, 225, 255, 0.55);
+  font-size: 11px;
+}
+.vp-pub {
+  margin: 8px 0 0;
+  font-family: var(--mono);
+}
+.urgent,
+.vp-echeance.urgent {
+  color: #ff7a6b;
+}
+.vp-cat h4 {
+  margin: 8px 0 4px;
+  font: 600 10px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(125, 249, 255, 0.6);
+}
+.vp-liste,
+.vs-liste,
+.vj-notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vp-projet {
+  position: relative;
+  padding: 6px 34px 6px 10px;
+  margin-bottom: 4px;
+  border-left: 2px solid var(--pole, var(--j-cyan));
+  background: rgba(125, 249, 255, 0.04);
+}
+.vp-projet[data-statut="pause"] {
+  opacity: 0.55;
+}
+.vp-nom {
+  color: #eaf6ff;
+  font-size: 13px;
+}
+.vp-action {
+  color: rgba(200, 225, 255, 0.7);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.vp-echeance,
+.vp-statut {
+  font: 600 10px var(--mono);
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  margin-left: 4px;
+  color: rgba(125, 249, 255, 0.8);
+}
+.vp-fait {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+}
+.vs-montage {
+  font: 12px var(--mono);
+  color: #ffd23f;
+  animation: vs-pulse 1.4s ease-in-out infinite;
+}
+@keyframes vs-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.vs-pub {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(125, 249, 255, 0.14);
+}
+.vs-quand {
+  font: 600 11px var(--mono);
+  color: var(--j-cyan);
+}
+.vs-titre small {
+  display: block;
+  color: rgba(200, 225, 255, 0.55);
+  font-size: 11px;
+}
+.vs-boutons {
+  display: flex;
+  gap: 4px;
+}
+.vj-bilan {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #eaf6ff;
+}
+.vj-humeur {
+  margin-left: 6px;
+  color: var(--j-cyan);
+  letter-spacing: 2px;
+}
+.vj-notes li {
+  font-size: 12px;
+  color: rgba(200, 225, 255, 0.75);
+  padding: 2px 0;
+}
+.vj-notes span {
+  font: 10px var(--mono);
+  color: rgba(125, 249, 255, 0.6);
+  margin-right: 4px;
+}
+.j-journal-form input {
+  width: 100%;
+  margin-top: 6px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(125, 249, 255, 0.3);
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+}
+.j-journal-form input:focus {
+  outline: 1px solid var(--j-cyan);
+}
+@media (max-width: 700px) {
+  .vs-pub {
+    grid-template-columns: 1fr auto;
+  }
+  .vs-quand {
+    grid-column: span 2;
+  }
+}

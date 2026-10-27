@@ -2,11 +2,12 @@
 // et la petite fenêtre des mails qui s'ouvre toute seule quand ils viennent d'être triés.
 // La fiche est construite une fois à l'ouverture, puis seuls ses blocs qui changent sont réécrits (le corps 3D et
 // le champ de question ne bougent pas).
-import type { ClientMessage, ConseillerVue, EtatBureau, MailsVue, TempsPole } from "../shared/protocol.ts";
+import type { ClientMessage, ConseillerVue, EtatBureau, MailsVue, Plateforme, TempsPole } from "../shared/protocol.ts";
 import { son } from "./sons.ts";
 import { JOURS_SEMAINE, MUSCLES, SEANCES, seance } from "../shared/sport.ts";
 import { barres, decalerHeure, duree, quandReveil, semaineSport, seanceSuivante, tuile } from "./poles-pur.ts";
 import { compteMails, prochainsRdv } from "./jarvis.ts";
+import { htmlCap, htmlJournal, htmlProjets, htmlStudio } from "./vie-html.ts";
 import type { Corps3D } from "./corps.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -43,6 +44,15 @@ export class QG {
     });
     const fiche = $("qg-fiche");
     fiche.addEventListener("click", (e) => this.clic(e));
+    $<HTMLFormElement>("j-journal-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const champ = $<HTMLInputElement>("j-journal-texte");
+      const texte = champ.value.trim();
+      if (!texte) return;
+      this.envoyer({ type: "journal", texte });
+      champ.value = "";
+      son("clic");
+    });
     fiche.addEventListener("submit", (e) => {
       e.preventDefault();
       const champ = fiche.querySelector<HTMLInputElement>(".qf-question input");
@@ -82,6 +92,8 @@ export class QG {
     this.etat = etat;
     this.rendreTuiles();
     this.rendreMails();
+    this.remplacer($("j-cap"), "cap", htmlCap(etat));
+    this.remplacer($("j-journal-contenu"), "journal", htmlJournal(etat.vie));
     const rv = etat.reveil;
     // le réveil sonne sur le Mac : grand écran « Debout ! » (sauf verrouillé : l'écran du visage s'en charge)
     const sonne = !!rv?.enCours && rv.mode !== "appel" && !etat.verrou?.verrouille;
@@ -161,6 +173,7 @@ export class QG {
   ${sport ? `<div class="j-carte qf-corps"><h3>Ton corps <small>· 14 derniers jours</small></h3><div id="qf-corps-scene" class="qf-corps-scene"></div><div class="qf-legende"><span><i class="qf-eteint"></i>pas travaillé</span><span class="qf-degrade">1×<i></i>4× et +</span></div><div id="qf-corps-pied" class="qf-corps-pied"></div></div>` : ""}
   <div id="qf-specifique" class="qf-colonne"></div>
   <div class="qf-colonne">
+    <div id="qf-projets" class="j-carte qf-projets"></div>
     <div id="qf-temps" class="j-carte"></div>
     <div id="qf-notes" class="j-carte"></div>
     <div id="qf-reponse" class="j-carte" hidden></div>
@@ -198,6 +211,8 @@ export class QG {
     if (!c) return;
     const t = e.poles?.find((p) => p.id === c.id);
     this.remplacer($("qf-specifique"), "specifique", this.specifique(c.id, e));
+    $("qf-projets").hidden = !e.vie;
+    this.remplacer($("qf-projets"), "projets", htmlProjets(e.vie, c.id === "vie" ? ["vie", "esprit"] : [c.id]));
     // le sport ne se chronomètre pas : la carte du temps n'apparaît que s'il y a eu des sessions
     $("qf-temps").hidden = !t || (c.id === "sante" && !t.semaine);
     if (t) this.remplacer($("qf-temps"), "temps", this.htmlTemps(t, c.id));
@@ -240,7 +255,7 @@ ${id === "business" && depasse ? `<p class="j-petit qf-rouge">Limite atteinte : 
     }
     if (id === "business") {
       const idees = e.idees ?? [];
-      return `<div class="j-carte"><h3>Idées au parking</h3>${
+      return `<div class="j-carte qf-studio">${htmlStudio(e.studio)}</div><div class="j-carte"><h3>Idées au parking</h3>${
         idees.length ? `<ul class="qf-liste">${idees.map((i) => `<li>${echapper(i.replace(/^- \[[\d-]+\]\s*/, ""))}</li>`).join("")}</ul>` : `<p class="j-petit">Aucune. Pendant les révisions, dis « Max, note cette idée » : elle t'attendra ici.</p>`
       }</div>`;
     }
@@ -334,6 +349,15 @@ ${this.htmlReveil(e)}
         return this.envoyer({ type: "vue", vue: "bureau" });
       case "trier":
         return this.envoyer({ type: "trier-mails" });
+      case "etape":
+        son("clic");
+        return this.envoyer({ type: "parler-max", texte: `J'ai fini la prochaine étape du projet « ${el.dataset.projet} ». Note-le et donne-moi la suivante.` });
+      case "publier":
+        el.textContent = "…";
+        return this.envoyer({ type: "publier", video: el.dataset.video!, plateforme: el.dataset.plateforme as Plateforme });
+      case "publiee":
+        son("clic");
+        return this.envoyer({ type: "publiee", video: el.dataset.video!, plateforme: el.dataset.plateforme as Plateforme });
       case "ranger":
         return this.envoyer({ type: "parler-max", texte: "Range les pubs dans le dossier Max - Pubs, s'il te plaît." });
       case "seance":

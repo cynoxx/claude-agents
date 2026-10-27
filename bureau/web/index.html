@@ -53,8 +53,6 @@
         <span class="espace"></span>
         <button type="button" id="j-obscur" class="qg-obscur" title="Max Ultime : le mode obscur, pour se concentrer (ou dis « Max, mode obscur »)">◆ Mode obscur</button>
         <button type="button" id="j-gestes" class="qg-icone qg-gestes" aria-label="Contrôler Max avec la main">🖐</button>
-        <button type="button" id="j-regard" class="qg-icone" aria-label="Max te suit du regard">👁</button>
-        <button type="button" id="j-sons" class="qg-icone" aria-label="Sons de l'interface">🔈</button>
         <button type="button" id="j-visage" hidden>🔐 Visage</button>
         <button type="button" id="j-reveil">👂 Réveiller</button>
         <button type="button" id="j-bureau" title="Le bureau : l'équipe de robots et ses quêtes">🏢 Le bureau</button>
@@ -68,6 +66,7 @@
               <div id="j-date" class="j-date"></div>
               <div id="j-meteo" class="j-meteo">—</div>
             </div>
+            <div id="j-cap" class="j-carte j-cap"></div>
             <div class="j-carte j-defile">
               <h3 id="j-jour-titre">Aujourd'hui</h3>
               <ol id="j-agenda" class="j-agenda"></ol>
@@ -94,6 +93,11 @@
               <span id="j-mails-compte" class="j-petit"></span>
             </button>
             <button type="button" id="j-mission" class="j-carte j-mission" hidden></button>
+            <div class="j-carte j-journal">
+              <h3>Journal</h3>
+              <div id="j-journal-contenu"></div>
+              <form id="j-journal-form" class="j-journal-form"><input id="j-journal-texte" autocomplete="off" maxlength="500" placeholder="Une ligne sur ta journée…" /></form>
+            </div>
             <div id="j-conseillers" class="j-petit"></div>
           </aside>
         </div>

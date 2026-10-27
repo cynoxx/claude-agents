@@ -226,6 +226,23 @@ Dans `bureau.config.json` :
 
 `tempsParJour` est la limite en minutes par jour (0 = pas de limite) ; `objectifsParJour` est la barre à remplir (6 h d'études).
 
+## Le Studio vidéo (Asclepium, Fruit TV)
+
+Gratuit, sur ton Mac. Il faut iCloud Drive activé et `ffmpeg` (`brew install ffmpeg`). Au premier lancement, Max crée le dossier **iCloud Drive › Max Studio**, que tu retrouves aussi dans l'app Fichiers de l'iPhone :
+
+1. « Max, écris-moi la loi 9 » : le script arrive dans *Asclepium › scripts*.
+2. Tu t'enregistres en le lisant (Dictaphone) et tu déposes l'audio, nommé « Loi 9 », dans *Asclepium › voix*.
+3. Le Studio monte tout seul une vidéo verticale : accroche, titre, sous-titres mot par mot, ta voix, ta musique (*Asclepium › musique*, facultatif) sur un fond (*Asclepium › fonds*, tes vidéos ou images, facultatif). Elle arrive dans *Prêtes › Asclepium*, avec sa légende.
+4. Une vidéo par jour : Shorts à 16:30, TikTok à 19:30, Reels à 21:00. À l'heure, Max te le rappelle. « Publie-la » (ou le bouton **Publier**) : la légende est copiée, la vidéo montrée, la page d'envoi ouverte. Dis-lui quand c'est posté (ou ✓).
+
+Fruit TV : dépose tes clips dans *Fruit TV › clips* ; un clip horizontal est remis en vertical. Les horaires, légendes et comptes se changent dans `bureau.config.json` (`studio`).
+
+Pourquoi pas de publication 100 % automatique : les API officielles de TikTok et YouTube gardent privées les vidéos envoyées par une appli non vérifiée. Le Studio prépare donc tout, et tu postes en un geste.
+
+## Ta vie, rangée
+
+Tes projets (par domaine et catégorie, avec leur prochaine action) et ton journal sont sur l'écran : le **Cap du jour** à gauche, le **Journal** à droite, les projets dans chaque fiche de pôle (✓ = étape faite, Max te donne la suivante). Max les tient à jour quand tu lui parles, et fait le bilan du soir avec toi. Fichiers : `vie/projets.json` et `vie/journal.jsonl` dans ton dossier Bureau.
+
 ## Une voix bien plus naturelle, gratuite, sur ton Mac (XTTS)
 
 XTTS v2 est une voix neuronale qui tourne sur ton Mac : pas d'abonnement, rien sur internet une fois installée, et bien plus naturelle que Piper.
