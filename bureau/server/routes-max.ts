@@ -16,6 +16,8 @@ import type { Planning } from "./max/planning.ts";
 import type { TriMails } from "./max/tri-mails.ts";
 import type { Sport } from "./max/sport.ts";
 import type { Vie } from "./max/vie.ts";
+import type { Studio } from "./studio/studio.ts";
+import type { Plateforme } from "../shared/protocol.ts";
 import type { Reveil } from "./max/reveil.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
@@ -73,6 +75,7 @@ export function routesMax(o: {
   triMails?: TriMails;
   sport?: Sport;
   vie?: Vie;
+  studio?: Studio;
   reveil?: Reveil;
   ouvrirPage?: () => string;
 }) {
@@ -397,6 +400,21 @@ export function routesMax(o: {
       case "POST /api/outils/seance":
         if (!o.sport) return repondre(res, 503, { ok: false, texte: "Le suivi du sport n'est pas disponible." });
         return repondre(res, 200, o.sport.noter(texte("seance"), { jour: texte("jour") || undefined, note: texte("note") || undefined }));
+      case "GET /api/outils/studio":
+      case "POST /api/outils/script-video":
+      case "POST /api/outils/publier-video":
+      case "POST /api/outils/video-publiee":
+      case "POST /api/outils/planifier-video": {
+        const s = o.studio;
+        if (!s) return repondre(res, 503, { ok: false, texte: "Le Studio n'est pas configuré (dossier iCloud Drive introuvable)." });
+        const plateforme = texte("plateforme") as Plateforme;
+        if (chemin.endsWith("studio")) return repondre(res, 200, { ok: true, texte: s.decrire() + "\n" + s.vue().videos.slice(-8).map((v) => `- ${v.titre} (${v.compte}) : ${v.statut}${v.jour ? `, prévue le ${v.jour}` : ""}${Object.keys(v.publiee).length ? `, postée sur ${Object.keys(v.publiee).join(", ")}` : ""}`).join("\n") });
+        if (chemin.endsWith("script-video")) return repondre(res, 200, s.script(texte("compte"), texte("titre"), String(corps.texte ?? "")));
+        if (chemin.endsWith("planifier-video")) return repondre(res, 200, s.replanifier(texte("video"), texte("jour")));
+        if (!["tiktok", "youtube", "instagram"].includes(plateforme)) return repondre(res, 400, { ok: false, texte: "Plateforme : tiktok, youtube ou instagram." });
+        if (chemin.endsWith("publier-video")) return repondre(res, 200, await s.publier(texte("video"), plateforme));
+        return repondre(res, 200, s.marquerPubliee(texte("video"), plateforme));
+      }
       case "POST /api/outils/projet": {
         if (!o.vie) return repondre(res, 503, { ok: false, texte: "Tes projets ne sont pas disponibles." });
         const opt = (k: string) => (corps[k] === undefined || corps[k] === null ? undefined : String(corps[k]));

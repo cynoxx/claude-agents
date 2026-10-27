@@ -174,6 +174,34 @@ export interface MailsVue {
   categories: { id: CategorieMails; nom: string; emoji: string; mails: { id: number; de: string; sujet: string; lu: boolean }[] }[];
 }
 
+export type Plateforme = "tiktok" | "youtube" | "instagram";
+
+/** Une vidéo du Studio : montée (ou en montage), prévue un jour, publiée plateforme par plateforme. */
+export interface VideoStudio {
+  id: string;
+  compte: string;
+  titre: string;
+  statut: "montage" | "prete" | "erreur";
+  erreur?: string;
+  /** Le chemin de la vidéo prête. */
+  fichier?: string;
+  legende?: string;
+  duree?: number;
+  /** Le jour prévu pour la publier (AAAA-MM-JJ). */
+  jour?: string;
+  /** Plateforme → jour où elle a été publiée. */
+  publiee: Partial<Record<Plateforme, string>>;
+  creee: string;
+}
+
+export interface StudioVue {
+  dossier: string;
+  comptes: { id: string; nom: string; type: "voix" | "clips"; horaires: Partial<Record<Plateforme, string>> }[];
+  videos: VideoStudio[];
+  /** Les prochaines publications prévues, dans l'ordre. */
+  prochaines: { id: string; titre: string; compte: string; plateforme: Plateforme; quand: string }[];
+}
+
 export type DomaineVie = "etudes" | "sante" | "business" | "apps" | "vie" | "esprit";
 
 /** Un projet de sa vie, rangé par domaine et catégorie, avec la prochaine chose à faire. */
@@ -261,6 +289,7 @@ export interface EtatBureau {
   mails?: MailsVue | null;
   sport?: SportVue;
   vie?: VieVue;
+  studio?: StudioVue;
   poles?: TempsPole[];
   /** Les dernières idées mises au parking. */
   idees?: string[];

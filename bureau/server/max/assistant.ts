@@ -80,6 +80,8 @@ export interface OptionsAssistant {
   sport?: { decrire(): string; vue?(): Pick<SportVue, "prevue" | "faite"> };
   /** Ses projets et son journal, pour le contexte de Max. */
   vie?: { decrire(): string };
+  /** Le Studio vidéo, pour le contexte de Max. */
+  studio?: { decrire(): string };
   /** L'intro au lancement (animation et musique) ; renvoie le délai avant que Max parle. */
   intro?: () => number;
   /** Le réveil par appel, pour le contexte de Max. */
@@ -183,6 +185,16 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return e("focus") === "corps" ? "🧍 Max affiche ton corps" : `🗂 Max ouvre la fiche ${e("pole")}`;
     case "noter_seance":
       return `🏋️ Séance notée : ${e("seance")}`;
+    case "script_video":
+      return "✍️ Max écrit le script";
+    case "publier_video":
+      return "📤 Max prépare la publication";
+    case "video_publiee":
+      return "✅ Max note la publication";
+    case "planifier_video":
+      return "🗓 Max replanifie la vidéo";
+    case "lire_studio":
+      return "🎬 Max regarde le Studio";
     case "projet":
       return "🗂 Max range un projet";
     case "ecrire_journal":
@@ -314,11 +326,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
     o.coach?.on("etat", () => this.changer());
     o.coach?.on("fin", (f: FinMinuteur) => this.finMinuteur(f));
     o.coach?.on("limite", (l: LimitePole) => this.limitePole(l));
-    o.coach?.on("rappel", (texte: string) => {
-      if (this.etat === "veille") this.reveiller(false);
-      this.noter("max", `🔔 ${texte}`);
-      this.parler(texte);
-    });
+    o.coach?.on("rappel", (texte: string) => this.rappeler(texte));
     o.verrou?.on("deverrouille", (prenom: string) => this.reveiller(true, prenom));
     o.planning?.on("creneau", (c: Creneau) => this.debutCreneau(c));
   }
@@ -486,6 +494,19 @@ export class Assistant extends EventEmitter implements AssistantApi {
       : "Mode obscur terminé. Réponds en une phrase, en redevenant le Max habituel.";
   }
 
+  /** Un rappel dit tel quel (en se réveillant s'il dormait). */
+  rappeler(texte: string): void {
+    if (this.etat === "veille") this.reveiller(false);
+    this.noter("max", `🔔 ${texte}`);
+    this.parler(texte);
+  }
+
+  /** Une nouvelle du système, affichée sans parler, et transmise à Max avec le message suivant. */
+  signaler(texte: string): void {
+    this.noter("bureau", texte);
+    this.informer(texte);
+  }
+
   informer(texte: string): void {
     this.infos.push(texte);
     if (this.infos.length > 10) this.infos.shift();
@@ -546,7 +567,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
         carnet: this.o.carnet(),
         missions: this.o.missions(),
         profil: this.o.profil?.(),
-        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
+        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.studio?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
         conseillers: this.o.conseillers?.(),
       }),
     );

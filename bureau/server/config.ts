@@ -1,3 +1,4 @@
+import type { Plateforme } from "../shared/protocol.ts";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -76,6 +77,30 @@ export interface BureauConfig {
    * lancer en entrant et en sortant (par exemple activer puis couper la Concentration « Ne pas déranger »).
    */
   obscur: { minutes: number; raccourciEntree: string | null; raccourciSortie: string | null };
+  /** Le Studio vidéo : un dossier (iCloud Drive, pour y accéder depuis l'iPhone) et tes comptes. */
+  studio: StudioConfig;
+}
+
+export interface CompteStudio {
+  id: string;
+  nom: string;
+  /** « voix » : tu déposes ta voix, le Studio monte la vidéo ; « clips » : tu déposes des vidéos prêtes. */
+  type: "voix" | "clips";
+  /** L'heure de publication de chaque plateforme (HH:MM), une vidéo par jour. */
+  horaires: Partial<Record<Plateforme, string>>;
+  /** La légende : {titre} et {phrase} (la première phrase que tu dis). */
+  legende: string;
+  bandeau?: string;
+  appel?: string;
+  couleur?: string;
+}
+
+export interface StudioConfig {
+  /** null : pas de Studio. */
+  dossier: string | null;
+  /** Rappeler à voix haute l'heure de publier. */
+  rappels: boolean;
+  comptes: CompteStudio[];
 }
 
 export interface ReveilConfig {
@@ -138,6 +163,23 @@ export const DEFAULT_CONFIG: BureauConfig = {
   musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true, recherche: "real.?gone" },
   fenetre: { mode: "app", navigateur: null },
   obscur: { minutes: 50, raccourciEntree: null, raccourciSortie: null },
+  studio: {
+    dossier: "~/Library/Mobile Documents/com~apple~CloudDocs/Max Studio",
+    rappels: true,
+    comptes: [
+      {
+        id: "asclepium",
+        nom: "Asclepium",
+        type: "voix",
+        horaires: { tiktok: "19:30", youtube: "16:30", instagram: "21:00" },
+        legende: "{titre} — {phrase}\n\nLe livre complet : lien en bio.\n#medecine #pass #las #etudiantenmedecine #motivation #asclepium",
+        bandeau: "48 lois pour réussir en médecine",
+        appel: "Le livre complet : lien en bio",
+        couleur: "#FFD23F",
+      },
+      { id: "fruit-tv", nom: "Fruit TV", type: "clips", horaires: { tiktok: "18:00" }, legende: "{titre}\n#fruittv #clip #pourtoi" },
+    ],
+  },
   reveil: { mode: "mac", telephone: null, heure: "07:00", rappelMinutes: 5, essais: 4, voixTwilio: "Polly.Remi-Neural", twilio: { compte: "", jeton: "", numero: "", cle: "" } },
 };
 
@@ -189,10 +231,12 @@ export function loadConfig(dir: string): BureauConfig {
     reveil: { ...DEFAULT_CONFIG.reveil, ...user.reveil, twilio: { ...DEFAULT_CONFIG.reveil.twilio, ...user.reveil?.twilio } },
     fenetre: { ...DEFAULT_CONFIG.fenetre, ...user.fenetre },
     obscur: { ...DEFAULT_CONFIG.obscur, ...user.obscur },
+    studio: { ...DEFAULT_CONFIG.studio, ...user.studio, comptes: Array.isArray(user.studio?.comptes) ? user.studio.comptes : DEFAULT_CONFIG.studio.comptes },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };
   if (c.mac.dossierCaptures) c.mac.dossierCaptures = expandHome(c.mac.dossierCaptures);
   c.musique.fichier = expandHome(c.musique.fichier);
+  if (c.studio.dossier) c.studio.dossier = expandHome(c.studio.dossier);
   c.voix.modele = c.voix.modele ? expandHome(c.voix.modele) : path.join(c.dossierDonnees, "modeles", MODELE_WHISPER);
   return c;
 }

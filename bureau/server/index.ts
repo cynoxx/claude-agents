@@ -22,6 +22,7 @@ import { TriMails } from "./max/tri-mails.ts";
 import { TrieurAuto } from "./max/trieur.ts";
 import { Sport } from "./max/sport.ts";
 import { Vie } from "./max/vie.ts";
+import { Studio } from "./studio/studio.ts";
 import { Musique } from "./max/musique.ts";
 import { Reveil } from "./max/reveil.ts";
 import { creerTwilio, preparateurReveil } from "./max/reveil-montage.ts";
@@ -90,6 +91,12 @@ const trieur = new TrieurAuto({
 });
 const sport = new Sport({ dossier: config.dossierMissions });
 const vie = new Vie({ dossier: config.dossierMissions });
+// le Studio vidéo, dans iCloud Drive (s'il est activé sur ce Mac)
+const dossierStudio = config.studio.dossier;
+const studio =
+  dossierStudio && fs.existsSync(path.dirname(dossierStudio))
+    ? new Studio({ config: { ...config.studio, dossier: dossierStudio }, ffmpeg: config.voix.ffmpeg, whisper: { bin: config.voix.whisper, modele: config.voix.modele! }, dossierEtat: config.dossierMissions })
+    : null;
 // ta musique : l'intro au lancement de Max, et le fond de l'appel du réveil
 const musique = new Musique({
   source: config.musique.fichier,
@@ -133,12 +140,19 @@ const assistant = new Assistant({
   planning,
   sport,
   vie,
+  ...(studio ? { studio } : {}),
   ...(config.musique.intro ? { intro: () => musique.jouerIntro() } : {}),
   reveil,
 });
 // la page de Max, dans sa propre fenêtre (mode app de Chrome & co) ou dans le navigateur
 const ouvrirMax = () => ouvrirFenetre(`http://localhost:${config.port}`, { config: config.fenetre, dossierDonnees: config.dossierDonnees });
 // le réveil sur le Mac : sa voix sur ta musique, de plus en plus fort
+if (studio) {
+  studio.on("prete", (t: string) => assistant.signaler(t));
+  if (config.studio.rappels) studio.on("rappel", (t: string) => assistant.rappeler(t));
+  studio.demarrer();
+  console.log(`🎬 Studio : ${dossierStudio}`);
+}
 surVoixPrete = (d) => {
   assistant.majDispoBouche(d);
   console.log(`${d.ok ? "🔊" : "⚠️ "} ${d.detail}`);
@@ -197,6 +211,7 @@ const server = createBureauServer({
   trieur,
   sport,
   vie,
+  ...(studio ? { studio } : {}),
   musique,
   reveil,
   ouvrirPage: ouvrirMax,
@@ -248,6 +263,7 @@ const fermer = () => {
   planning.fermer();
   reveil.fermer();
   jarvis.arreter();
+  studio?.arreter();
   conseillers.arreterTout();
   manager.arreter();
   setTimeout(() => process.exit(0), 1500).unref();

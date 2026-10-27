@@ -408,6 +408,33 @@ serveur.registerTool(
   },
   async ({ seance, jour, note }) => appeler("POST", "/api/outils/seance", { seance, jour, note }),
 );
+serveur.registerTool("lire_studio", { description: "Le Studio vidéo : prochaines publications, vidéos prêtes, en retard ou en montage." }, async () => appeler("GET", "/api/outils/studio"));
+serveur.registerTool(
+  "script_video",
+  {
+    description: "Écrit le script d'une vidéo (le texte qu'il lira en s'enregistrant) dans le dossier du compte, lisible sur son iPhone. Titre = le nom qu'il donnera à son audio (ex. « Loi 9 »).",
+    inputSchema: { compte: z.string().describe("asclepium ou fruit-tv"), titre: z.string(), texte: z.string() },
+  },
+  async (a) => appeler("POST", "/api/outils/script-video", a),
+);
+serveur.registerTool(
+  "publier_video",
+  {
+    description: "Prépare la publication d'une vidéo prête : copie la légende, montre la vidéo dans le Finder et ouvre la page d'envoi. Sans video : la prochaine prévue sur cette plateforme.",
+    inputSchema: { plateforme: z.enum(["tiktok", "youtube", "instagram"]), video: z.string().optional().describe("Titre ou id") },
+  },
+  async (a) => appeler("POST", "/api/outils/publier-video", a),
+);
+serveur.registerTool(
+  "video_publiee",
+  { description: "Note qu'une vidéo est postée sur une plateforme (quand il te le dit).", inputSchema: { video: z.string(), plateforme: z.enum(["tiktok", "youtube", "instagram"]) } },
+  async (a) => appeler("POST", "/api/outils/video-publiee", a),
+);
+serveur.registerTool(
+  "planifier_video",
+  { description: "Change le jour prévu d'une vidéo prête.", inputSchema: { video: z.string(), jour: z.string().describe("AAAA-MM-JJ") } },
+  async (a) => appeler("POST", "/api/outils/planifier-video", a),
+);
 serveur.registerTool(
   "projet",
   {
