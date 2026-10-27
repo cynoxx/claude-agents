@@ -81,6 +81,17 @@ export class Bouche extends EventEmitter {
   }
 
   /**
+   * Comme `preparer`, sans attendre une voix lente à charger (XTTS met jusqu'à deux minutes) : Max parle tout de
+   * suite avec la voix du Mac, puis passe à sa vraie voix dès qu'elle est prête (`surPrete`).
+   */
+  async preparerEnArrierePlan(surPrete: (d: Dispo) => void): Promise<Dispo> {
+    if (!this.o.piper) return this.preparer();
+    const say = await this.preparerSay();
+    void this.preparer().then(surPrete);
+    return say.ok ? { ok: true, detail: `Voix : ${this.o.piper.nom} en chargement (voix du Mac en attendant)` } : say;
+  }
+
+  /**
    * Enregistre une phrase dite par Max dans un fichier WAV, sans la jouer (le message du réveil) : avec Piper, ou
    * avec `say`. Renvoie false si c'est impossible.
    */

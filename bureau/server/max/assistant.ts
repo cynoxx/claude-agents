@@ -34,6 +34,8 @@ interface ManagerLike extends EventEmitter {
 export interface VerrouLike extends EventEmitter {
   readonly verrouille: boolean;
   verrouiller(): void;
+  /** Demande à la page de lancer la reconnaissance du visage (on a entendu « Max »). */
+  demander?(): void;
 }
 /** L'emploi du temps du jour (événement `creneau` au début de chaque créneau). */
 export interface PlanningLike extends EventEmitter {
@@ -59,6 +61,8 @@ export interface OptionsAssistant {
   motCle: string;
   suiteMs: number;
   veilleMs: number;
+  /** Annoncer à voix haute chaque créneau de l'emploi du temps (sinon, il s'affiche seulement). */
+  annoncesCreneaux?: boolean;
   dispos: { oreille: Dispo; bouche: Dispo };
   coach?: CoachLike;
   /** Le fichier moi.md. */
@@ -232,6 +236,10 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private tours = 0;
   private couperReponse = false;
   private suiteJusqua = 0;
+  private entendu: { texte: string; heure: number; pourMax: boolean } | null = null;
+  /** Le micro est relancé tout seul s'il s'arrête : délai avant la prochaine tentative. */
+  private relanceMicroMs = 2000;
+  private relanceMicro?: NodeJS.Timeout;
   private veilleDemandee = false;
   private reouverture?: NodeJS.Timeout;
   private minuterieVeille?: NodeJS.Timeout;
@@ -261,8 +269,19 @@ export class Assistant extends EventEmitter implements AssistantApi {
         this.oreilleArretVolontaire = false;
         return;
       }
-      if (this.etat !== "veille" && this.dispoOreille.ok) this.dispoOreille = { ok: false, detail: "Le micro s'est arrêté." };
+      // l'écoute est permanente : le micro repart tout seul (de plus en plus espacé s'il s'arrête sans cesse)
+      if (this.dispoOreille.ok) this.dispoOreille = { ok: false, detail: "Le micro s'est arrêté : je le relance." };
       this.changer();
+      clearTimeout(this.relanceMicro);
+      this.relanceMicro = setTimeout(() => this.ecouterEnPermanence(), this.relanceMicroMs);
+      this.relanceMicroMs = Math.min(30_000, this.relanceMicroMs * 2);
+    });
+    o.oreille?.on("phrase", () => {
+      this.relanceMicroMs = 2000;
+      if (!this.dispoOreille.ok) {
+        this.dispoOreille = { ok: true };
+        this.changer();
+      }
     });
 
     o.bouche.on("debut", () => {
@@ -308,18 +327,33 @@ export class Assistant extends EventEmitter implements AssistantApi {
       vue: this.ecran,
       pole: this.pole,
       focus: this.focus,
+      entendu: this.entendu,
       obscur: this.obscur,
     };
+  }
+
+  /**
+   * L'oreille reste ouverte en permanence, même quand Max dort ou est verrouillé : dire « Max » suffit toujours.
+   * (Endormi, il se réveille ; verrouillé, il lance la reconnaissance du visage.)
+   */
+  /** La voix a fini de se charger (ou a échoué) : l'écran le montre. */
+  majDispoBouche(d: Dispo): void {
+    this.dispoBouche = d;
+    this.changer();
+  }
+
+  ecouterEnPermanence(): void {
+    if (!this.o.oreille || this.o.oreille.active) return;
+    this.dispoOreille = { ok: true };
+    this.o.oreille.demarrer();
+    this.changer();
   }
 
   reveiller(accueil = true, prenom = ""): void {
     if (this.etat !== "veille" || this.o.verrou?.verrouille) return;
     this.veilleDemandee = false;
     this.etat = "ecoute";
-    if (this.o.oreille) {
-      this.dispoOreille = { ok: true };
-      this.o.oreille.demarrer();
-    }
+    this.ecouterEnPermanence();
     this.assurerCerveau();
     this.relancerMinuterie();
     this.changer();
@@ -354,10 +388,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
     clearTimeout(this.minuterieVeille);
     this.veilleDemandee = false;
     if (this.etat === "veille") return;
-    if (this.o.oreille?.active) {
-      this.oreilleArretVolontaire = true;
-      this.o.oreille.arreter();
-    }
+    // l'oreille reste ouverte : en veille, seul « Max » le réveille
+    if (this.o.oreille) this.o.oreille.muet = false;
     if (this.cerveau) {
       this.cerveau.removeAllListeners();
       this.cerveau.arreter();
@@ -370,7 +402,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.phrase = "";
     this.etat = "veille";
     this.o.verrou?.verrouiller();
-    this.noter("bureau", `😴 Max est en veille. Dis « Dis Siri, ${this.o.phraseSiri ?? "Max au rapport"} » ou clique sur 👂 pour le réveiller.`);
+    this.noter("bureau", "😴 Max est en veille. Dis « Max » pour le réveiller.");
   }
 
   veilleApresParole(): void {
@@ -454,9 +486,23 @@ export class Assistant extends EventEmitter implements AssistantApi {
   // --- interne -----------------------------------------------------------------
 
   private entendre(texte: string): void {
-    if (this.etat === "veille" || this.o.oreille?.muet || this.o.bouche.parle) return;
-    const message = reconnaitreAppel(texte, this.o.motCle, Date.now() < this.suiteJusqua);
+    if (this.o.oreille?.muet || this.o.bouche.parle) return;
+    const enVeille = this.etat === "veille";
+    const message = reconnaitreAppel(texte, this.o.motCle, !enVeille && Date.now() < this.suiteJusqua);
+    // ce qu'il a entendu s'affiche (verrouillé, rien) : la preuve que le micro marche
+    if (!this.o.verrou?.verrouille) {
+      this.entendu = { texte: texte.slice(0, 160), heure: Date.now(), pourMax: message !== null };
+      this.changer();
+    }
     if (message === null) return;
+    if (enVeille) {
+      // « Max » le réveille ; verrouillé, il lance la reconnaissance du visage d'abord
+      if (this.o.verrou?.verrouille) {
+        this.o.verrou.demander?.();
+        return;
+      }
+      this.reveiller(false);
+    }
     this.relancerMinuterie();
     if (!message) {
       this.parler("Oui ?");
@@ -558,10 +604,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private relancerMinuterie(): void {
     clearTimeout(this.minuterieVeille);
     if (this.etat === "veille") return;
-    this.minuterieVeille = setTimeout(() => {
-      this.parler("Je me mets en veille.");
-      this.veilleApresParole();
-    }, this.o.veilleMs);
+    // il s'endort sans rien dire : il entend toujours « Max »
+    this.minuterieVeille = setTimeout(() => this.veilleApresParole(), this.o.veilleMs);
   }
 
   private surMission(e: EtatBureau): void {
@@ -591,10 +635,9 @@ export class Assistant extends EventEmitter implements AssistantApi {
 
   /** Début d'un créneau de l'emploi du temps : Max l'annonce (et se réveille pour ça, sauf s'il est verrouillé). */
   private debutCreneau(c: Creneau): void {
-    if (this.o.verrou?.verrouille) {
-      const phrase = `C'est l'heure : ${c.titre}.`;
-      this.noter("max", phrase);
-      this.parler(phrase);
+    // par défaut, un créneau s'affiche sans parler (Max ne parle pas pour rien)
+    if (!this.o.annoncesCreneaux || this.o.verrou?.verrouille) {
+      this.noter("bureau", `🗓 ${c.debut} · ${c.titre}`);
       return;
     }
     if (this.etat === "veille") this.reveiller(false);

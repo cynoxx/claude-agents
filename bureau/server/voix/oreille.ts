@@ -19,6 +19,11 @@ export function argsFfmpegFichier(fichier: string, tempsReel: boolean): string[]
 
 export interface OptionsOreille {
   commande: { bin: string; args: string[] };
+  /**
+   * Recalcule la commande à chaque démarrage (le numéro d'un micro change quand l'iPhone apparaît ou disparaît) ;
+   * null : on garde `commande`.
+   */
+  resoudre?: () => Promise<{ bin: string; args: string[] } | null>;
   transcrire: (wav: Buffer) => Promise<string>;
   detecteur?: OptionsDetecteur;
 }
@@ -54,8 +59,23 @@ export class Oreille extends EventEmitter {
   }
 
   demarrer(): void {
-    if (this.active) return;
+    if (this.active || this.demarrage) return;
     this.arretDemande = false;
+    if (!this.o.resoudre) return this.lancer();
+    this.demarrage = this.o
+      .resoudre()
+      .catch(() => null)
+      .then((c) => {
+        this.demarrage = null;
+        if (c) this.o.commande = c;
+        if (!this.arretDemande) this.lancer();
+      });
+  }
+
+  private demarrage: Promise<void> | null = null;
+
+  private lancer(): void {
+    if (this.active) return;
     this.detecteur.reinitialiser();
     this.octetSeul = null;
     let stderr = "";

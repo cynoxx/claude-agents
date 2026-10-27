@@ -147,11 +147,16 @@ export class Jarvis {
     $("j-statut").textContent = STATUTS[e];
     $("j-statut").dataset.etat = e;
     $("j-reveil").textContent = e === "veille" ? "👂 Réveiller" : "😴 Veille";
-    $("j-dit").textContent = textePrincipal(a) || (e === "veille" ? "Dis « Dis Siri, Max au rapport » ou clique sur Réveiller." : "Je t'écoute.");
+    $("j-dit").textContent = textePrincipal(a) || (e === "veille" ? "Dis « Max » quand tu as besoin de moi." : "Je t'écoute.");
     const toi = texteToi(a);
     $("j-toi").textContent = toi ? `« ${toi} »` : "";
     const soucis = a ? [a.oreille, a.bouche, a.cerveau].filter((d) => !d.ok && d.detail).map((d) => `⚠️ ${d.detail}`) : [];
     $("j-soucis").textContent = soucis.join(" · ");
+    // ce que le micro a entendu en dernier : la preuve qu'il t'écoute (estompé si ce n'était pas pour Max)
+    const ent = $("j-entendu");
+    const en = a?.entendu;
+    ent.textContent = !a?.oreille.ok ? "🎙 micro coupé" : en ? `🎙 ${new Date(en.heure).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · « ${en.texte} »` : "🎙 j'écoute…";
+    ent.dataset.pourMax = en?.pourMax ? "oui" : "non";
 
     // panneaux
     const j = etat.jarvis;

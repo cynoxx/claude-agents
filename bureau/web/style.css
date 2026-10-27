@@ -2600,3 +2600,18 @@ body[data-obscur="oui"] .j-gestes-msg {
   color: #ffd9d4;
   box-shadow: 0 0 22px rgba(255, 30, 30, 0.3);
 }
+
+.j-entendu {
+  text-align: center;
+  margin: 4px 0 0;
+  font: 12px/1.4 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: rgba(150, 210, 255, 0.45);
+  min-height: 1.4em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.j-entendu[data-pour-max="oui"] {
+  color: rgba(150, 230, 255, 0.95);
+}

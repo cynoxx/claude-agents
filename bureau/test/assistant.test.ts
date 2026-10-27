@@ -297,7 +297,8 @@ describe("Assistant — veille", () => {
     cerveau().repondre("Bonne nuit !");
     await jusqua(() => a.vue().etat === "veille");
     expect(bouche.dites.at(-1)).toBe("Bonne nuit !");
-    expect(oreille.active).toBe(false);
+    // l'oreille reste ouverte : il suffit de dire « Max » pour le réveiller
+    expect(oreille.active).toBe(true);
     expect(cerveau().actif).toBe(false);
   });
 
@@ -305,8 +306,21 @@ describe("Assistant — veille", () => {
     creer({ veilleMs: 300 });
     a.reveiller();
     await jusqua(() => a.vue().etat === "veille", 3000);
-    expect(bouche.dites.at(-1)).toBe("Je me mets en veille.");
-    expect(oreille.active).toBe(false);
+    expect(bouche.dites).not.toContain("Je me mets en veille.");
+    expect(oreille.active).toBe(true);
+  });
+
+  it("en veille, se réveille quand on l'appelle « Max »", async () => {
+    a.reveiller();
+    a.veille();
+    expect(oreille.active).toBe(true);
+    oreille.emit("phrase", "bonjour tout le monde");
+    expect(a.vue().etat).toBe("veille");
+    expect(a.vue().entendu?.texte).toBe("bonjour tout le monde");
+    expect(a.vue().entendu?.pourMax).toBe(false);
+    oreille.emit("phrase", "Max, quelle heure est-il ?");
+    expect(a.vue().etat).not.toBe("veille");
+    expect(cerveau().recus.at(-1)).toContain("quelle heure est-il");
   });
 
   it("se réveille sans accueil quand on lui écrit pendant qu'il dort", () => {
@@ -314,6 +328,18 @@ describe("Assistant — veille", () => {
     expect(a.vue().etat).toBe("reflechit");
     expect(bouche.dites).toEqual([]);
     expect(cerveau().recus).toEqual(["Bonjour Max"]);
+  });
+
+  it("relance le micro tout seul s'il s'arrête sans qu'on le demande", async () => {
+    a.reveiller();
+    const avant = oreille.demarrages;
+    oreille.active = false;
+    oreille.emit("arret");
+    expect(a.vue().oreille.ok).toBe(false);
+    await jusqua(() => oreille.demarrages > avant, 3000);
+    expect(oreille.active).toBe(true);
+    oreille.emit("phrase", "bla");
+    expect(a.vue().oreille.ok).toBe(true);
   });
 
   it("marche sans micro (écrit seulement) et le dit", () => {
@@ -409,7 +435,7 @@ describe("Assistant — coach", () => {
   it("rappelle la phrase Siri quand il s'endort", () => {
     a.reveiller();
     a.veille();
-    expect(a.vue().messages.at(-1)?.texte).toContain("« Dis Siri, Max au rapport »");
+    expect(a.vue().messages.at(-1)?.texte).toContain("Dis « Max » pour le réveiller");
   });
 
   it("transmet avec le message suivant ce qui s'est passé depuis la page", () => {
@@ -535,7 +561,15 @@ describe("Assistant — emploi du temps", () => {
     expect(cerveau().consigne).toContain("09:00–11:00 Biochimie");
   });
 
-  it("annonce le début d'un créneau (et se réveille pour ça)", () => {
+  it("affiche le début d'un créneau sans parler, par défaut", () => {
+    planning.emit("creneau", { debut: "09:00", fin: "11:00", titre: "Biochimie", type: "travail" });
+    expect(a.vue().etat).toBe("veille");
+    expect(cerveaux).toHaveLength(0);
+    expect(a.vue().messages.at(-1)?.texte).toBe("🗓 09:00 · Biochimie");
+  });
+
+  it("annonce le début d'un créneau (et se réveille pour ça) si on le lui demande", () => {
+    creer({ planning, annoncesCreneaux: true });
     planning.emit("creneau", { debut: "09:00", fin: "11:00", titre: "Biochimie", type: "travail" });
     expect(a.vue().etat).not.toBe("veille");
     expect(cerveau().recus.at(-1)).toContain("Début du créneau « Biochimie » (09:00–11:00, travail)");
@@ -578,18 +612,29 @@ describe("Assistant — verrou par le visage", () => {
     expect(bouche.dites).toEqual(["Salut Johan ! Déjà 50 minutes de travail aujourd'hui. Je t'écoute."]);
   });
 
+  it("verrouillé, entend « Max » mais demande le visage au lieu de répondre", () => {
+    let demandes = 0;
+    Object.assign(verrou, { demander: () => demandes++ });
+    a.ecouterEnPermanence();
+    expect(oreille.active).toBe(true);
+    oreille.emit("phrase", "Max, lis mes mails");
+    expect(demandes).toBe(1);
+    expect(a.vue().etat).toBe("veille");
+    expect(a.vue().entendu ?? null).toBeNull();
+    expect(cerveaux).toHaveLength(0);
+  });
+
   it("se reverrouille en s'endormant", () => {
     verrou.ouvrir();
     a.veille();
     expect(verrou.verrouille).toBe(true);
   });
 
-  it("verrouillé, annonce un créneau sans se réveiller", async () => {
+  it("verrouillé, note un créneau sans parler ni se réveiller", () => {
     const planning = new FauxPlanning();
-    creer({ verrou, coach, planning });
+    creer({ verrou, coach, planning, annoncesCreneaux: true });
     planning.emit("creneau", { debut: "12:30", fin: "13:30", titre: "Déjeuner", type: "repas" });
-    await jusqua(() => bouche.dites.length === 1 && !bouche.parle);
-    expect(bouche.dites).toEqual(["C'est l'heure : Déjeuner."]);
+    expect(bouche.dites).toEqual([]);
     expect(a.vue().etat).toBe("veille");
     expect(cerveaux).toHaveLength(0);
   });

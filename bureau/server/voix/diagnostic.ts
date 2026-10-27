@@ -37,6 +37,15 @@ export async function preparerOreille(config: BureauConfig): Promise<{ oreille: 
 
   const oreille = new Oreille({
     commande: { bin: v.ffmpeg, args: argsFfmpegMicro(micro) },
+    // choisi automatiquement : on le recherche à chaque démarrage (son numéro bouge quand l'iPhone est à côté)
+    ...(v.micro
+      ? {}
+      : {
+          resoudre: async () => {
+            const m = choisirMicro((await listeFfmpeg(v.ffmpeg)) ?? "");
+            return m ? { bin: v.ffmpeg, args: argsFfmpegMicro(m) } : null;
+          },
+        }),
     transcrire: (wav) => transcrire({ bin: v.whisper, modele }, wav),
   });
   return { oreille, dispo: { ok: true, detail: `Micro : ${micro}` } };

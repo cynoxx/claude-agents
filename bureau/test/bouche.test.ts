@@ -178,6 +178,17 @@ describe("Bouche avec la voix Piper", () => {
     b.arreter();
   });
 
+  it("démarre tout de suite avec say et prévient quand la voix lourde est prête", async () => {
+    const b = avecPiper();
+    let prete: { ok: boolean; detail?: string } | null = null;
+    const d = await b.preparerEnArrierePlan((x) => (prete = x));
+    expect(d.ok).toBe(true);
+    expect(d.detail).toContain("en chargement");
+    for (let i = 0; i < 100 && !prete; i++) await attendre(20);
+    expect(prete).toEqual({ ok: true, detail: "Voix : fr_FR-tom-medium (Piper)" });
+    b.arreter();
+  });
+
   it("reprend la voix du Mac (say) si Piper ne démarre pas, et dit pourquoi", async () => {
     process.env.FAKE_PIPER_MODE = "plante";
     const b = avecPiper();

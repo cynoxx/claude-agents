@@ -42,6 +42,8 @@ export interface VoixConfig {
   /** Le nom du raccourci Siri (« Dis Siri, <phrase> »), rappelé quand Max s'endort. */
   phraseSiri: string;
   suiteSecondes: number;
+  /** Annoncer à voix haute chaque créneau de l'emploi du temps (false : il s'affiche seulement). */
+  annoncesCreneaux: boolean;
   veilleMinutes: number;
 }
 
@@ -124,7 +126,8 @@ export const DEFAULT_CONFIG: BureauConfig = {
     debit: 175,
     motCle: "max",
     phraseSiri: "Max au rapport",
-    suiteSecondes: 10,
+    suiteSecondes: 30,
+    annoncesCreneaux: false,
     veilleMinutes: 30,
   },
   conseillers: CONSEILLERS_DEFAUT,

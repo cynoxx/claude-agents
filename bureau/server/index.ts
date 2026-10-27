@@ -1,5 +1,6 @@
 // `npm start` (ou le script lancé par « Dis Siri, Max au rapport ») : démarre le Bureau, réveille Max et ouvre le navigateur.
 import { execFile } from "node:child_process";
+import type { Dispo } from "../shared/protocol.ts";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,7 +49,9 @@ const manager = new MissionManager(config, bin, { ok: false, erreur: "vérificat
 const jeton = creerJeton(config.dossierDonnees);
 const mcpConfig = ecrireConfigMcp({ racine, port: config.port, dossierDonnees: config.dossierDonnees });
 const bouche = creerBouche(config);
-const [{ oreille, dispo: dispoOreille }, dispoBouche] = await Promise.all([preparerOreille(config), bouche.preparer()]);
+// la voix lente (XTTS) se charge en arrière-plan : le Bureau démarre tout de suite
+let surVoixPrete: (d: Dispo) => void = () => {};
+const [{ oreille, dispo: dispoOreille }, dispoBouche] = await Promise.all([preparerOreille(config), bouche.preparerEnArrierePlan((d) => surVoixPrete(d))]);
 // Le coach (minuteur, journal de travail, rappels) et les conseillers (un par domaine de la vie)
 const coach = new Coach({ dossier: config.dossierMissions, dossierDonnees: config.dossierDonnees, limites: config.tempsParJour });
 const profil = () => lireProfil(config.dossierMissions);
@@ -116,6 +119,7 @@ const assistant = new Assistant({
   missions: () => listMissions(config.dossierMissions),
   motCle: config.voix.motCle,
   suiteMs: config.voix.suiteSecondes * 1000,
+  annoncesCreneaux: config.voix.annoncesCreneaux,
   veilleMs: config.voix.veilleMinutes * 60_000,
   dispos: { oreille: dispoOreille, bouche: dispoBouche },
   coach,
@@ -132,6 +136,10 @@ const assistant = new Assistant({
 // la page de Max, dans sa propre fenêtre (mode app de Chrome & co) ou dans le navigateur
 const ouvrirMax = () => ouvrirFenetre(`http://localhost:${config.port}`, { config: config.fenetre, dossierDonnees: config.dossierDonnees });
 // le réveil sur le Mac : sa voix sur ta musique, de plus en plus fort
+surVoixPrete = (d) => {
+  assistant.majDispoBouche(d);
+  console.log(`${d.ok ? "🔊" : "⚠️ "} ${d.detail}`);
+};
 const reveilMac = new ReveilMac({
   mac,
   musique,
@@ -218,6 +226,8 @@ server.listen(config.port, "127.0.0.1", async () => {
   if (!process.env.BUREAU_NO_OPEN) console.log(`🪟 Max s'ouvre ${ouvrirMax() === "navigateur" ? "dans ton navigateur" : "dans sa propre fenêtre"}.`);
   jarvis.demarrer();
   reveil.demarrer();
+  // l'oreille est ouverte en permanence : « Max » le réveille, ou lance le scan du visage s'il est verrouillé
+  assistant.ecouterEnPermanence();
   if (verrou.verrouille) {
     verrou.demander();
     console.log("🔒 Max est verrouillé : regarde la caméra pour le déverrouiller.");

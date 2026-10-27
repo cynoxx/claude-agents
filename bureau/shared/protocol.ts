@@ -89,6 +89,8 @@ export interface AssistantVue {
   vue?: VueEcran;
   /** La fiche de pôle ouverte sur l'écran de Max (« sante »…), ou null. */
   pole?: string | null;
+  /** La dernière phrase entendue par le micro (adressée à Max ou non) : la preuve qu'il entend. */
+  entendu?: { texte: string; heure: number; pourMax: boolean } | null;
   /** Max Ultime (le mode obscur) : depuis quand, ou null. */
   obscur?: number | null;
   /** Ce que la fiche doit montrer en premier (« corps » pour la fiche Sport). */

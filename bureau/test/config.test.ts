@@ -48,7 +48,8 @@ describe("loadConfig", () => {
       debit: 175,
       motCle: "max",
       phraseSiri: "Max au rapport",
-      suiteSecondes: 10,
+      suiteSecondes: 30,
+      annoncesCreneaux: false,
       veilleMinutes: 30,
     });
   });
