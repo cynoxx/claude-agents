@@ -78,6 +78,8 @@ export interface OptionsAssistant {
   planning?: PlanningLike;
   /** Le sport (séance du jour, muscles travaillés), pour le contexte de Max. */
   sport?: { decrire(): string; vue?(): Pick<SportVue, "prevue" | "faite"> };
+  /** Ses projets et son journal, pour le contexte de Max. */
+  vie?: { decrire(): string };
   /** L'intro au lancement (animation et musique) ; renvoie le délai avant que Max parle. */
   intro?: () => number;
   /** Le réveil par appel, pour le contexte de Max. */
@@ -181,6 +183,12 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return e("focus") === "corps" ? "🧍 Max affiche ton corps" : `🗂 Max ouvre la fiche ${e("pole")}`;
     case "noter_seance":
       return `🏋️ Séance notée : ${e("seance")}`;
+    case "projet":
+      return "🗂 Max range un projet";
+    case "ecrire_journal":
+      return "📓 Max écrit dans ton journal";
+    case "lire_journal":
+      return "📓 Max relit ton journal";
     case "lire_sport":
       return "🏋️ Max regarde ton sport";
     case "changer_semaine_sport":
@@ -538,7 +546,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
         carnet: this.o.carnet(),
         missions: this.o.missions(),
         profil: this.o.profil?.(),
-        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
+        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
         conseillers: this.o.conseillers?.(),
       }),
     );

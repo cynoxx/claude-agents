@@ -174,6 +174,40 @@ export interface MailsVue {
   categories: { id: CategorieMails; nom: string; emoji: string; mails: { id: number; de: string; sujet: string; lu: boolean }[] }[];
 }
 
+export type DomaineVie = "etudes" | "sante" | "business" | "apps" | "vie" | "esprit";
+
+/** Un projet de sa vie, rangé par domaine et catégorie, avec la prochaine chose à faire. */
+export interface ProjetVie {
+  id: string;
+  nom: string;
+  domaine: DomaineVie;
+  categorie: string;
+  objectif?: string;
+  prochaineAction?: string;
+  /** AAAA-MM-JJ */
+  echeance?: string;
+  statut: "actif" | "pause" | "fini";
+  /** Jour de la dernière mise à jour (AAAA-MM-JJ). */
+  maj: string;
+}
+
+export interface JourJournal {
+  jour: string;
+  notes: { heure: string; texte: string }[];
+  bilan?: string;
+  /** 1 à 5 */
+  humeur?: number;
+}
+
+/** Sa vie : les domaines et leurs catégories, les projets, le focus du jour et le journal. */
+export interface VieVue {
+  domaines: { id: DomaineVie; nom: string; emoji: string; categories: string[] }[];
+  projets: ProjetVie[];
+  focus: ProjetVie[];
+  journal: JourJournal | null;
+  recents: JourJournal[];
+}
+
 /** Le sport : la semaine type (jours fixes), la séance du jour et les muscles travaillés ces 14 derniers jours. */
 export interface SportVue {
   /** Séance prévue chaque jour, lundi d'abord. */
@@ -226,6 +260,7 @@ export interface EtatBureau {
   planning?: PlanningVue | null;
   mails?: MailsVue | null;
   sport?: SportVue;
+  vie?: VieVue;
   poles?: TempsPole[];
   /** Les dernières idées mises au parking. */
   idees?: string[];

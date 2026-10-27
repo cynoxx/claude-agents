@@ -15,6 +15,7 @@ import type { Verrou } from "./max/verrou.ts";
 import type { Planning } from "./max/planning.ts";
 import type { TriMails } from "./max/tri-mails.ts";
 import type { Sport } from "./max/sport.ts";
+import type { Vie } from "./max/vie.ts";
 import type { Reveil } from "./max/reveil.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
@@ -71,6 +72,7 @@ export function routesMax(o: {
   planning?: Planning;
   triMails?: TriMails;
   sport?: Sport;
+  vie?: Vie;
   reveil?: Reveil;
   ouvrirPage?: () => string;
 }) {
@@ -395,6 +397,21 @@ export function routesMax(o: {
       case "POST /api/outils/seance":
         if (!o.sport) return repondre(res, 503, { ok: false, texte: "Le suivi du sport n'est pas disponible." });
         return repondre(res, 200, o.sport.noter(texte("seance"), { jour: texte("jour") || undefined, note: texte("note") || undefined }));
+      case "POST /api/outils/projet": {
+        if (!o.vie) return repondre(res, 503, { ok: false, texte: "Tes projets ne sont pas disponibles." });
+        const opt = (k: string) => (corps[k] === undefined || corps[k] === null ? undefined : String(corps[k]));
+        const ch = Object.fromEntries(["id", "nom", "domaine", "categorie", "objectif", "prochaineAction", "echeance", "statut"].map((k) => [k, opt(k)]));
+        return repondre(res, 200, o.vie.projet(ch));
+      }
+      case "POST /api/outils/journal":
+        if (!o.vie) return repondre(res, 503, { ok: false, texte: "Ton journal n'est pas disponible." });
+        return repondre(res, 200, o.vie.ecrire(texte("texte"), { bilan: corps.bilan === true, humeur: nombre("humeur") }));
+      case "GET /api/outils/journal": {
+        if (!o.vie) return repondre(res, 503, { ok: false, texte: "Ton journal n'est pas disponible." });
+        const jours = o.vie.journal(7);
+        const t = jours.map((j) => `${j.jour}${j.humeur ? ` (humeur ${j.humeur}/5)` : ""}\n${j.notes.map((n) => `- ${n.heure} ${n.texte}`).join("\n")}${j.bilan ? `\nBilan : ${j.bilan}` : ""}`).join("\n\n");
+        return repondre(res, 200, { ok: true, texte: t || "Le journal est vide." });
+      }
       case "GET /api/outils/sport":
         if (!o.sport) return repondre(res, 503, { ok: false, texte: "Le suivi du sport n'est pas disponible." });
         return repondre(res, 200, { ok: true, texte: o.sport.decrire() });

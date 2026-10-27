@@ -21,6 +21,7 @@ import { Verrou } from "../server/max/verrou.ts";
 import { Planning } from "../server/max/planning.ts";
 import { TriMails } from "../server/max/tri-mails.ts";
 import { Sport } from "../server/max/sport.ts";
+import { Vie } from "../server/max/vie.ts";
 import { Reveil } from "../server/max/reveil.ts";
 import { Visage } from "../server/max/visage.ts";
 import type { AssistantVue, EtatBureau, MissionVue, ServerMessage } from "../shared/protocol.ts";
@@ -143,6 +144,7 @@ describe("routes et WebSocket de Max", () => {
   let planning: Planning;
   let triMails: TriMails;
   let sport: Sport;
+  let vie: Vie;
   let server: ReturnType<typeof createBureauServer>;
   let base: string;
 
@@ -171,8 +173,9 @@ describe("routes et WebSocket de Max", () => {
     planning = new Planning({ dossier: root, dossierDonnees: donnees });
     triMails = new TriMails();
     sport = new Sport({ dossier: root });
+    vie = new Vie({ dossier: root });
     const reveil = new Reveil({ dossierDonnees: donnees, telephone: null, appelleur: null, heureDefaut: "07:00", rappelMinutes: 5, essais: 4, preparer: async () => "" });
-    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac, planning, triMails, sport, reveil });
+    server = createBureauServer({ config, manager, webDir: tmp(), jeton, assistant, coach, conseillers, mac, planning, triMails, sport, vie, reveil });
     await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -246,7 +249,7 @@ describe("routes et WebSocket de Max", () => {
           "aller_au_bureau", "retour_jarvis",
           "enregistrer_planning", "lire_planning", "preparer_planning_calendrier", "ajouter_planning_calendrier",
           "trier_mails", "afficher_mails", "preparer_rangement", "ranger_mails",
-          "ouvrir_pole", "mode_obscur", "noter_seance", "lire_sport", "changer_semaine_sport",
+          "ouvrir_pole", "mode_obscur", "noter_seance", "lire_sport", "changer_semaine_sport", "projet", "ecrire_journal", "lire_journal",
           "regler_reveil", "annuler_reveil", "etat_reveil", "essayer_reveil",
         ].sort(),
       );
@@ -435,6 +438,13 @@ describe("routes et WebSocket de Max", () => {
       expect((await texte("noter_seance", { seance: "yoga" })).erreur).toBe(true);
       expect((await texte("changer_semaine_sport", { changements: [{ jour: "dimanche", seance: "jambes" }] })).texte).toContain("dimanche : Jambes");
       expect((await texte("lire_sport")).texte).toContain("Quadriceps ×1");
+      // ses projets et son journal
+      expect((await texte("projet", { nom: "Asclepium", prochaineAction: "Monter la loi 9" })).texte).toContain("Projet mis à jour : Asclepium — vidéos « Loi N » → Monter la loi 9");
+      expect((await texte("projet", { nom: "Permis", domaine: "vie", categorie: "Administratif" })).texte).toContain("Projet créé : Permis");
+      expect((await texte("projet", { id: "inconnu" })).erreur).toBe(true);
+      expect((await texte("ecrire_journal", { texte: "Bonne séance de bio", humeur: 4 })).texte).toBe("Noté dans ton journal.");
+      expect((await texte("lire_journal")).texte).toContain("Bonne séance de bio");
+      expect(vie.vue().journal?.humeur).toBe(4);
       expect((await texte("demarrer_session", { sujet: "Boutique", minutes: 90, pole: "business" })).texte).toContain("Il reste 1 heure avant la limite du pôle business");
       expect(coach.temps().get("business")?.limite).toBe(60);
       expect((await texte("arreter_session")).erreur).toBe(false);

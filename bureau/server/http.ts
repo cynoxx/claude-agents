@@ -15,6 +15,7 @@ import type { Planning } from "./max/planning.ts";
 import type { TriMails } from "./max/tri-mails.ts";
 import type { TrieurAuto } from "./max/trieur.ts";
 import type { Sport } from "./max/sport.ts";
+import type { Vie } from "./max/vie.ts";
 import type { Musique } from "./max/musique.ts";
 import type { Reveil } from "./max/reveil.ts";
 import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
@@ -66,6 +67,7 @@ export function createBureauServer(o: {
   triMails?: TriMails;
   trieur?: TrieurAuto;
   sport?: Sport;
+  vie?: Vie;
   musique?: Musique;
   reveil?: Reveil;
   /** Le dossier des modèles de reconnaissance du visage (face-api), servis à la page. */
@@ -211,6 +213,7 @@ export function createBureauServer(o: {
       ...(o.planning ? { planning: o.planning.vue() } : {}),
       ...(o.triMails ? { mails: o.triMails.vue() } : {}),
       ...(o.sport ? { sport: o.sport.vue() } : {}),
+      ...(o.vie ? { vie: o.vie.vue() } : {}),
       ...(o.coach && o.conseillers ? { poles: poles(), idees: lireIdees(root).slice(-8) } : {}),
       ...(intro ? { intro } : {}),
       ...(o.musique ? { musique: o.musique.disponible } : {}),
@@ -235,11 +238,13 @@ export function createBureauServer(o: {
   o.planning?.on("etat", diffuser);
   o.triMails?.on("etat", diffuser);
   o.sport?.on("etat", diffuser);
+  o.vie?.on("etat", diffuser);
   o.reveil?.on("etat", diffuser);
   server.on("close", () => {
     o.reveil?.off("etat", diffuser);
     o.musique?.off("intro", surIntro);
     o.sport?.off("etat", diffuser);
+    o.vie?.off("etat", diffuser);
     o.planning?.off("etat", diffuser);
     o.triMails?.off("etat", diffuser);
     o.verrou?.off("etat", diffuser);

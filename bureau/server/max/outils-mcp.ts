@@ -408,6 +408,33 @@ serveur.registerTool(
   },
   async ({ seance, jour, note }) => appeler("POST", "/api/outils/seance", { seance, jour, note }),
 );
+serveur.registerTool(
+  "projet",
+  {
+    description:
+      "Crée ou met à jour un de ses projets (par id ou nom) : prochaine action, échéance, statut… Un champ vide (\"\") l'efface. Domaines : etudes, sante, business, apps, vie, esprit.",
+    inputSchema: {
+      id: z.string().optional(),
+      nom: z.string().optional(),
+      domaine: z.enum(["etudes", "sante", "business", "apps", "vie", "esprit"]).optional(),
+      categorie: z.string().optional().describe("ex. « Vidéos monétisables », « PASS », « Argent »"),
+      objectif: z.string().optional(),
+      prochaineAction: z.string().optional().describe("La toute prochaine chose concrète à faire"),
+      echeance: z.string().optional().describe("AAAA-MM-JJ"),
+      statut: z.enum(["actif", "pause", "fini"]).optional(),
+    },
+  },
+  async (a) => appeler("POST", "/api/outils/projet", a),
+);
+serveur.registerTool(
+  "ecrire_journal",
+  {
+    description: "Écrit dans son journal du jour : une note (ce qu'il raconte de sa journée) ou le bilan du soir (bilan: true), avec son humeur de 1 à 5 si elle est connue.",
+    inputSchema: { texte: z.string(), bilan: z.boolean().optional(), humeur: z.number().int().min(1).max(5).optional() },
+  },
+  async (a) => appeler("POST", "/api/outils/journal", a),
+);
+serveur.registerTool("lire_journal", { description: "Son journal des 7 derniers jours (notes, bilans, humeur)." }, async () => appeler("GET", "/api/outils/journal"));
 serveur.registerTool("lire_sport", { description: "La séance du jour et de demain, la semaine type et les muscles travaillés ces 14 derniers jours." }, async () => appeler("GET", "/api/outils/sport"));
 serveur.registerTool(
   "changer_semaine_sport",

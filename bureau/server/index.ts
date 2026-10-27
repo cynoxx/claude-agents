@@ -21,6 +21,7 @@ import { Planning } from "./max/planning.ts";
 import { TriMails } from "./max/tri-mails.ts";
 import { TrieurAuto } from "./max/trieur.ts";
 import { Sport } from "./max/sport.ts";
+import { Vie } from "./max/vie.ts";
 import { Musique } from "./max/musique.ts";
 import { Reveil } from "./max/reveil.ts";
 import { creerTwilio, preparateurReveil } from "./max/reveil-montage.ts";
@@ -88,6 +89,7 @@ const trieur = new TrieurAuto({
   profil,
 });
 const sport = new Sport({ dossier: config.dossierMissions });
+const vie = new Vie({ dossier: config.dossierMissions });
 // ta musique : l'intro au lancement de Max, et le fond de l'appel du réveil
 const musique = new Musique({
   source: config.musique.fichier,
@@ -130,6 +132,7 @@ const assistant = new Assistant({
   verrou,
   planning,
   sport,
+  vie,
   ...(config.musique.intro ? { intro: () => musique.jouerIntro() } : {}),
   reveil,
 });
@@ -193,6 +196,7 @@ const server = createBureauServer({
   triMails,
   trieur,
   sport,
+  vie,
   musique,
   reveil,
   ouvrirPage: ouvrirMax,
