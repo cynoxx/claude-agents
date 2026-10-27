@@ -50,7 +50,8 @@ export function creerBouche(config: BureauConfig, journal: (m: string) => void =
   }
   if (moteur === "xtts") {
     const secours: PiperLike[] = [...(piperInstalle(config.dossierDonnees, v.voixPiper) ? [piper()] : []), new SayVersFichier(base)];
-    const avec = new AvecSecours(new Xtts(config.dossierDonnees, v.xtts), secours, { journal });
+    // XTTS tourne sur le Mac : une phrase ratée ne l'écarte pas, seule cette phrase passe au secours
+    const avec = new AvecSecours(new Xtts(config.dossierDonnees, v.xtts), secours, { journal, pauseMs: 0 });
     return new Bouche({
       ...base,
       piper: {

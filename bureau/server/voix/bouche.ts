@@ -36,9 +36,12 @@ export interface OptionsBouche {
   piper?: { moteur: PiperLike; lecteur: string; dossier: string; nom: string; decrire?: () => string; ton?: (obscur: boolean) => void };
 }
 
+/** Combien de temps une phrase attend la vraie voix qui se charge, avant d'être dite par la voix du Mac. */
+const ATTENTE_VOIX_MS = 150_000;
+
 interface Phrase {
   texte: string;
-  /** Avec Piper : le fichier WAV, une fois prêt (null si la synthèse a raté). */
+  /** Avec Piper : le fichier WAV, une fois prêt (null si la synthèse a raté ; "" : la dire avec `say`). */
   wav?: Promise<string | null>;
 }
 
@@ -49,6 +52,8 @@ export class Bouche extends EventEmitter {
   private occupe = false;
   private generation = 0;
   private numero = 0;
+  /** Pendant que la vraie voix se charge : true quand elle est prête, false si elle n'a pas démarré. */
+  private chargement: Promise<boolean> | null = null;
   private voix: string | null;
   private disponible = true;
   private avecPiper = false;
@@ -87,8 +92,13 @@ export class Bouche extends EventEmitter {
   async preparerEnArrierePlan(surPrete: (d: Dispo) => void): Promise<Dispo> {
     if (!this.o.piper) return this.preparer();
     const say = await this.preparerSay();
-    void this.preparer().then(surPrete);
-    return say.ok ? { ok: true, detail: `Voix : ${this.o.piper.nom} en chargement (voix du Mac en attendant)` } : say;
+    // les phrases dites pendant le chargement attendent la vraie voix (pas de voix du Mac qui jure avec la sienne)
+    this.chargement = this.preparer().then((d) => {
+      surPrete(d);
+      this.chargement = null;
+      return this.avecPiper;
+    });
+    return say.ok ? { ok: true, detail: `Voix : ${this.o.piper.nom} en chargement` } : say;
   }
 
   /**
@@ -148,12 +158,20 @@ export class Bouche extends EventEmitter {
     const silencieux = !this.parle;
     const item: Phrase = { texte };
     // avec Piper, la synthèse commence tout de suite (pendant que la phrase d'avant est dite)
-    if (this.avecPiper && this.o.piper) {
-      const fichier = path.join(this.o.piper.dossier, `max-${process.pid}-${++this.numero}.wav`);
-      item.wav = this.o.piper.moteur.synthetiser(texte, fichier).then(
-        () => fichier,
-        () => null,
-      );
+    const piper = this.o.piper;
+    if (piper && (this.avecPiper || this.chargement)) {
+      const fichier = path.join(piper.dossier, `max-${process.pid}-${++this.numero}.wav`);
+      const synthese = () =>
+        piper.moteur.synthetiser(texte, fichier).then(
+          () => fichier,
+          () => null,
+        );
+      if (this.avecPiper) item.wav = synthese();
+      else {
+        // la vraie voix se charge : on l'attend (au plus ATTENTE_VOIX_MS), sinon la voix du Mac pour cette phrase
+        const delai = new Promise<boolean>((r) => setTimeout(() => r(false), ATTENTE_VOIX_MS).unref());
+        item.wav = Promise.race([this.chargement!, delai]).then((prete) => (prete && this.avecPiper ? synthese() : ""));
+      }
     }
     this.file.push(item);
     if (silencieux) {
@@ -190,6 +208,7 @@ export class Bouche extends EventEmitter {
       const lecteur = this.o.piper.lecteur;
       void item.wav.then((fichier) => {
         if (generation !== this.generation) return void (fichier && fs.rmSync(fichier, { force: true }));
+        if (fichier === "") return this.jouer(this.o.bin, [...(this.voix ? ["-v", this.voix] : []), "-r", String(this.o.debit), item.texte]);
         if (!fichier) return this.suivante(); // phrase ratée : on passe à la suivante
         this.jouer(lecteur, [fichier], () => fs.rmSync(fichier, { force: true }));
       });

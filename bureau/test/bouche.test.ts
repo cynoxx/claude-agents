@@ -189,6 +189,29 @@ describe("Bouche avec la voix Piper", () => {
     b.arreter();
   });
 
+  it("pendant le chargement, attend la vraie voix au lieu de parler avec celle du Mac", async () => {
+    const b = avecPiper();
+    let prete = false;
+    await b.preparerEnArrierePlan(() => (prete = true));
+    const evts = suivre(b);
+    b.dire("Salut.");
+    for (let i = 0; i < 150 && evts.at(-1) !== "fin"; i++) await attendre(20);
+    expect(prete).toBe(true);
+    expect(lignesLues()).toEqual(["WAV:Salut."]);
+    expect(dits()).toEqual([]);
+    b.arreter();
+  });
+
+  it("dit la phrase avec la voix du Mac si la vraie voix n'a pas pu démarrer", async () => {
+    process.env.FAKE_PIPER_MODE = "plante";
+    const b = avecPiper();
+    await b.preparerEnArrierePlan(() => {});
+    b.dire("Salut.");
+    await attendre(400);
+    expect(dits().at(-1)?.at(-1)).toBe("Salut.");
+    b.arreter();
+  });
+
   it("reprend la voix du Mac (say) si Piper ne démarre pas, et dit pourquoi", async () => {
     process.env.FAKE_PIPER_MODE = "plante";
     const b = avecPiper();
