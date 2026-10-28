@@ -408,6 +408,15 @@ serveur.registerTool(
   },
   async ({ seance, jour, note }) => appeler("POST", "/api/outils/seance", { seance, jour, note }),
 );
+serveur.registerTool(
+  "ouvrir_artefact",
+  {
+    description:
+      "Ouvre dans son navigateur un de ses artefacts claude.ai, posés dans le bureau : jarvis-ultime (planning, études PASS, fiches, interrogation, prière, budget, courses, proches, bilan du soir), agent-financier (budget, dépenses, épargne), muse (idées de business IA du jour, boost Asclepium).",
+    inputSchema: { artefact: z.enum(["jarvis-ultime", "agent-financier", "muse"]) },
+  },
+  async (a) => appeler("POST", "/api/outils/artefact", a),
+);
 serveur.registerTool("lire_studio", { description: "Le Studio vidéo : prochaines publications, vidéos prêtes, en retard ou en montage." }, async () => appeler("GET", "/api/outils/studio"));
 serveur.registerTool(
   "script_video",

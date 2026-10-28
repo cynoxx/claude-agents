@@ -1,5 +1,6 @@
 // L'écran Jarvis : la sphère de Max au centre, ce qu'il dit, et autour l'heure, la météo, l'agenda du jour,
 // le travail du jour, la mission en cours. « Max, emmène-moi au bureau » zoome dans la sphère jusqu'au bureau.
+import { ARTEFACTS } from "../shared/artefacts.ts";
 import type { AssistantVue, ClientMessage, EtatBureau, EtatMax, MailsVue, PlanningVue, VueEcran } from "../shared/protocol.ts";
 import { dureeCourte, restant } from "./conversation.ts";
 import { duree } from "./poles-pur.ts";
@@ -127,6 +128,15 @@ export class Jarvis {
     $("j-bureau").addEventListener("click", () => this.envoyer({ type: "vue", vue: "bureau" }));
     $("j-mission").addEventListener("click", () => this.envoyer({ type: "vue", vue: "bureau" }));
     $("btn-jarvis").addEventListener("click", () => this.envoyer({ type: "vue", vue: "jarvis" }));
+    // tes artefacts claude.ai, posés dans le bureau : un clic les ouvre dans ton navigateur
+    const arts = document.getElementById("hud-artefacts");
+    if (arts) {
+      arts.innerHTML = ARTEFACTS.map((x) => `<button type="button" data-artefact="${x.id}" title="${x.description}">${x.emoji} ${x.nom}</button>`).join("");
+      arts.addEventListener("click", (e) => {
+        const b = (e.target as HTMLElement).closest<HTMLElement>("[data-artefact]");
+        if (b) this.envoyer({ type: "artefact", id: b.dataset.artefact! });
+      });
+    }
     $("j-reveil").addEventListener("click", () => this.envoyer({ type: this.etat?.assistant?.etat === "veille" ? "reveil" : "veille" }));
     this.horloge();
     setInterval(() => this.horloge(), 1000);

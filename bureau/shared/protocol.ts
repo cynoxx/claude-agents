@@ -343,6 +343,7 @@ export type ClientMessage =
   | { type: "obscur"; actif: boolean }
   | { type: "journal"; texte: string }
   | { type: "entendu"; texte: string }
+  | { type: "artefact"; id: string }
   | { type: "micro"; probleme: string | null }
   | { type: "publier"; video: string; plateforme: Plateforme }
   | { type: "publiee"; video: string; plateforme: Plateforme };

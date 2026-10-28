@@ -196,6 +196,8 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return "🗓 Max replanifie la vidéo";
     case "lire_studio":
       return "🎬 Max regarde le Studio";
+    case "ouvrir_artefact":
+      return `🧩 Max ouvre ${String(entree.artefact ?? "un artefact")}`;
     case "projet":
       return "🗂 Max range un projet";
     case "ecrire_journal":

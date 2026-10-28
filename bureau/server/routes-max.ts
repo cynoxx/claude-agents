@@ -17,6 +17,7 @@ import type { TriMails } from "./max/tri-mails.ts";
 import type { Sport } from "./max/sport.ts";
 import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
+import { ARTEFACTS } from "../shared/artefacts.ts";
 import type { Plateforme } from "../shared/protocol.ts";
 import type { Reveil } from "./max/reveil.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
@@ -375,6 +376,14 @@ export function routesMax(o: {
       case "POST /api/outils/ranger-mails":
         return repondre(res, 200, await confirmations.confirmer("rangement", o.assistant?.dernierMessageUtilisateur?.() ?? null));
       // les pôles et le sport
+      case "POST /api/outils/artefact": {
+        const cle = texte("artefact").toLowerCase();
+        const art = ARTEFACTS.find((x) => x.id === cle || x.nom.toLowerCase().includes(cle));
+        if (!art) return repondre(res, 400, { ok: false, texte: `Artefact inconnu : ${cle}. Il y a : ${ARTEFACTS.map((x) => x.nom).join(", ")}.` });
+        if (!o.mac) return repondre(res, 503, { ok: false, texte: "Je ne peux pas ouvrir de page ici." });
+        const ra = await o.mac.ouvrirSite(art.url);
+        return repondre(res, 200, ra.ok ? { ok: true, texte: `${art.nom} est ouvert dans ton navigateur.` } : ra);
+      }
       case "POST /api/outils/obscur": {
         if (!o.assistant?.modeObscur) return repondre(res, 503, { ok: false, texte: "Max n'est pas disponible." });
         return repondre(res, 200, { ok: true, texte: o.assistant.modeObscur(corps.actif !== false && corps.actif !== "false") });

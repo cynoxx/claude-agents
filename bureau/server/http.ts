@@ -17,6 +17,7 @@ import type { TrieurAuto } from "./max/trieur.ts";
 import type { Sport } from "./max/sport.ts";
 import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
+import { ARTEFACTS } from "../shared/artefacts.ts";
 import type { OreillePage } from "./voix/oreille-page.ts";
 import type { Musique } from "./max/musique.ts";
 import type { Reveil } from "./max/reveil.ts";
@@ -372,6 +373,16 @@ export function createBureauServer(o: {
           const rs = msg.type === "seance" ? o.sport.noter(String(msg.seance ?? ""), { jour: msg.jour ? String(msg.jour) : undefined }) : o.sport.changerSemaine([{ jour: Number(msg.jour), seance: String(msg.seance ?? "") }]);
           r = rs.ok ? { ok: true } : { ok: false, erreur: rs.texte };
           if (rs.ok) o.assistant?.informer?.(`Depuis la page : ${rs.texte}`);
+          break;
+        }
+        case "artefact": {
+          const art = ARTEFACTS.find((x) => x.id === msg.id);
+          if (!art || !o.mac) {
+            r = { ok: false, erreur: "Cet artefact ne peut pas s'ouvrir ici." };
+            break;
+          }
+          const ra = await o.mac.ouvrirSite(art.url);
+          r = ra.ok ? { ok: true } : { ok: false, erreur: ra.texte };
           break;
         }
         case "journal": {
