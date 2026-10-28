@@ -333,6 +333,20 @@ export class Studio extends EventEmitter {
     return { ok: true, texte: `« ${v.titre} » prévue le ${jour}.` };
   }
 
+  /** Le dossier d'un compte (« scripts », « voix »…), pour les automatismes. */
+  dossierDe(compte: string, sous: string): string | null {
+    const c = this.compte(compte);
+    return c ? this.dossierCompte(c, sous) : null;
+  }
+
+  /** Les titres déjà faits ou prévus pour un compte (vidéos et scripts), pour trouver la loi suivante. */
+  titres(compte: string): string[] {
+    const c = this.compte(compte);
+    if (!c) return [];
+    const scripts = this.fichiers(this.dossierCompte(c, "scripts"), (n) => n.endsWith(".txt")).map((f) => path.basename(f, ".txt"));
+    return [...this.videos.filter((v) => v.compte === c.id).map((v) => v.titre), ...scripts];
+  }
+
   /** Écrit le script d'une vidéo dans <Compte>/scripts, pour le lire en s'enregistrant (aussi sur l'iPhone). */
   script(compte: string, titre: string, texte: string): Reponse {
     const c = this.compte(compte);

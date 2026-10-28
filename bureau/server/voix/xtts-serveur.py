@@ -19,12 +19,25 @@ os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 import numpy as np  # noqa: E402
 from TTS.api import TTS  # noqa: E402
 
+try:
+    import torch  # noqa: E402
+
+    # tous les cœurs du processeur (par défaut, PyTorch en garde sous le coude)
+    torch.set_num_threads(max(1, os.cpu_count() or 1))
+except Exception:
+    torch = None
+
 tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=False)
+# « auto » : la puce graphique du Mac (MPS) si elle est là, bien plus rapide ; on vérifie plus bas qu'elle sait dire
+# une phrase, sinon retour au processeur
+if appareil == "auto":
+    mps = getattr(getattr(torch, "backends", None), "mps", None)
+    appareil = "mps" if mps is not None and mps.is_available() else "cpu"
 if appareil != "cpu":
     try:
         tts.to(appareil)
     except Exception:  # la puce graphique ne sait pas : on reste sur le processeur
-        pass
+        appareil = "cpu"
 connus = sorted(tts.speakers or [])
 if locuteur not in connus and connus:
     locuteur = connus[0]
@@ -46,8 +59,16 @@ def dire(texte, qui, fichier):
 
 # une première phrase pour tout mettre en route (la suivante sera plus rapide)
 with tempfile.TemporaryDirectory() as dossier:
-    dire("Bonjour.", locuteur, os.path.join(dossier, "essai.wav"))
-print(json.dumps({"pret": True, "locuteur": locuteur, "locuteurs": connus}), flush=True)
+    try:
+        dire("Bonjour.", locuteur, os.path.join(dossier, "essai.wav"))
+    except Exception:
+        if appareil == "cpu":
+            raise
+        # la puce graphique a calé sur une opération : tout sur le processeur
+        appareil = "cpu"
+        tts.to("cpu")
+        dire("Bonjour.", locuteur, os.path.join(dossier, "essai.wav"))
+print(json.dumps({"pret": True, "locuteur": locuteur, "locuteurs": connus, "appareil": appareil}), flush=True)
 
 for ligne in sys.stdin:
     demande = {}

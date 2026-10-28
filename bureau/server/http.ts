@@ -17,6 +17,9 @@ import type { TrieurAuto } from "./max/trieur.ts";
 import type { Sport } from "./max/sport.ts";
 import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
+import type { Automatismes } from "./max/automatismes.ts";
+import { lireIdeesDuJour } from "./max/automatismes-actions.ts";
+import { jourDe } from "./max/coach.ts";
 import { ARTEFACTS } from "../shared/artefacts.ts";
 import type { OreillePage } from "./voix/oreille-page.ts";
 import type { Musique } from "./max/musique.ts";
@@ -72,6 +75,7 @@ export function createBureauServer(o: {
   sport?: Sport;
   vie?: Vie;
   studio?: Studio;
+  automatismes?: Automatismes;
   /** L'oreille dans la page (reconnaissance vocale de Chrome), quand c'est elle qui écoute. */
   oreillePage?: OreillePage;
   musique?: Musique;
@@ -195,6 +199,11 @@ export function createBureauServer(o: {
       };
     });
   };
+  const idees = () => {
+    const jour = jourDe(new Date());
+    const l = lireIdeesDuJour(root, jour);
+    return l ? { jour, idees: l } : null;
+  };
   // verrouillé, la page ne reçoit rien de personnel : ni conversation, ni mission, ni agenda, ni conseillers
   const etatComplet = (): EtatBureau => {
     const verrou = o.verrou?.vue();
@@ -221,6 +230,8 @@ export function createBureauServer(o: {
       ...(o.sport ? { sport: o.sport.vue() } : {}),
       ...(o.vie ? { vie: o.vie.vue() } : {}),
       ...(o.studio ? { studio: o.studio.vue() } : {}),
+      ...(o.automatismes ? { automatismes: o.automatismes.vue() } : {}),
+      ...(idees() ? { ideesDuJour: idees() } : {}),
       ...(o.coach && o.conseillers ? { poles: poles(), idees: lireIdees(root).slice(-8) } : {}),
       ...(intro ? { intro } : {}),
       ...(o.musique ? { musique: o.musique.disponible } : {}),
@@ -247,6 +258,7 @@ export function createBureauServer(o: {
   o.sport?.on("etat", diffuser);
   o.vie?.on("etat", diffuser);
   o.studio?.on("etat", diffuser);
+  o.automatismes?.on("etat", diffuser);
   o.reveil?.on("etat", diffuser);
   server.on("close", () => {
     o.reveil?.off("etat", diffuser);
@@ -254,6 +266,7 @@ export function createBureauServer(o: {
     o.sport?.off("etat", diffuser);
     o.vie?.off("etat", diffuser);
     o.studio?.off("etat", diffuser);
+    o.automatismes?.off("etat", diffuser);
     o.planning?.off("etat", diffuser);
     o.triMails?.off("etat", diffuser);
     o.verrou?.off("etat", diffuser);
@@ -383,6 +396,16 @@ export function createBureauServer(o: {
           }
           const ra = await o.mac.ouvrirSite(art.url);
           r = ra.ok ? { ok: true } : { ok: false, erreur: ra.texte };
+          break;
+        }
+        case "automatisme": {
+          const au = o.automatismes;
+          if (!au) {
+            r = { ok: false, erreur: "Les automatismes ne sont pas disponibles." };
+            break;
+          }
+          if (typeof msg.actif === "boolean") au.activer(String(msg.id), msg.actif);
+          if (msg.lancer) void au.lancer(String(msg.id));
           break;
         }
         case "journal": {

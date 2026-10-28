@@ -299,7 +299,11 @@ describe("Assistant — veille", () => {
     expect(bouche.dites.at(-1)).toBe("Bonne nuit !");
     // l'oreille reste ouverte : il suffit de dire « Max » pour le réveiller
     expect(oreille.active).toBe(true);
-    expect(cerveau().actif).toBe(false);
+    // son cerveau reste allumé : le prochain « Max » a une réponse tout de suite
+    expect(cerveau().actif).toBe(true);
+    oreille.emit("phrase", "Max, tu es là ?");
+    expect(cerveaux).toHaveLength(1);
+    expect(cerveau().recus.at(-1)).toContain("tu es là");
   });
 
   it("se met en veille tout seul après un long silence", async () => {

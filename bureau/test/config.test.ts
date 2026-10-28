@@ -43,7 +43,7 @@ describe("loadConfig", () => {
       micro: null,
       moteur: "auto",
       elevenlabs: { cle: "", voix: null, nomVoix: null, modele: "eleven_multilingual_v2", stabilite: 0.45, similarite: 0.8, style: 0.2, vitesse: 1 },
-      xtts: { locuteur: "Damien Black", vitesse: 1, appareil: "cpu" },
+      xtts: { locuteur: "Damien Black", vitesse: 1, appareil: "auto" },
       voixPiper: "fr_FR-tom-medium",
       vitessePiper: 1,
       voixMac: null,

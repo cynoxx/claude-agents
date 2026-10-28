@@ -7,7 +7,7 @@ import { son } from "./sons.ts";
 import { JOURS_SEMAINE, MUSCLES, SEANCES, seance } from "../shared/sport.ts";
 import { barres, decalerHeure, duree, quandReveil, semaineSport, seanceSuivante, tuile } from "./poles-pur.ts";
 import { compteMails, prochainsRdv } from "./jarvis.ts";
-import { htmlCap, htmlJournal, htmlProjets, htmlStudio } from "./vie-html.ts";
+import { htmlAutomatismes, htmlCap, htmlIdees, htmlJournal, htmlProjets, htmlStudio } from "./vie-html.ts";
 import type { Corps3D } from "./corps.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -44,6 +44,14 @@ export class QG {
     });
     const fiche = $("qg-fiche");
     fiche.addEventListener("click", (e) => this.clic(e));
+    $("j-automatismes").addEventListener("click", (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>("[data-auto]");
+      if (!b) return;
+      son("clic");
+      const id = b.dataset.id!;
+      if (b.dataset.auto === "lancer") this.envoyer({ type: "automatisme", id, lancer: true });
+      else this.envoyer({ type: "automatisme", id, actif: b.dataset.auto === "activer" });
+    });
     $<HTMLFormElement>("j-journal-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const champ = $<HTMLInputElement>("j-journal-texte");
@@ -94,6 +102,7 @@ export class QG {
     this.rendreMails();
     this.remplacer($("j-cap"), "cap", htmlCap(etat));
     this.remplacer($("j-journal-contenu"), "journal", htmlJournal(etat.vie));
+    this.remplacer($("j-automatismes"), "automatismes", htmlAutomatismes(etat.automatismes));
     const rv = etat.reveil;
     // le réveil sonne sur le Mac : grand écran « Debout ! » (sauf verrouillé : l'écran du visage s'en charge)
     const sonne = !!rv?.enCours && rv.mode !== "appel" && !etat.verrou?.verrouille;
@@ -255,7 +264,7 @@ ${id === "business" && depasse ? `<p class="j-petit qf-rouge">Limite atteinte : 
     }
     if (id === "business") {
       const idees = e.idees ?? [];
-      return `<div class="j-carte qf-studio">${htmlStudio(e.studio)}</div><div class="j-carte"><h3>Idées au parking</h3>${
+      return `<div class="j-carte qf-studio">${htmlStudio(e.studio)}</div><div class="j-carte">${htmlIdees(e.ideesDuJour)}</div><div class="j-carte"><h3>Idées au parking</h3>${
         idees.length ? `<ul class="qf-liste">${idees.map((i) => `<li>${echapper(i.replace(/^- \[[\d-]+\]\s*/, ""))}</li>`).join("")}</ul>` : `<p class="j-petit">Aucune. Pendant les révisions, dis « Max, note cette idée » : elle t'attendra ici.</p>`
       }</div>`;
     }

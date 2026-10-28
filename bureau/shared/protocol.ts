@@ -204,6 +204,26 @@ export interface StudioVue {
   prochaines: { id: string; titre: string; compte: string; plateforme: Plateforme; quand: string }[];
 }
 
+/** Un automatisme : ce que Max fait tout seul chaque jour. */
+export interface AutomatismeVue {
+  id: string;
+  nom: string;
+  description: string;
+  heure: string;
+  jours?: number[];
+  actif: boolean;
+  faitAujourdhui: boolean;
+  resultat?: string;
+  enCours: boolean;
+}
+
+/** Les idées de business du jour (générées tout seul par Max, façon Muse). */
+export interface IdeeDuJour {
+  titre: string;
+  accroche: string;
+  premierPas: string;
+}
+
 export type DomaineVie = "etudes" | "sante" | "business" | "apps" | "vie" | "esprit";
 
 /** Un projet de sa vie, rangé par domaine et catégorie, avec la prochaine chose à faire. */
@@ -292,6 +312,8 @@ export interface EtatBureau {
   sport?: SportVue;
   vie?: VieVue;
   studio?: StudioVue;
+  automatismes?: AutomatismeVue[];
+  ideesDuJour?: { jour: string; idees: IdeeDuJour[] } | null;
   poles?: TempsPole[];
   /** Les dernières idées mises au parking. */
   idees?: string[];
@@ -344,6 +366,7 @@ export type ClientMessage =
   | { type: "journal"; texte: string }
   | { type: "entendu"; texte: string }
   | { type: "artefact"; id: string }
+  | { type: "automatisme"; id: string; actif?: boolean; lancer?: boolean }
   | { type: "micro"; probleme: string | null }
   | { type: "publier"; video: string; plateforme: Plateforme }
   | { type: "publiee"; video: string; plateforme: Plateforme };

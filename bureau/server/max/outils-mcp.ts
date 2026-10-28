@@ -409,6 +409,15 @@ serveur.registerTool(
   async ({ seance, jour, note }) => appeler("POST", "/api/outils/seance", { seance, jour, note }),
 );
 serveur.registerTool(
+  "automatismes",
+  {
+    description:
+      "Tes automatismes quotidiens (ce que tu fais tout seul) : sans id, la liste ; avec id, le lancer tout de suite ; avec actif, l'activer ou le couper. Ids : cap-matin, script-video, idees-jour, relance-etudes, bilan-soir, revue-semaine.",
+    inputSchema: { id: z.string().optional(), actif: z.boolean().optional() },
+  },
+  async (a) => appeler("POST", "/api/outils/automatisme", a),
+);
+serveur.registerTool(
   "ouvrir_artefact",
   {
     description:

@@ -23,6 +23,8 @@ import { TrieurAuto } from "./max/trieur.ts";
 import { Sport } from "./max/sport.ts";
 import { Vie } from "./max/vie.ts";
 import { Studio } from "./studio/studio.ts";
+import { Automatismes } from "./max/automatismes.ts";
+import { automatismesDeMax, redacteur } from "./max/automatismes-actions.ts";
 import { Musique } from "./max/musique.ts";
 import { Reveil } from "./max/reveil.ts";
 import { creerTwilio, preparateurReveil } from "./max/reveil-montage.ts";
@@ -150,12 +152,29 @@ const assistant = new Assistant({
   sport,
   vie,
   ...(studio ? { studio } : {}),
+  automatismes: { decrire: () => automatismes.decrire() },
   ...(config.musique.intro ? { intro: () => musique.jouerIntro() } : {}),
   reveil,
 });
 // la page de Max, dans sa propre fenêtre (mode app de Chrome & co) ou dans le navigateur
 const ouvrirMax = () => ouvrirFenetre(`http://localhost:${config.port}`, { config: config.fenetre, dossierDonnees: config.dossierDonnees });
 // le réveil sur le Mac : sa voix sur ta musique, de plus en plus fort
+// les automatismes : ce que Max fait tout seul chaque jour (cap du matin, script vidéo, idées, relance, bilan, revue)
+const automatismes = new Automatismes(
+  automatismesDeMax({
+    vie,
+    studio,
+    travail: () => ({ aujourdhui: coach.vue().aujourdhui, objectif: config.objectifsParJour.etudes ?? 0 }),
+    seance: () => seance(sport.vue().prevue)?.nom ?? null,
+    profil,
+    rediger: redacteur({ bin, modele: config.modeles.robots, dossier: config.dossierMissions }),
+    demander: (t, info) => assistant.demander(t, info),
+    dossier: config.dossierMissions,
+  }),
+  { dossier: config.dossierMissions },
+);
+automatismes.on("resultat", (t: string) => assistant.signaler(t));
+automatismes.demarrer();
 if (studio) {
   studio.on("prete", (t: string) => assistant.signaler(t));
   if (config.studio.rappels) studio.on("rappel", (t: string) => assistant.rappeler(t));
@@ -222,6 +241,7 @@ const server = createBureauServer({
   vie,
   ...(studio ? { studio } : {}),
   ...(oreillePage ? { oreillePage } : {}),
+  automatismes,
   musique,
   reveil,
   ouvrirPage: ouvrirMax,
@@ -257,6 +277,7 @@ server.listen(config.port, "127.0.0.1", async () => {
   reveil.demarrer();
   // l'oreille est ouverte en permanence : « Max » le réveille, ou lance le scan du visage s'il est verrouillé
   assistant.ecouterEnPermanence();
+  assistant.prechauffer();
   if (verrou.verrouille) {
     verrou.demander();
     console.log("🔒 Max est verrouillé : regarde la caméra pour le déverrouiller.");
@@ -274,6 +295,7 @@ const fermer = () => {
   reveil.fermer();
   jarvis.arreter();
   studio?.arreter();
+  automatismes.arreter();
   conseillers.arreterTout();
   manager.arreter();
   setTimeout(() => process.exit(0), 1500).unref();

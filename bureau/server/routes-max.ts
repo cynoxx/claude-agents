@@ -17,6 +17,7 @@ import type { TriMails } from "./max/tri-mails.ts";
 import type { Sport } from "./max/sport.ts";
 import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
+import type { Automatismes } from "./max/automatismes.ts";
 import { ARTEFACTS } from "../shared/artefacts.ts";
 import type { Plateforme } from "../shared/protocol.ts";
 import type { Reveil } from "./max/reveil.ts";
@@ -77,6 +78,7 @@ export function routesMax(o: {
   sport?: Sport;
   vie?: Vie;
   studio?: Studio;
+  automatismes?: Automatismes;
   reveil?: Reveil;
   ouvrirPage?: () => string;
 }) {
@@ -376,6 +378,18 @@ export function routesMax(o: {
       case "POST /api/outils/ranger-mails":
         return repondre(res, 200, await confirmations.confirmer("rangement", o.assistant?.dernierMessageUtilisateur?.() ?? null));
       // les pôles et le sport
+      case "POST /api/outils/automatisme": {
+        const au = o.automatismes;
+        if (!au) return repondre(res, 503, { ok: false, texte: "Les automatismes ne sont pas disponibles." });
+        const id = texte("id");
+        if (!id) return repondre(res, 200, { ok: true, texte: au.vue().map((a) => `- ${a.id} : ${a.nom} à ${a.heure} (${a.actif ? "actif" : "coupé"}${a.faitAujourdhui ? ", fait aujourd'hui" : ""}) — ${a.description}${a.resultat ? `. Dernier résultat : ${a.resultat}` : ""}`).join("\n") });
+        if (!au.vue().some((a) => a.id === id)) return repondre(res, 400, { ok: false, texte: `Automatisme inconnu : ${id}.` });
+        if (typeof corps.actif === "boolean") {
+          au.activer(id, corps.actif);
+          return repondre(res, 200, { ok: true, texte: `${id} ${corps.actif ? "activé" : "coupé"}.` });
+        }
+        return repondre(res, 200, { ok: true, texte: await au.lancer(id) });
+      }
       case "POST /api/outils/artefact": {
         const cle = texte("artefact").toLowerCase();
         const art = ARTEFACTS.find((x) => x.id === cle || x.nom.toLowerCase().includes(cle));

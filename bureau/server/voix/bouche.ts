@@ -2,6 +2,7 @@
 // commande `say` du Mac. Avec Piper, la phrase suivante est préparée pendant que la précédente est dite.
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { Dispo } from "../../shared/protocol.ts";
@@ -33,7 +34,16 @@ export interface OptionsBouche {
    * La voix « en fichiers » (Piper, ou ElevenLabs avec ses secours) : le moteur, le lecteur de WAV (`afplay`), un
    * dossier pour les fichiers, le nom de la voix, et de quoi la décrire après le démarrage.
    */
-  piper?: { moteur: PiperLike; lecteur: string; dossier: string; nom: string; decrire?: () => string; ton?: (obscur: boolean) => void };
+  piper?: {
+    moteur: PiperLike;
+    lecteur: string;
+    dossier: string;
+    nom: string;
+    decrire?: () => string;
+    ton?: (obscur: boolean) => void;
+    /** Un dossier où garder les phrases courtes déjà dites (« Oui ? », « D'accord. ») : elles repartent tout de suite. */
+    cache?: string;
+  };
 }
 
 /** Combien de temps une phrase attend la vraie voix qui se charge, avant d'être dite par la voix du Mac. */
@@ -43,7 +53,13 @@ interface Phrase {
   texte: string;
   /** Avec Piper : le fichier WAV, une fois prêt (null si la synthèse a raté ; "" : la dire avec `say`). */
   wav?: Promise<string | null>;
+  /** Le fichier vient du cache des phrases courtes : on ne l'efface pas. */
+  garder?: boolean;
 }
+
+/** Les phrases courtes que Max dit souvent : préparées dès que sa voix est prête. */
+export const PHRASES_COURANTES = ["Oui ?", "D'accord.", "Je regarde.", "C'est noté.", "Je m'en occupe.", "Bonne question.", "Je t'écoute."];
+const COURTE = 40;
 
 /** Événements : `debut` (il se met à parler), `phrase` (chaque phrase dite), `fin` (il a fini ou s'est tu). */
 export class Bouche extends EventEmitter {
@@ -95,6 +111,7 @@ export class Bouche extends EventEmitter {
     // les phrases dites pendant le chargement attendent la vraie voix (pas de voix du Mac qui jure avec la sienne)
     this.chargement = this.preparer().then((d) => {
       surPrete(d);
+      void this.prechauffer(PHRASES_COURANTES);
       this.chargement = null;
       return this.avecPiper;
     });
@@ -118,6 +135,24 @@ export class Bouche extends EventEmitter {
     if (!this.disponible) return false;
     const args = [...(this.voix ? ["-v", this.voix] : []), "-r", String(this.o.debit), "-o", fichier, "--file-format=WAVE", "--data-format=LEI16@22050", texte];
     return new Promise((resolve) => execFile(this.o.bin, args, { timeout: 60_000 }, (e) => resolve(!e && fs.existsSync(fichier))));
+  }
+
+  /** Le fichier du cache pour une phrase courte (null : phrase trop longue ou pas de cache). */
+  private fichierCache(texte: string): string | null {
+    const dos = this.o.piper?.cache;
+    if (!dos || texte.length > COURTE) return null;
+    fs.mkdirSync(dos, { recursive: true });
+    return path.join(dos, `${createHash("sha1").update(`${this.o.piper!.nom}|${texte}`).digest("hex").slice(0, 16)}.wav`);
+  }
+
+  /** Prépare d'avance les phrases courtes (en arrière-plan, une à une). */
+  async prechauffer(phrases: string[]): Promise<void> {
+    if (!this.avecPiper || !this.o.piper) return;
+    for (const p of phrases) {
+      const f = this.fichierCache(p);
+      if (!f || fs.existsSync(f)) continue;
+      await this.o.piper.moteur.synthetiser(p, f).catch(() => fs.rmSync(f, { force: true }));
+    }
   }
 
   /** Le ton de Max : normal, ou Max Ultime (plus grave et plus lent, quand la voix le permet). */
@@ -166,7 +201,17 @@ export class Bouche extends EventEmitter {
           () => fichier,
           () => null,
         );
-      if (this.avecPiper) item.wav = synthese();
+      const cache = this.fichierCache(texte);
+      if (this.avecPiper && cache) {
+        // phrase courte : déjà prête (instantanée), ou préparée une fois puis gardée
+        item.garder = true;
+        item.wav = fs.existsSync(cache)
+          ? Promise.resolve(cache)
+          : piper.moteur.synthetiser(texte, cache).then(
+              () => cache,
+              () => (fs.rmSync(cache, { force: true }), null),
+            );
+      } else if (this.avecPiper) item.wav = synthese();
       else {
         // la vraie voix se charge : on l'attend (au plus ATTENTE_VOIX_MS), sinon la voix du Mac pour cette phrase
         const delai = new Promise<boolean>((r) => setTimeout(() => r(false), ATTENTE_VOIX_MS).unref());
@@ -185,7 +230,7 @@ export class Bouche extends EventEmitter {
   taire(): void {
     if (!this.parle) return;
     this.generation++;
-    for (const item of this.file) void item.wav?.then((f) => f && fs.rmSync(f, { force: true }));
+    for (const item of this.file) if (!item.garder) void item.wav?.then((f) => f && fs.rmSync(f, { force: true }));
     this.file = [];
     this.occupe = false;
     const p = this.enCours;
@@ -207,10 +252,10 @@ export class Bouche extends EventEmitter {
       const generation = this.generation;
       const lecteur = this.o.piper.lecteur;
       void item.wav.then((fichier) => {
-        if (generation !== this.generation) return void (fichier && fs.rmSync(fichier, { force: true }));
+        if (generation !== this.generation) return void (fichier && !item.garder && fs.rmSync(fichier, { force: true }));
         if (fichier === "") return this.jouer(this.o.bin, [...(this.voix ? ["-v", this.voix] : []), "-r", String(this.o.debit), item.texte]);
         if (!fichier) return this.suivante(); // phrase ratée : on passe à la suivante
-        this.jouer(lecteur, [fichier], () => fs.rmSync(fichier, { force: true }));
+        this.jouer(lecteur, [fichier], () => !item.garder && fs.rmSync(fichier, { force: true }));
       });
       return;
     }

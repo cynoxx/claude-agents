@@ -2832,3 +2832,69 @@ body[data-obscur="oui"] .j-gestes-msg {
   border-color: rgba(255, 210, 63, 0.6);
   box-shadow: 0 0 10px rgba(255, 210, 63, 0.25);
 }
+
+/* automatismes et idées du jour */
+.va-liste,
+.vi-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.va {
+  display: grid;
+  grid-template-columns: 42px 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 12px;
+  color: rgba(200, 225, 255, 0.8);
+}
+.va[data-actif="non"] {
+  opacity: 0.45;
+}
+.va-heure {
+  font: 600 11px var(--mono);
+  color: var(--j-cyan);
+}
+.va button {
+  padding: 0 6px;
+  min-height: 22px;
+  font-size: 10px;
+}
+.va-interrupteur {
+  width: 30px;
+  border-radius: 999px;
+  position: relative;
+}
+.va-interrupteur::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: rgba(200, 225, 255, 0.4);
+  transition: left 0.2s;
+}
+.va-interrupteur[aria-pressed="true"]::after {
+  left: 16px;
+  background: var(--j-cyan);
+  box-shadow: 0 0 6px var(--j-cyan);
+}
+.vi-liste li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(125, 249, 255, 0.14);
+  font-size: 12px;
+  color: rgba(200, 225, 255, 0.75);
+}
+.vi-liste b {
+  color: #eaf6ff;
+  font-size: 13px;
+}
+.vi-liste small {
+  color: #ffd23f;
+}

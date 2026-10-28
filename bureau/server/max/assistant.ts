@@ -11,6 +11,7 @@ import { dureeParlee, type FinMinuteur, type LimitePole } from "./coach.ts";
 
 /** Au-delà, Max ne dit plus sa réponse à voix haute : la suite est à l'écran (il ne parle pas trop). */
 const PAROLE_MAX = 320;
+const CERVEAU_MAX_MS = 2 * 3600_000;
 
 export interface OreilleLike extends EventEmitter {
   demarrer(): void;
@@ -84,6 +85,8 @@ export interface OptionsAssistant {
   sport?: { decrire(): string; vue?(): Pick<SportVue, "prevue" | "faite"> };
   /** Ses projets et son journal, pour le contexte de Max. */
   vie?: { decrire(): string };
+  /** Ses automatismes, pour le contexte de Max. */
+  automatismes?: { decrire(): string };
   /** Le Studio vidéo, pour le contexte de Max. */
   studio?: { decrire(): string };
   /** L'intro au lancement (animation et musique) ; renvoie le délai avant que Max parle. */
@@ -196,6 +199,8 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return "🗓 Max replanifie la vidéo";
     case "lire_studio":
       return "🎬 Max regarde le Studio";
+    case "automatismes":
+      return "⚙️ Max règle ses automatismes";
     case "ouvrir_artefact":
       return `🧩 Max ouvre ${String(entree.artefact ?? "un artefact")}`;
     case "projet":
@@ -264,6 +269,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private relanceMicroMs = 2000;
   /** Ce que Max a déjà dit de sa réponse en cours (caractères). */
   private parleReponse = 0;
+  private cerveauNe = 0;
   private relanceMicro?: NodeJS.Timeout;
   private veilleDemandee = false;
   private reouverture?: NodeJS.Timeout;
@@ -415,7 +421,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
     if (this.etat === "veille") return;
     // l'oreille reste ouverte : en veille, seul « Max » le réveille
     if (this.o.oreille) this.o.oreille.muet = false;
-    if (this.cerveau) {
+    // le cerveau reste allumé (il répond tout de suite au prochain « Max ») ; seule une réponse en cours est coupée
+    if (this.cerveau && this.tours > 0) {
       this.cerveau.removeAllListeners();
       this.cerveau.arreter();
       this.cerveau = null;
@@ -510,6 +517,12 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.parler(texte);
   }
 
+  /** Max pose une question tout seul (un automatisme) : il la dit, puis écoute la réponse sans qu'on redise « Max ». */
+  demander(texte: string, info?: string): void {
+    if (info) this.informer(info);
+    this.rappeler(texte);
+  }
+
   /** Une nouvelle du système, affichée sans parler, et transmise à Max avec le message suivant. */
   signaler(texte: string): void {
     this.noter("bureau", texte);
@@ -569,15 +582,23 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.changer();
   }
 
+  /** Allume son cerveau d'avance (au lancement), pour que la première réponse soit rapide. */
+  prechauffer(): void {
+    if (!this.o.verrou?.verrouille) this.assurerCerveau();
+  }
+
   private assurerCerveau(): void {
-    if (this.cerveau?.actif) return;
+    // un cerveau de plus de 2 heures est renouvelé entre deux réponses (sa consigne a l'heure et le contexte du jour)
+    if (this.cerveau?.actif && (Date.now() - this.cerveauNe < CERVEAU_MAX_MS || this.tours > 0)) return;
+    if (this.cerveau?.actif) this.cerveau.arreter();
+    this.cerveauNe = Date.now();
     this.cerveau?.removeAllListeners();
     const c = this.o.creerCerveau(
       consigneMax({
         carnet: this.o.carnet(),
         missions: this.o.missions(),
         profil: this.o.profil?.(),
-        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.studio?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
+        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.studio?.decrire(), this.o.automatismes?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
         conseillers: this.o.conseillers?.(),
       }),
     );

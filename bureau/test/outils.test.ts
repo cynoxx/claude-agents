@@ -249,7 +249,7 @@ describe("routes et WebSocket de Max", () => {
           "aller_au_bureau", "retour_jarvis",
           "enregistrer_planning", "lire_planning", "preparer_planning_calendrier", "ajouter_planning_calendrier",
           "trier_mails", "afficher_mails", "preparer_rangement", "ranger_mails",
-          "ouvrir_pole", "mode_obscur", "noter_seance", "lire_sport", "changer_semaine_sport", "projet", "ecrire_journal", "lire_journal", "lire_studio", "script_video", "publier_video", "video_publiee", "planifier_video", "ouvrir_artefact",
+          "ouvrir_pole", "mode_obscur", "noter_seance", "lire_sport", "changer_semaine_sport", "projet", "ecrire_journal", "lire_journal", "lire_studio", "script_video", "publier_video", "video_publiee", "planifier_video", "ouvrir_artefact", "automatismes",
           "regler_reveil", "annuler_reveil", "etat_reveil", "essayer_reveil",
         ].sort(),
       );

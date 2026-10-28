@@ -59,6 +59,7 @@ export function creerBouche(config: BureauConfig, journal: (m: string) => void =
         lecteur: "afplay",
         dossier,
         nom: v.xtts.locuteur,
+        cache: path.join(config.dossierDonnees, "voix-cache", "phrases"),
         decrire: () => (avec.panne ? `Voix : secours (XTTS indisponible : ${avec.panne})` : `Voix : ${v.xtts.locuteur} (XTTS, sur ton Mac)`),
       },
     });

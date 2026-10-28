@@ -1,5 +1,5 @@
 // Les blocs de l'écran pour ta vie : le cap du jour, les projets d'un pôle, le Studio et le journal (sans DOM, testables).
-import type { EtatBureau, Plateforme, ProjetVie, StudioVue, VieVue } from "../shared/protocol.ts";
+import type { AutomatismeVue, EtatBureau, Plateforme, ProjetVie, StudioVue, VieVue } from "../shared/protocol.ts";
 
 const echapper = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const ICONE: Record<Plateforme, string> = { tiktok: "♪ TikTok", youtube: "▶ Shorts", instagram: "◎ Reels" };
@@ -80,4 +80,25 @@ export function htmlJournal(vie: VieVue | undefined): string {
   if (!j) return `<p class="j-petit">Rien encore aujourd'hui. Raconte à Max, ou écris ici.</p>`;
   const notes = j.notes.slice(-3).map((n) => `<li><span>${n.heure}</span> ${echapper(n.texte)}</li>`);
   return `${j.bilan ? `<p class="vj-bilan">${echapper(j.bilan)}<span class="vj-humeur">${humeur}</span></p>` : ""}${notes.length ? `<ol class="vj-notes">${notes.join("")}</ol>` : ""}`;
+}
+
+/** Les automatismes de Max, à l'accueil : l'heure, fait ou pas aujourd'hui, et de quoi les couper ou les lancer. */
+export function htmlAutomatismes(liste: AutomatismeVue[] | undefined): string {
+  if (!liste?.length) return "";
+  return `<ul class="va-liste">${liste
+    .map(
+      (a) =>
+        `<li class="va" data-actif="${a.actif ? "oui" : "non"}" title="${echapper(a.description)}${a.resultat ? `\n\nDernier : ${echapper(a.resultat)}` : ""}"><span class="va-heure">${a.heure}</span><span class="va-nom">${echapper(a.nom)}${
+          a.enCours ? " ⚙️" : a.faitAujourdhui ? " ✓" : ""
+        }</span><button type="button" data-auto="lancer" data-id="${a.id}" title="Le lancer maintenant" aria-label="Lancer ${echapper(a.nom)}">▶</button><button type="button" data-auto="${a.actif ? "couper" : "activer"}" data-id="${a.id}" class="va-interrupteur" aria-pressed="${a.actif}" aria-label="${a.actif ? "Couper" : "Activer"} ${echapper(a.nom)}"></button></li>`,
+    )
+    .join("")}</ul>`;
+}
+
+/** Les idées de business du jour (fiche Business). */
+export function htmlIdees(i: EtatBureau["ideesDuJour"]): string {
+  if (!i?.idees.length) return `<h3>Idées du jour</h3><p class="j-petit">Max t'en propose 3 chaque jour à 12 h 30.</p>`;
+  return `<h3>Idées du jour</h3><ul class="vi-liste">${i.idees
+    .map((x) => `<li><b>${echapper(x.titre)}</b><span>${echapper(x.accroche)}</span><small>→ ${echapper(x.premierPas)}</small></li>`)
+    .join("")}</ul>`;
 }

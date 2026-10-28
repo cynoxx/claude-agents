@@ -239,6 +239,21 @@ Fruit TV : dépose tes clips dans *Fruit TV › clips* ; un clip horizontal est 
 
 Pourquoi pas de publication 100 % automatique : les API officielles de TikTok et YouTube gardent privées les vidéos envoyées par une appli non vérifiée. Le Studio prépare donc tout, et tu postes en un geste.
 
+## Les automatismes (Max les fait tout seul)
+
+| Heure | Automatisme | Ce qu'il fait |
+|---|---|---|
+| 07:30 | Cap du matin | tes 3 prochaines actions, ta séance, la vidéo à poster, à l'écran |
+| 09:00 | Script vidéo | le script de la loi suivante d'Asclepium, dans *Max Studio › Asclepium › scripts* |
+| 12:30 | Idées du jour | 3 idées de business IA pour toi, dans la fiche Business |
+| 15:00 | Relance études | si tu es loin de ton objectif de PASS, Max te propose 50 minutes |
+| 21:30 | Bilan du soir | Max te demande ta journée et l'écrit dans ton journal |
+| dim. 18:00 | Revue de la semaine | le résumé de ta semaine et tes 3 priorités, dans ton journal |
+
+En plus : le tri des mails à leur arrivée, le montage des vidéos dès que tu déposes ta voix, et les rappels de publication. Sur l'accueil, la carte **Automatismes** montre ce qui a tourné (✓), ▶ en lance un tout de suite, l'interrupteur le coupe. Tu peux aussi dire « Max, coupe la relance de 15 h ».
+
+**Pour le script automatique** : la première fois, Max crée *Max Studio › Asclepium › lois.md* ; colles-y tes 48 lois, une par ligne (`9. Titre — l'idée en quelques mots`). Max ne prend que les lois de cette liste : il n'en invente jamais.
+
 ## Ta vie, rangée
 
 Tes projets (par domaine et catégorie, avec leur prochaine action) et ton journal sont sur l'écran : le **Cap du jour** à gauche, le **Journal** à droite, les projets dans chaque fiche de pôle (✓ = étape faite, Max te donne la suivante). Max les tient à jour quand tu lui parles, et fait le bilan du soir avec toi. Fichiers : `vie/projets.json` et `vie/journal.jsonl` dans ton dossier Bureau.

@@ -13,7 +13,7 @@ export interface XttsConfig {
   /** 0,8 à 1,2. */
   vitesse: number;
   /** « cpu » (le plus sûr) ou « mps » (la puce graphique des Mac Apple, parfois plus rapide). */
-  appareil: "cpu" | "mps";
+  appareil: "auto" | "cpu" | "mps";
 }
 
 /** Les voix d'homme graves de XTTS à faire écouter d'abord. */

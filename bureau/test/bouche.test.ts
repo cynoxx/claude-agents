@@ -189,6 +189,28 @@ describe("Bouche avec la voix Piper", () => {
     b.arreter();
   });
 
+  it("garde les phrases courtes déjà dites : la deuxième fois, elles partent sans repasser par la voix", async () => {
+    const cache = path.join(dossier, "cache");
+    const b = new Bouche({
+      bin: FAKE_SAY,
+      voix: null,
+      debit: 175,
+      piper: { moteur: new Piper({ python: "python3", modele: "m.onnx", vitesse: 1, commande: { bin: FAKE_PIPER, args: [] } }), lecteur: FAKE_LECTEUR, dossier: path.join(dossier, "wav"), nom: "x", cache },
+    });
+    await b.preparer();
+    const evts = suivre(b);
+    b.dire("Oui ?");
+    for (let i = 0; i < 100 && evts.at(-1) !== "fin"; i++) await attendre(20);
+    expect(fs.readdirSync(cache)).toHaveLength(1);
+    const f = path.join(cache, fs.readdirSync(cache)[0]);
+    const avant = fs.statSync(f).mtimeMs;
+    b.dire("Oui ?");
+    for (let i = 0; i < 100 && evts.filter((e) => e === "fin").length < 2; i++) await attendre(20);
+    expect(fs.statSync(f).mtimeMs).toBe(avant);
+    expect(lignesLues()).toEqual(["WAV:Oui ?", "WAV:Oui ?"]);
+    b.arreter();
+  });
+
   it("pendant le chargement, attend la vraie voix au lieu de parler avec celle du Mac", async () => {
     const b = avecPiper();
     let prete = false;
