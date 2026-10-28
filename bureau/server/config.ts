@@ -14,6 +14,13 @@ export interface Projet {
 
 export interface VoixConfig {
   active: boolean;
+  /**
+   * Qui écoute : « page » (la reconnaissance vocale de Chrome, dans la fenêtre de Max : rapide, texte en direct) ou
+   * « mac » (le micro capturé par ffmpeg puis transcrit par Whisper, tout sur le Mac, plus lent).
+   */
+  ecoute: "page" | "mac";
+  /** Le silence qui marque la fin de ta phrase, en millisecondes (plus long : il te laisse finir). */
+  pauseFinMs: number;
   ffmpeg: string;
   whisper: string;
   say: string;
@@ -133,10 +140,13 @@ export const DEFAULT_CONFIG: BureauConfig = {
   dossierMissions: "~/Documents/Bureau",
   dossierDonnees: "~/Library/Application Support/Bureau",
   projets: [],
-  modeles: { chef: "opus", robots: "sonnet", conversation: "opus" },
+  // la conversation en Sonnet : des réponses en 2 à 3 secondes au lieu de 6 à 10 (« opus » dans bureau.config.json pour revenir)
+  modeles: { chef: "opus", robots: "sonnet", conversation: "sonnet" },
   limites: { robots: 5, etapes: 3, minutesParRobot: 20 },
   voix: {
     active: true,
+    ecoute: "page",
+    pauseFinMs: 1200,
     ffmpeg: "ffmpeg",
     whisper: "whisper-cli",
     say: "say",

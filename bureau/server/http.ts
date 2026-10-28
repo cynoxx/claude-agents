@@ -17,6 +17,7 @@ import type { TrieurAuto } from "./max/trieur.ts";
 import type { Sport } from "./max/sport.ts";
 import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
+import type { OreillePage } from "./voix/oreille-page.ts";
 import type { Musique } from "./max/musique.ts";
 import type { Reveil } from "./max/reveil.ts";
 import { estRouteMax, routesMax, type AssistantApi } from "./routes-max.ts";
@@ -70,6 +71,8 @@ export function createBureauServer(o: {
   sport?: Sport;
   vie?: Vie;
   studio?: Studio;
+  /** L'oreille dans la page (reconnaissance vocale de Chrome), quand c'est elle qui écoute. */
+  oreillePage?: OreillePage;
   musique?: Musique;
   reveil?: Reveil;
   /** Le dossier des modèles de reconnaissance du visage (face-api), servis à la page. */
@@ -203,7 +206,7 @@ export function createBureauServer(o: {
         jarvis: { meteo: o.jarvis?.vue().meteo ?? null, agenda: null },
         // le réveil sonne : l'écran verrouillé le dit (sans rien de personnel)
         ...(o.reveil ? { reveil: o.reveil.vue() } : {}),
-        ...(a ? { assistant: { etat: "veille", phrase: a.phrase, messages: [], oreille: a.oreille, bouche: a.bouche, cerveau: a.cerveau, vue: "jarvis" } } : {}),
+        ...(a ? { assistant: { etat: "veille", phrase: a.phrase, messages: [], oreille: a.oreille, bouche: a.bouche, cerveau: a.cerveau, vue: "jarvis", ...(a.ecoute ? { ecoute: a.ecoute } : {}) } } : {}),
       };
     }
     return {
@@ -292,6 +295,9 @@ export function createBureauServer(o: {
               : v.effacer();
         return envoyer(ws, { type: "visage", ok: rv.ok, texte: rv.texte });
       }
+      // l'oreille de la page marche aussi verrouillé : « Max » lance la reconnaissance du visage
+      if (msg.type === "entendu") return void o.oreillePage?.recevoir(String(msg.texte ?? ""));
+      if (msg.type === "micro") return void o.oreillePage?.signaler(msg.probleme ? String(msg.probleme).slice(0, 300) : null);
       if (v?.verrouille) return envoyer(ws, { type: "erreur", message: "🔒 Max est verrouillé : regarde la caméra pour le déverrouiller." });
       switch (msg.type) {
         case "lancer":

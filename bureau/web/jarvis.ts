@@ -151,8 +151,10 @@ export class Jarvis {
     // ce que le micro a entendu en dernier : la preuve qu'il t'écoute (estompé si ce n'était pas pour Max)
     const ent = $("j-entendu");
     const en = a?.entendu;
-    ent.textContent = !a?.oreille.ok ? "🎙 micro coupé" : en ? `🎙 ${new Date(en.heure).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · « ${en.texte} »` : "🎙 j'écoute…";
-    ent.dataset.pourMax = en?.pourMax ? "oui" : "non";
+    // la page écrit en direct ce qu'elle entend : on ne l'écrase pas pendant quelques secondes
+    if (Date.now() - Number(ent.dataset.directA ?? 0) > 4000)
+      ent.textContent = !a?.oreille.ok ? `🎙 ${a?.oreille.detail ?? "micro coupé"}` : en ? `🎙 ${new Date(en.heure).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · « ${en.texte} »` : "🎙 j'écoute…";
+    if (Date.now() - Number(ent.dataset.directA ?? 0) > 4000) ent.dataset.pourMax = en?.pourMax ? "oui" : "non";
 
     // panneaux
     const j = etat.jarvis;

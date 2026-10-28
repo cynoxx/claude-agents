@@ -36,6 +36,7 @@ import { MissionManager } from "./mission.ts";
 import { listMissions, markInterrupted } from "./storage.ts";
 import { creerBouche } from "./voix/voix-config.ts";
 import { preparerOreille } from "./voix/diagnostic.ts";
+import { OreillePage } from "./voix/oreille-page.ts";
 
 const racine = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const config = loadConfig(process.env.BUREAU_CONFIG_DIR ?? racine);
@@ -53,7 +54,14 @@ const mcpConfig = ecrireConfigMcp({ racine, port: config.port, dossierDonnees: c
 const bouche = creerBouche(config);
 // la voix lente (XTTS) se charge en arrière-plan : le Bureau démarre tout de suite
 let surVoixPrete: (d: Dispo) => void = () => {};
-const [{ oreille, dispo: dispoOreille }, dispoBouche] = await Promise.all([preparerOreille(config), bouche.preparerEnArrierePlan((d) => surVoixPrete(d))]);
+// l'oreille : la reconnaissance vocale de la page (par défaut), ou le micro du Mac capturé par ffmpeg + Whisper
+const oreillePage = config.voix.ecoute === "page" ? new OreillePage() : null;
+const [{ oreille, dispo: dispoOreille }, dispoBouche] = await Promise.all([
+  oreillePage
+    ? Promise.resolve({ oreille: oreillePage, dispo: { ok: true, detail: "Micro : la fenêtre de Max écoute (reconnaissance vocale de Chrome)" } })
+    : preparerOreille(config),
+  bouche.preparerEnArrierePlan((d) => surVoixPrete(d)),
+]);
 // Le coach (minuteur, journal de travail, rappels) et les conseillers (un par domaine de la vie)
 const coach = new Coach({ dossier: config.dossierMissions, dossierDonnees: config.dossierDonnees, limites: config.tempsParJour });
 const profil = () => lireProfil(config.dossierMissions);
@@ -131,6 +139,7 @@ const assistant = new Assistant({
   annoncesCreneaux: config.voix.annoncesCreneaux,
   veilleMs: config.voix.veilleMinutes * 60_000,
   dispos: { oreille: dispoOreille, bouche: dispoBouche },
+  ecoute: { mode: config.voix.ecoute, pauseFinMs: config.voix.pauseFinMs },
   coach,
   profil,
   conseillers: () => conseillers.liste(),
@@ -212,6 +221,7 @@ const server = createBureauServer({
   sport,
   vie,
   ...(studio ? { studio } : {}),
+  ...(oreillePage ? { oreillePage } : {}),
   musique,
   reveil,
   ouvrirPage: ouvrirMax,

@@ -163,9 +163,9 @@ describe("Assistant — réveil", () => {
     expect(oreille.active).toBe(true);
     expect(cerveau().actif).toBe(true);
     expect(cerveau().consigne).toContain("Prénom : Johan");
-    expect(bouche.dites).toEqual(["Salut ! Je t'écoute."]);
+    expect(bouche.dites).toEqual(["Salut, je t'écoute."]);
     await jusqua(() => a.vue().etat === "ecoute");
-    expect(a.vue().messages.map((m) => [m.de, m.texte])).toEqual([["max", "Salut ! Je t'écoute."]]);
+    expect(a.vue().messages.map((m) => [m.de, m.texte])).toEqual([["max", "Salut, je t'écoute."]]);
   });
 
   it("ne refait rien si on le réveille alors qu'il est déjà réveillé", () => {
@@ -406,7 +406,7 @@ describe("Assistant — coach", () => {
     expect(cerveau().consigne).toContain("Je suis en PASS.");
     expect(cerveau().consigne).toContain("Nous sommes le lundi 26 octobre 2026.");
     expect(cerveau().consigne).toContain("- etudes : 🩺 Prof (Études)");
-    expect(bouche.dites).toEqual(["Salut ! Déjà 50 minutes de travail aujourd'hui. Je t'écoute."]);
+    expect(bouche.dites).toEqual(["Salut, je t'écoute."]);
     expect(a.vue().coach).toEqual(coach.vue());
   });
 
@@ -536,14 +536,11 @@ describe("Assistant — emploi du temps", () => {
     creer({ planning });
   });
 
-  it("au premier réveil du jour, propose de construire l'emploi du temps (une seule fois)", () => {
+  it("au premier réveil du jour, propose l'emploi du temps à l'écran, sans lancer la conversation", () => {
     a.reveiller();
-    expect(cerveau().recus.at(-1)).toContain("premier réveil de la journée");
+    expect(cerveau().recus).toEqual([]);
     expect(cerveau().consigne).toContain("Pas encore d'emploi du temps aujourd'hui.");
-    expect(a.vue().messages.at(-1)?.texte).toContain("Max te propose ton emploi du temps");
-    a.veille();
-    a.reveiller();
-    expect(cerveau().recus.filter((r) => r.includes("premier réveil"))).toHaveLength(0);
+    expect(a.vue().messages.at(-1)?.texte).toContain("on fait ma journée");
   });
 
   it("si on lui écrit en premier, lui glisse de proposer l'emploi du temps avec le message", () => {
@@ -609,7 +606,7 @@ describe("Assistant — verrou par le visage", () => {
     verrou.ouvrir("Johan");
     expect(a.vue().etat).not.toBe("veille");
     expect(oreille.active).toBe(true);
-    expect(bouche.dites).toEqual(["Salut Johan ! Déjà 50 minutes de travail aujourd'hui. Je t'écoute."]);
+    expect(bouche.dites).toEqual(["Salut Johan, je t'écoute."]);
   });
 
   it("verrouillé, entend « Max » mais demande le visage au lieu de répondre", () => {
@@ -682,7 +679,7 @@ describe("Assistant — intégration avec un vrai cerveau et une vraie bouche (f
     await jusqua(() => a.vue().messages.some((m) => m.de === "max" && m.texte.startsWith("Bien reçu")), 5000);
     await jusqua(() => a.vue().etat === "ecoute");
     const dits = fs.readFileSync(process.env.FAKE_SAY_LOG!, "utf8").trim().split("\n").map((l) => JSON.parse(l).at(-1));
-    expect(dits).toEqual(["Salut ! Je t'écoute.", "Bien reçu : bonjour.", "Autre chose ?"]);
+    expect(dits).toEqual(["Salut, je t'écoute.", "Bien reçu : bonjour.", "Autre chose ?"]);
   }, 15_000);
 });
 
@@ -713,5 +710,20 @@ describe("Assistant — Max Ultime (mode obscur)", () => {
     const avant = bouche.dites.length;
     a.modeObscur(true);
     expect(bouche.dites).toHaveLength(avant);
+  });
+});
+
+describe("Assistant — parle peu", () => {
+  it("ne dit que le début d'une longue réponse (la suite reste à l'écran), et coupe une longue première phrase", async () => {
+    a.reveiller();
+    await jusqua(() => a.vue().etat === "ecoute");
+    bouche.dites = [];
+    oreille.emit("phrase", "Max, explique-moi tout");
+    const longue = "Alors voilà ce que je te propose pour aujourd'hui, en commençant par la biochimie ce matin. " + "Ensuite une autre phrase assez longue pour remplir. ".repeat(10);
+    cerveau().repondre(longue);
+    await jusqua(() => a.vue().etat === "ecoute", 3000);
+    expect(bouche.dites[0]).toBe("Alors voilà ce que je te propose pour aujourd'hui.");
+    expect(bouche.dites.join(" ").length).toBeLessThan(420);
+    expect(a.vue().messages.at(-1)?.texte).toBe(longue.trim());
   });
 });

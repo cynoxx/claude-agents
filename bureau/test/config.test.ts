@@ -9,7 +9,7 @@ describe("loadConfig", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-cfg-"));
     const c = loadConfig(dir);
     expect(c.port).toBe(4747);
-    expect(c.modeles).toEqual({ chef: "opus", robots: "sonnet", conversation: "opus" });
+    expect(c.modeles).toEqual({ chef: "opus", robots: "sonnet", conversation: "sonnet" });
     expect(c.limites).toEqual({ robots: 5, etapes: 3, minutesParRobot: 20 });
     expect(c.dossierMissions).toBe(path.join(os.homedir(), "Documents", "Bureau"));
     expect(c.projets).toEqual([]);
@@ -22,7 +22,7 @@ describe("loadConfig", () => {
       JSON.stringify({ projets: [{ nom: "Cynox", chemin: "~/Code/cynox" }], modeles: { robots: "haiku" } }),
     );
     const c = loadConfig(dir);
-    expect(c.modeles).toEqual({ chef: "opus", robots: "haiku", conversation: "opus" });
+    expect(c.modeles).toEqual({ chef: "opus", robots: "haiku", conversation: "sonnet" });
     expect(c.projets).toEqual([{ nom: "Cynox", chemin: path.join(os.homedir(), "Code/cynox") }]);
     expect(c.limites).toEqual(DEFAULT_CONFIG.limites);
   });
@@ -34,6 +34,8 @@ describe("loadConfig", () => {
     expect(c.dossierDonnees).toBe(donnees);
     expect(c.voix).toEqual({
       active: true,
+      ecoute: "page",
+      pauseFinMs: 1200,
       ffmpeg: "ffmpeg",
       whisper: "whisper-cli",
       say: "say",

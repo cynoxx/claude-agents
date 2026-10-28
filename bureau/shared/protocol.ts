@@ -91,6 +91,8 @@ export interface AssistantVue {
   pole?: string | null;
   /** La dernière phrase entendue par le micro (adressée à Max ou non) : la preuve qu'il entend. */
   entendu?: { texte: string; heure: number; pourMax: boolean } | null;
+  /** Qui écoute (« page » : la page fait la reconnaissance vocale), et après quel silence la phrase est finie. */
+  ecoute?: { mode: "page" | "mac"; pauseFinMs: number };
   /** Max Ultime (le mode obscur) : depuis quand, ou null. */
   obscur?: number | null;
   /** Ce que la fiche doit montrer en premier (« corps » pour la fiche Sport). */
@@ -340,5 +342,7 @@ export type ClientMessage =
   | { type: "fenetre"; nee: number }
   | { type: "obscur"; actif: boolean }
   | { type: "journal"; texte: string }
+  | { type: "entendu"; texte: string }
+  | { type: "micro"; probleme: string | null }
   | { type: "publier"; video: string; plateforme: Plateforme }
   | { type: "publiee"; video: string; plateforme: Plateforme };

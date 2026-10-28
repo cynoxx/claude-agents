@@ -1,3 +1,4 @@
+import { Ecoute } from "./ecoute.ts";
 import { Gestes } from "./gestes.ts";
 import Phaser from "phaser";
 import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
@@ -54,6 +55,7 @@ function ceder(): void {
 }
 
 const gestes = new Gestes((m) => ws?.send(JSON.stringify(m)));
+const ecoute = new Ecoute((m) => ws?.readyState === 1 && ws.send(JSON.stringify(m)));
 
 function connecter(): void {
   ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
@@ -70,6 +72,7 @@ function connecter(): void {
       hud.rendre(msg.etat.assistant?.coach);
       jarvis.rendre(msg.etat);
       gestes.rendre(msg.etat);
+      ecoute.rendre(msg.etat);
       qg.rendre(msg.etat);
       intro.rendre(msg.etat);
       conversation.rendre(msg.etat.assistant);

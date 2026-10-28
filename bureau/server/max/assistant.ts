@@ -8,7 +8,9 @@ import type { AssistantApi } from "../routes-max.ts";
 import { consigneMax } from "./consigne.ts";
 import type { FinReponse } from "./cerveau.ts";
 import { dureeParlee, type FinMinuteur, type LimitePole } from "./coach.ts";
-import { complementSport } from "./sport.ts";
+
+/** Au-delà, Max ne dit plus sa réponse à voix haute : la suite est à l'écran (il ne parle pas trop). */
+const PAROLE_MAX = 320;
 
 export interface OreilleLike extends EventEmitter {
   demarrer(): void;
@@ -59,6 +61,8 @@ export interface OptionsAssistant {
   carnet: () => string[];
   missions: () => MissionResume[];
   motCle: string;
+  /** Qui écoute, montré à la page (« page » : c'est elle qui fait la reconnaissance vocale). */
+  ecoute?: { mode: "page" | "mac"; pauseFinMs: number };
   suiteMs: number;
   veilleMs: number;
   /** Annoncer à voix haute chaque créneau de l'emploi du temps (sinon, il s'affiche seulement). */
@@ -88,10 +92,7 @@ export interface OptionsAssistant {
   reveil?: { decrire(): string };
 }
 
-const PROPOSER_PLANNING =
-  "[Bureau] C'est son premier réveil de la journée et il n'a pas encore d'emploi du temps. Propose-lui maintenant, en une ou deux phrases, de construire ensemble son emploi du temps d'aujourd'hui.";
 
-const ACCUEIL = "Salut ! Je t'écoute.";
 const DELAI_REOUVERTURE_MS = 300; // l'oreille reste fermée un instant après sa voix, pour ne pas s'entendre
 const MAX_MESSAGES = 100;
 
@@ -259,6 +260,8 @@ export class Assistant extends EventEmitter implements AssistantApi {
   private entendu: { texte: string; heure: number; pourMax: boolean } | null = null;
   /** Le micro est relancé tout seul s'il s'arrête : délai avant la prochaine tentative. */
   private relanceMicroMs = 2000;
+  /** Ce que Max a déjà dit de sa réponse en cours (caractères). */
+  private parleReponse = 0;
   private relanceMicro?: NodeJS.Timeout;
   private veilleDemandee = false;
   private reouverture?: NodeJS.Timeout;
@@ -283,6 +286,10 @@ export class Assistant extends EventEmitter implements AssistantApi {
     o.oreille?.on("erreur", (m: string) => {
       this.dispoOreille = { ok: false, detail: m };
       this.noter("bureau", `⚠️ Micro : ${m}`);
+    });
+    o.oreille?.on("retabli", () => {
+      this.dispoOreille = { ok: true };
+      this.changer();
     });
     o.oreille?.on("arret", () => {
       if (this.oreilleArretVolontaire) {
@@ -345,6 +352,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
       focus: this.focus,
       entendu: this.entendu,
       obscur: this.obscur,
+      ...(this.o.ecoute ? { ecoute: this.o.ecoute } : {}),
     };
   }
 
@@ -378,16 +386,15 @@ export class Assistant extends EventEmitter implements AssistantApi {
       this.emit("arrivee");
       const saluer = () => {
         if (this.etat === "veille") return;
-        const base = this.o.coach?.accueil() ?? ACCUEIL;
-        const sport = this.o.sport?.vue ? complementSport(this.o.sport.vue()) : "";
-        const avecSport = sport ? base.replace(/ Je t'écoute\.$/, ` ${sport} Je t'écoute.`) : base;
-        const bonjour = prenom ? avecSport.replace(/^Salut !/, `Salut ${prenom} !`) : avecSport;
+        // court : le reste (séance, travail, échéance) est à l'écran, il le demande s'il veut
+        const bonjour = `Salut${prenom ? ` ${prenom}` : ""}, je t'écoute.`;
         this.noter("max", bonjour);
         this.parler(bonjour);
         // une fois par jour, au premier réveil : construire l'emploi du temps ensemble
         if (this.o.planning?.doitProposer()) {
           this.o.planning.noterPropose();
-          this.envoyer(PROPOSER_PLANNING, { de: "bureau", texte: "🗓 Premier réveil du jour : Max te propose ton emploi du temps" });
+          // proposé à l'écran, pas à voix haute : Max ne lance pas la conversation tout seul
+          this.noter("bureau", "🗓 Pas encore d'emploi du temps aujourd'hui : dis « Max, on fait ma journée ».");
         }
       };
       // l'intro (animation et musique) d'abord : Max parle quand la musique a baissé
@@ -554,6 +561,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
     }
     this.infos = [];
     this.tours++;
+    this.parleReponse = 0;
     this.relancerMinuterie();
     if (this.etat !== "parle") this.etat = "reflechit";
     this.changer();
@@ -573,7 +581,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
     );
     c.on("texte", (t: string) => {
       if (this.couperReponse) return;
-      for (const p of this.phraseur.ajouter(t)) this.parler(p);
+      for (const p of this.phraseur.ajouter(t)) this.parlerReponse(p);
     });
     c.on("outil", (o: { nom: string; entree: Record<string, unknown> }) => this.noter("bureau", libelleOutil(o.nom, o.entree)));
     c.on("fin", (f: FinReponse) => this.finReponse(f));
@@ -596,7 +604,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
     this.tours = Math.max(0, this.tours - 1);
     if (this.tours === 0) this.couperReponse = false;
     const reste = this.phraseur.finir();
-    if (!coupee) reste.forEach((p) => this.parler(p));
+    if (!coupee) reste.forEach((p) => this.parlerReponse(p));
     if (f.ok) {
       if (f.texte.trim()) this.noter("max", f.texte.trim());
     } else {
@@ -623,6 +631,21 @@ export class Assistant extends EventEmitter implements AssistantApi {
 
   private verifierVeille(): void {
     if (this.veilleDemandee && this.tours === 0 && !this.o.bouche.parle && this.etat !== "veille") this.veille();
+  }
+
+  /**
+   * Une phrase de sa réponse : dite seulement jusqu'à PAROLE_MAX caractères (la suite reste à l'écran), et une
+   * longue première phrase coupée à sa virgule pour que la voix démarre plus vite.
+   */
+  private parlerReponse(phrase: string): void {
+    if (this.parleReponse >= PAROLE_MAX) return;
+    let morceaux = [phrase];
+    const i = phrase.indexOf(", ", 20);
+    if (this.parleReponse === 0 && phrase.length > 80 && i > 0 && i < phrase.length - 15) morceaux = [phrase.slice(0, i), phrase.slice(i + 2)];
+    for (const m of morceaux) {
+      this.parleReponse += m.length;
+      this.parler(m);
+    }
   }
 
   private parler(phrase: string): void {

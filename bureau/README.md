@@ -282,6 +282,8 @@ Ta clé reste dans `bureau.config.json`, sur ton Mac (jamais sur GitHub).
 
 ## Parler à Max
 
+**Nouveau : c'est la fenêtre de Max qui écoute** (la reconnaissance vocale de Chrome). Tu vois ce que tu dis s'écrire en direct sous Max ; ta phrase part quand tu as fini de parler (1,2 s de silence, réglable avec `voix.pauseFinMs`). Pendant qu'il parle, dis « stop » ou « tais-toi » : il se tait. La première fois, Chrome demande l'autorisation du micro : clique sur **Autoriser**. Il faut internet (la reconnaissance passe par Google). Pour revenir à l'ancienne écoute 100 % locale (ffmpeg + Whisper) : `"voix": { "ecoute": "mac" }` dans `bureau.config.json`.
+
 Commence ta phrase par **« Max »** (ou « Dis Max », « Hé Max ») : il ne réagit qu'à ça, pour ne pas te répondre quand tu parles à quelqu'un d'autre.
 
 - « Max, compare cinq mutuelles pour un jeune actif à Paris et fais-moi un tableau. » → il lance une mission et te le dit.
