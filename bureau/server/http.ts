@@ -18,6 +18,7 @@ import type { Sport } from "./max/sport.ts";
 import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
 import type { Automatismes } from "./max/automatismes.ts";
+import type { Plan } from "./max/plan.ts";
 import { lireIdeesDuJour } from "./max/automatismes-actions.ts";
 import { jourDe } from "./max/coach.ts";
 import { ARTEFACTS } from "../shared/artefacts.ts";
@@ -76,6 +77,7 @@ export function createBureauServer(o: {
   vie?: Vie;
   studio?: Studio;
   automatismes?: Automatismes;
+  plan?: Plan;
   /** L'oreille dans la page (reconnaissance vocale de Chrome), quand c'est elle qui écoute. */
   oreillePage?: OreillePage;
   musique?: Musique;
@@ -194,7 +196,7 @@ export function createBureauServer(o: {
         semaine: t?.semaine ?? 0,
         jours: t?.jours ?? [0, 0, 0, 0, 0, 0, 0],
         limite: t?.limite ?? null,
-        objectif: o.config.objectifsParJour?.[d.id] || null,
+        objectif: (d.id === "etudes" && o.plan ? o.plan.objectifMinutes() : o.config.objectifsParJour?.[d.id]) || null,
         notes: o.conseillers!.notes(d.id),
       };
     });
@@ -231,6 +233,7 @@ export function createBureauServer(o: {
       ...(o.vie ? { vie: o.vie.vue() } : {}),
       ...(o.studio ? { studio: o.studio.vue() } : {}),
       ...(o.automatismes ? { automatismes: o.automatismes.vue() } : {}),
+      ...(o.plan ? { plan: o.plan.vue() } : {}),
       ...(idees() ? { ideesDuJour: idees() } : {}),
       ...(o.coach && o.conseillers ? { poles: poles(), idees: lireIdees(root).slice(-8) } : {}),
       ...(intro ? { intro } : {}),
@@ -259,6 +262,7 @@ export function createBureauServer(o: {
   o.vie?.on("etat", diffuser);
   o.studio?.on("etat", diffuser);
   o.automatismes?.on("etat", diffuser);
+  o.plan?.on("etat", diffuser);
   o.reveil?.on("etat", diffuser);
   server.on("close", () => {
     o.reveil?.off("etat", diffuser);
@@ -267,6 +271,7 @@ export function createBureauServer(o: {
     o.vie?.off("etat", diffuser);
     o.studio?.off("etat", diffuser);
     o.automatismes?.off("etat", diffuser);
+    o.plan?.off("etat", diffuser);
     o.planning?.off("etat", diffuser);
     o.triMails?.off("etat", diffuser);
     o.verrou?.off("etat", diffuser);
@@ -396,6 +401,16 @@ export function createBureauServer(o: {
           }
           const ra = await o.mac.ouvrirSite(art.url);
           r = ra.ok ? { ok: true } : { ok: false, erreur: ra.texte };
+          break;
+        }
+        case "regle": {
+          if (!o.plan) {
+            r = { ok: false, erreur: "Le plan n'est pas disponible." };
+            break;
+          }
+          const rr = o.plan.cocher(msg.regle, msg.tenue !== false);
+          r = rr.ok ? { ok: true } : { ok: false, erreur: rr.texte };
+          if (rr.ok) o.assistant?.informer?.(`Depuis la page : ${rr.texte}`);
           break;
         }
         case "automatisme": {

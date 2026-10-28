@@ -2,12 +2,12 @@
 // et la petite fenêtre des mails qui s'ouvre toute seule quand ils viennent d'être triés.
 // La fiche est construite une fois à l'ouverture, puis seuls ses blocs qui changent sont réécrits (le corps 3D et
 // le champ de question ne bougent pas).
-import type { ClientMessage, ConseillerVue, EtatBureau, MailsVue, Plateforme, TempsPole } from "../shared/protocol.ts";
+import type { ClientMessage, ConseillerVue, EtatBureau, MailsVue, Plateforme, RegleId, TempsPole } from "../shared/protocol.ts";
 import { son } from "./sons.ts";
 import { JOURS_SEMAINE, MUSCLES, SEANCES, seance } from "../shared/sport.ts";
 import { barres, decalerHeure, duree, quandReveil, semaineSport, seanceSuivante, tuile } from "./poles-pur.ts";
 import { compteMails, prochainsRdv } from "./jarvis.ts";
-import { htmlAutomatismes, htmlCap, htmlIdees, htmlJournal, htmlProjets, htmlStudio } from "./vie-html.ts";
+import { htmlAutomatismes, htmlCap, htmlIdees, htmlJournal, htmlPlan, htmlProjets, htmlStudio } from "./vie-html.ts";
 import type { Corps3D } from "./corps.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -44,6 +44,12 @@ export class QG {
     });
     const fiche = $("qg-fiche");
     fiche.addEventListener("click", (e) => this.clic(e));
+    $("j-plan").addEventListener("click", (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>("[data-regle]");
+      if (!b) return;
+      son("clic");
+      this.envoyer({ type: "regle", regle: b.dataset.regle as RegleId, tenue: b.getAttribute("aria-pressed") !== "true" });
+    });
     $("j-automatismes").addEventListener("click", (e) => {
       const b = (e.target as HTMLElement).closest<HTMLElement>("[data-auto]");
       if (!b) return;
@@ -101,6 +107,8 @@ export class QG {
     this.rendreTuiles();
     this.rendreMails();
     this.remplacer($("j-cap"), "cap", htmlCap(etat));
+    $("j-plan").hidden = !etat.plan;
+    this.remplacer($("j-plan"), "plan", htmlPlan(etat.plan));
     this.remplacer($("j-journal-contenu"), "journal", htmlJournal(etat.vie));
     this.remplacer($("j-automatismes"), "automatismes", htmlAutomatismes(etat.automatismes));
     const rv = etat.reveil;

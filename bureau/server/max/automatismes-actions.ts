@@ -22,6 +22,10 @@ export interface Dependances {
   demander: (texte: string, info?: string) => void;
   dossier: string;
   maintenant?: () => Date;
+  /** Le plan de reconstruction : le réveil de demain, à régler chaque soir. */
+  plan?: { reveilDemain(): string };
+  /** Règle le réveil de demain ; renvoie ce qui s'est passé. */
+  reglerReveil?: (heure: string) => string;
 }
 
 const h = (min: number) => (min >= 60 ? `${Math.floor(min / 60)} h${min % 60 ? ` ${String(min % 60).padStart(2, "0")}` : ""}` : `${min} min`);
@@ -158,10 +162,33 @@ Pour chaque idée : un titre court, une accroche d'une phrase, et le tout premie
       faire: async () => {
         if (d.vie.vue().journal?.bilan) return null;
         d.demander(
-          "C'est l'heure du bilan. Qu'est-ce qui a marché aujourd'hui ?",
-          "Il répond au bilan du soir : écoute, demande en une question ce qui coince pour demain et son humeur sur 5, puis ecrire_journal avec bilan true. Puis mets à jour les prochaines actions de ses projets si besoin.",
+          "C'est l'heure du bilan, en trois lignes : à quelle heure tu t'es levé, combien de blocs tu as faits, et à quelle heure tu te couches ?",
+          "Il répond au bilan du soir (lever, blocs faits, heure de coucher). Coche ses règles avec regle_du_jour (lever : levé à l'heure et téléphone hors de la chambre ; bloc : premier bloc avant tout réseau social), écris le bilan avec ecrire_journal (bilan true, humeur sur 5 s'il la donne). Si les règles sont tenues, dis-lui que c'est une bonne journée, quoi qu'il arrive d'autre. Sinon, sans reproche : une seule chose à tenir demain. Rappelle-lui l'heure du réveil de demain.",
         );
         return "🌙 Bilan du soir lancé.";
+      },
+    },
+    {
+      id: "reveil-progressif",
+      nom: "Réveil progressif",
+      description: "chaque soir, règle le réveil de demain : il recule de 30 min tous les 3 jours, de 8 h 30 jusqu'à 7 h",
+      heure: "20:00",
+      faire: async () => {
+        if (!d.plan || !d.reglerReveil) return null;
+        const h = d.plan.reveilDemain();
+        d.reglerReveil(h);
+        return `⏰ Réveil de demain réglé à ${h.replace(":", " h ")}. Téléphone hors de la chambre ce soir.`;
+      },
+    },
+    {
+      id: "appel-famille",
+      nom: "Appel à la famille",
+      description: "le dimanche à 19 h 30, Max te rappelle d'appeler tes parents ou ton frère",
+      heure: "19:30",
+      jours: [0],
+      faire: async () => {
+        d.demander("C'est dimanche soir : c'est le moment d'appeler ta famille.", "Il répond au rappel de l'appel hebdomadaire à sa famille : encourage-le simplement, sans insister.");
+        return "📞 Rappel : appel à la famille.";
       },
     },
     {

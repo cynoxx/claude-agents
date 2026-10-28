@@ -409,10 +409,19 @@ serveur.registerTool(
   async ({ seance, jour, note }) => appeler("POST", "/api/outils/seance", { seance, jour, note }),
 );
 serveur.registerTool(
+  "regle_du_jour",
+  {
+    description:
+      "Coche (ou décoche) une de ses 3 règles non négociables du jour : lever (levé à l'heure, téléphone hors de la chambre), bloc (premier bloc de médecine avant tout réseau social), coucher (couché avant l'heure, sans écran au lit).",
+    inputSchema: { regle: z.enum(["lever", "bloc", "coucher"]), tenue: z.boolean().optional() },
+  },
+  async (a) => appeler("POST", "/api/outils/regle", a),
+);
+serveur.registerTool(
   "automatismes",
   {
     description:
-      "Tes automatismes quotidiens (ce que tu fais tout seul) : sans id, la liste ; avec id, le lancer tout de suite ; avec actif, l'activer ou le couper. Ids : cap-matin, script-video, idees-jour, relance-etudes, bilan-soir, revue-semaine.",
+      "Tes automatismes quotidiens (ce que tu fais tout seul) : sans id, la liste ; avec id, le lancer tout de suite ; avec actif, l'activer ou le couper. Ids : cap-matin, script-video, idees-jour, relance-etudes, reveil-progressif, bilan-soir, appel-famille, revue-semaine.",
     inputSchema: { id: z.string().optional(), actif: z.boolean().optional() },
   },
   async (a) => appeler("POST", "/api/outils/automatisme", a),

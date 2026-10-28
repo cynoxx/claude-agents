@@ -224,6 +224,21 @@ export interface IdeeDuJour {
   premierPas: string;
 }
 
+export type RegleId = "lever" | "bloc" | "coucher";
+
+/** Le plan de reconstruction : semaine, blocs visés, réveil qui recule, les 3 règles du jour. */
+export interface PlanVue {
+  jour: number;
+  semaine: number;
+  blocs: number;
+  reveil: string;
+  reveilDemain: string;
+  regles: { id: RegleId; texte: string }[];
+  aujourdhui: Record<RegleId, boolean>;
+  serie: number;
+  identite: string;
+}
+
 export type DomaineVie = "etudes" | "sante" | "business" | "apps" | "vie" | "esprit";
 
 /** Un projet de sa vie, rangé par domaine et catégorie, avec la prochaine chose à faire. */
@@ -313,6 +328,7 @@ export interface EtatBureau {
   vie?: VieVue;
   studio?: StudioVue;
   automatismes?: AutomatismeVue[];
+  plan?: PlanVue;
   ideesDuJour?: { jour: string; idees: IdeeDuJour[] } | null;
   poles?: TempsPole[];
   /** Les dernières idées mises au parking. */
@@ -366,6 +382,7 @@ export type ClientMessage =
   | { type: "journal"; texte: string }
   | { type: "entendu"; texte: string }
   | { type: "artefact"; id: string }
+  | { type: "regle"; regle: RegleId; tenue: boolean }
   | { type: "automatisme"; id: string; actif?: boolean; lancer?: boolean }
   | { type: "micro"; probleme: string | null }
   | { type: "publier"; video: string; plateforme: Plateforme }

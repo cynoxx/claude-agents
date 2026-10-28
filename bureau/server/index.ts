@@ -22,6 +22,7 @@ import { TriMails } from "./max/tri-mails.ts";
 import { TrieurAuto } from "./max/trieur.ts";
 import { Sport } from "./max/sport.ts";
 import { Vie } from "./max/vie.ts";
+import { Plan } from "./max/plan.ts";
 import { Studio } from "./studio/studio.ts";
 import { Automatismes } from "./max/automatismes.ts";
 import { automatismesDeMax, redacteur } from "./max/automatismes-actions.ts";
@@ -101,6 +102,7 @@ const trieur = new TrieurAuto({
 });
 const sport = new Sport({ dossier: config.dossierMissions });
 const vie = new Vie({ dossier: config.dossierMissions });
+const plan = new Plan({ dossier: config.dossierMissions });
 // le Studio vidéo, dans iCloud Drive (s'il est activé sur ce Mac)
 const dossierStudio = config.studio.dossier;
 const studio =
@@ -152,6 +154,7 @@ const assistant = new Assistant({
   sport,
   vie,
   ...(studio ? { studio } : {}),
+  plan,
   automatismes: { decrire: () => automatismes.decrire() },
   ...(config.musique.intro ? { intro: () => musique.jouerIntro() } : {}),
   reveil,
@@ -164,7 +167,9 @@ const automatismes = new Automatismes(
   automatismesDeMax({
     vie,
     studio,
-    travail: () => ({ aujourdhui: coach.vue().aujourdhui, objectif: config.objectifsParJour.etudes ?? 0 }),
+    travail: () => ({ aujourdhui: coach.vue().aujourdhui, objectif: plan.objectifMinutes() }),
+    plan,
+    reglerReveil: (h) => reveil.regler(h).texte,
     seance: () => seance(sport.vue().prevue)?.nom ?? null,
     profil,
     rediger: redacteur({ bin, modele: config.modeles.robots, dossier: config.dossierMissions }),
@@ -242,6 +247,7 @@ const server = createBureauServer({
   ...(studio ? { studio } : {}),
   ...(oreillePage ? { oreillePage } : {}),
   automatismes,
+  plan,
   musique,
   reveil,
   ouvrirPage: ouvrirMax,

@@ -85,6 +85,8 @@ export interface OptionsAssistant {
   sport?: { decrire(): string; vue?(): Pick<SportVue, "prevue" | "faite"> };
   /** Ses projets et son journal, pour le contexte de Max. */
   vie?: { decrire(): string };
+  /** Le plan de reconstruction, pour le contexte de Max. */
+  plan?: { decrire(): string };
   /** Ses automatismes, pour le contexte de Max. */
   automatismes?: { decrire(): string };
   /** Le Studio vidéo, pour le contexte de Max. */
@@ -199,6 +201,8 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return "🗓 Max replanifie la vidéo";
     case "lire_studio":
       return "🎬 Max regarde le Studio";
+    case "regle_du_jour":
+      return "✅ Max coche tes règles";
     case "automatismes":
       return "⚙️ Max règle ses automatismes";
     case "ouvrir_artefact":
@@ -244,7 +248,7 @@ export const PHRASES_OBSCUR = {
     "Tu m'as réveillé. Alors prouve que ça en valait la peine. Cinquante minutes. Sans excuse.",
     "Moi, je ne fatigue jamais. Toi, tu as un concours. Ouvre ton cours.",
   ],
-  sortie: ["Mode normal. Ne t'habitue pas à la facilité.", "Je me retire. Tu sais où me trouver quand tu voudras être sérieux."],
+  sortie: ["Mode normal. Ce bloc-là compte, garde-le.", "Je me retire. Un engagement tenu de plus."],
 };
 
 export function phraseObscur(actif: boolean, hasard = Math.random()): string {
@@ -598,7 +602,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
         carnet: this.o.carnet(),
         missions: this.o.missions(),
         profil: this.o.profil?.(),
-        contexte: [this.o.coach?.contexte(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.studio?.decrire(), this.o.automatismes?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
+        contexte: [this.o.coach?.contexte(), this.o.plan?.decrire(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.studio?.decrire(), this.o.automatismes?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
         conseillers: this.o.conseillers?.(),
       }),
     );

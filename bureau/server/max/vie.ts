@@ -31,7 +31,7 @@ export const PROJETS_DEPART: Omit<ProjetVie, "id" | "maj">[] = [
     prochaineAction: "Enregistrer la voix de la prochaine loi",
     statut: "actif",
   },
-  { domaine: "business", categorie: "Vidéos monétisables", nom: "Fruit TV — clips", prochaineAction: "Déposer les prochains clips dans le dossier du studio", statut: "actif" },
+  { domaine: "business", categorie: "Vidéos monétisables", nom: "Fruit TV — clips", prochaineAction: "Déposer les prochains clips dans le dossier du studio", statut: "pause" },
   { domaine: "business", categorie: "Livre & boutique", nom: "Livre Asclepium (Shopify)", prochaineAction: "Relier chaque vidéo au lien de la boutique", statut: "actif" },
   { domaine: "apps", categorie: "Applications", nom: "Cynox Fitness", statut: "pause" },
   { domaine: "apps", categorie: "Applications", nom: "Lifforge", statut: "pause" },

@@ -18,8 +18,9 @@ import type { Sport } from "./max/sport.ts";
 import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
 import type { Automatismes } from "./max/automatismes.ts";
+import type { Plan } from "./max/plan.ts";
 import { ARTEFACTS } from "../shared/artefacts.ts";
-import type { Plateforme } from "../shared/protocol.ts";
+import type { Plateforme, RegleId } from "../shared/protocol.ts";
 import type { Reveil } from "./max/reveil.ts";
 import { decrireEtat, decrireHistorique } from "./max/descriptions.ts";
 import type { MissionManager } from "./mission.ts";
@@ -79,6 +80,7 @@ export function routesMax(o: {
   vie?: Vie;
   studio?: Studio;
   automatismes?: Automatismes;
+  plan?: Plan;
   reveil?: Reveil;
   ouvrirPage?: () => string;
 }) {
@@ -378,6 +380,10 @@ export function routesMax(o: {
       case "POST /api/outils/ranger-mails":
         return repondre(res, 200, await confirmations.confirmer("rangement", o.assistant?.dernierMessageUtilisateur?.() ?? null));
       // les pôles et le sport
+      case "POST /api/outils/regle": {
+        if (!o.plan) return repondre(res, 503, { ok: false, texte: "Le plan n'est pas disponible." });
+        return repondre(res, 200, o.plan.cocher(texte("regle") as RegleId, corps.tenue !== false));
+      }
       case "POST /api/outils/automatisme": {
         const au = o.automatismes;
         if (!au) return repondre(res, 503, { ok: false, texte: "Les automatismes ne sont pas disponibles." });

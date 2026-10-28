@@ -1,5 +1,5 @@
 // Les blocs de l'écran pour ta vie : le cap du jour, les projets d'un pôle, le Studio et le journal (sans DOM, testables).
-import type { AutomatismeVue, EtatBureau, Plateforme, ProjetVie, StudioVue, VieVue } from "../shared/protocol.ts";
+import type { AutomatismeVue, EtatBureau, PlanVue, Plateforme, ProjetVie, StudioVue, VieVue } from "../shared/protocol.ts";
 
 const echapper = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const ICONE: Record<Plateforme, string> = { tiktok: "♪ TikTok", youtube: "▶ Shorts", instagram: "◎ Reels" };
@@ -101,4 +101,16 @@ export function htmlIdees(i: EtatBureau["ideesDuJour"]): string {
   return `<h3>Idées du jour</h3><ul class="vi-liste">${i.idees
     .map((x) => `<li><b>${echapper(x.titre)}</b><span>${echapper(x.accroche)}</span><small>→ ${echapper(x.premierPas)}</small></li>`)
     .join("")}</ul>`;
+}
+
+/** Le plan de reconstruction, à l'accueil : les 3 règles à cocher, l'objectif de blocs, le réveil, la série. */
+export function htmlPlan(p: PlanVue | undefined): string {
+  if (!p) return "";
+  const n = p.regles.filter((r) => p.aujourdhui[r.id]).length;
+  return `<h3>Tes 3 règles <small>· jour ${p.jour} · ${n}/3</small></h3><ul class="vr-liste">${p.regles
+    .map(
+      (r) =>
+        `<li><button type="button" class="vr-case" data-regle="${r.id}" aria-pressed="${p.aujourdhui[r.id]}">${p.aujourdhui[r.id] ? "✓" : ""}</button><span>${echapper(r.texte)}</span></li>`,
+    )
+    .join("")}</ul><p class="vr-pied">🎯 ${p.blocs} blocs de 50 min · ⏰ demain ${p.reveilDemain.replace(":", " h ")}${p.serie ? ` · 🔥 ${p.serie} j à 3/3` : ""}</p><p class="vr-identite">« ${echapper(p.identite)} »</p>`;
 }
