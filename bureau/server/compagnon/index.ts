@@ -1,4 +1,4 @@
-// `npm run compagnon` : lance le compagnon (Lumen), le deuxième assistant, fait pour parler, avec l'IA locale du Mac
+// `npm run compagnon` : lance le compagnon (Tokyo), le deuxième assistant, fait pour parler, avec l'IA locale du Mac
 // (LM Studio par défaut). Sa propre fenêtre, sa propre mémoire, à part de Max.
 import fs from "node:fs";
 import http from "node:http";

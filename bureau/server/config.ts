@@ -181,7 +181,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   fenetre: { mode: "app", navigateur: null },
   obscur: { minutes: 50, raccourciEntree: null, raccourciSortie: null },
   cerveau: { moteur: "claude", url: "http://localhost:11434/v1", modele: "qwen2.5:7b", cle: "", outils: true },
-  compagnon: { nom: "Lumen", port: 4848, url: "http://127.0.0.1:1234/v1", modele: "auto", cle: "", pauseFinMs: 1300 },
+  compagnon: { nom: "Tokyo", port: 4848, url: "http://127.0.0.1:1234/v1", modele: "auto", cle: "", pauseFinMs: 1300 },
   studio: {
     dossier: "~/Library/Mobile Documents/com~apple~CloudDocs/Max Studio",
     rappels: true,

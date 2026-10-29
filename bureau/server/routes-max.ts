@@ -43,6 +43,8 @@ export interface AssistantApi extends EventEmitter {
   /** Ouvre la fiche d'un pôle sur l'écran de Max (null : retour à l'accueil). */
   ouvrirPole?(pole: string | null, focus?: string | null): void;
   modeObscur?(actif: boolean, dire?: boolean): string;
+  /** Rejoue l'intro (musique et animation) sans le remettre en veille. */
+  rejouerIntro?(): void;
 }
 
 const MAX_RESULTAT = 8000;
@@ -137,7 +139,9 @@ export function routesMax(o: {
     switch (`${req.method} ${chemin}`) {
       case "POST /api/reveil":
         if (!o.assistant) return repondre(res, 503, { ok: false, texte: "Max n'est pas disponible." });
-        o.assistant.reveiller();
+        // déjà réveillé : « Max au rapport » rejoue quand même l'intro (musique et animation)
+        if (o.assistant.rejouerIntro && o.assistant.vue().etat !== "veille") o.assistant.rejouerIntro();
+        else o.assistant.reveiller();
         o.assistant.allerA?.("jarvis");
         return repondre(res, 200, { ok: true, texte: "Max est réveillé.", fenetre });
       case "GET /api/outils/etat":

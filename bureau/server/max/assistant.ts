@@ -514,6 +514,10 @@ export class Assistant extends EventEmitter implements AssistantApi {
       : "Mode obscur terminé. Réponds en une phrase, en redevenant le Max habituel.";
   }
 
+  rejouerIntro(): void {
+    if (!this.o.bouche.parle) this.o.intro?.();
+  }
+
   /** Un rappel dit tel quel (en se réveillant s'il dormait). */
   rappeler(texte: string): void {
     if (this.etat === "veille") this.reveiller(false);
