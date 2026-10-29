@@ -85,6 +85,8 @@ export interface OptionsAssistant {
   sport?: { decrire(): string; vue?(): Pick<SportVue, "prevue" | "faite"> };
   /** Ses projets et son journal, pour le contexte de Max. */
   vie?: { decrire(): string };
+  /** Le suivi d'habitudes Excel, pour le contexte de Max. */
+  habitudes?: { decrire(): string };
   /** Le plan de reconstruction, pour le contexte de Max. */
   plan?: { decrire(): string };
   /** Ses automatismes, pour le contexte de Max. */
@@ -201,6 +203,10 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return "🗓 Max replanifie la vidéo";
     case "lire_studio":
       return "🎬 Max regarde le Studio";
+    case "habitude_du_jour":
+      return "📊 Max remplit ton suivi Excel";
+    case "ouvrir_lien":
+      return `🔗 Max ouvre ${String(entree.lien ?? "un raccourci")}`;
     case "regle_du_jour":
       return "✅ Max coche tes règles";
     case "automatismes":
@@ -606,7 +612,7 @@ export class Assistant extends EventEmitter implements AssistantApi {
         carnet: this.o.carnet(),
         missions: this.o.missions(),
         profil: this.o.profil?.(),
-        contexte: [this.o.coach?.contexte(), this.o.plan?.decrire(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.studio?.decrire(), this.o.automatismes?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
+        contexte: [this.o.coach?.contexte(), this.o.plan?.decrire(), this.o.habitudes?.decrire(), this.o.planning?.decrire(), this.o.sport?.decrire(), this.o.vie?.decrire(), this.o.studio?.decrire(), this.o.automatismes?.decrire(), this.o.reveil?.decrire()].filter(Boolean).join("\n"),
         conseillers: this.o.conseillers?.(),
       }),
     );

@@ -1,6 +1,7 @@
 // L'écran Jarvis : la sphère de Max au centre, ce qu'il dit, et autour l'heure, la météo, l'agenda du jour,
 // le travail du jour, la mission en cours. « Max, emmène-moi au bureau » zoome dans la sphère jusqu'au bureau.
 import { ARTEFACTS } from "../shared/artefacts.ts";
+import { LIENS } from "../shared/liens.ts";
 import type { AssistantVue, ClientMessage, EtatBureau, EtatMax, MailsVue, PlanningVue, VueEcran } from "../shared/protocol.ts";
 import { dureeCourte, restant } from "./conversation.ts";
 import { duree } from "./poles-pur.ts";
@@ -128,6 +129,15 @@ export class Jarvis {
     $("j-bureau").addEventListener("click", () => this.envoyer({ type: "vue", vue: "bureau" }));
     $("j-mission").addEventListener("click", () => this.envoyer({ type: "vue", vue: "bureau" }));
     $("btn-jarvis").addEventListener("click", () => this.envoyer({ type: "vue", vue: "jarvis" }));
+    // raccourcis directs : Notion, Super Productivity, ton tableau Excel d'habitudes
+    const liens = document.getElementById("j-liens");
+    if (liens) {
+      liens.innerHTML = LIENS.map((x) => `<button type="button" class="qg-icone" data-lien="${x.id}" title="${x.nom} : ${x.description}" aria-label="${x.nom}">${x.emoji}</button>`).join("");
+      liens.addEventListener("click", (e) => {
+        const b = (e.target as HTMLElement).closest<HTMLElement>("[data-lien]");
+        if (b) this.envoyer({ type: "lien", id: b.dataset.lien! });
+      });
+    }
     // tes artefacts claude.ai, posés dans le bureau : un clic les ouvre dans ton navigateur
     const arts = document.getElementById("hud-artefacts");
     if (arts) {

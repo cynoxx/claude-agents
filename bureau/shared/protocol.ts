@@ -382,6 +382,7 @@ export type ClientMessage =
   | { type: "journal"; texte: string }
   | { type: "entendu"; texte: string }
   | { type: "artefact"; id: string }
+  | { type: "lien"; id: string }
   | { type: "regle"; regle: RegleId; tenue: boolean }
   | { type: "automatisme"; id: string; actif?: boolean; lancer?: boolean }
   | { type: "micro"; probleme: string | null }

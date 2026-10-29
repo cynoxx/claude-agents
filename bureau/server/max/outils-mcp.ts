@@ -409,6 +409,23 @@ serveur.registerTool(
   async ({ seance, jour, note }) => appeler("POST", "/api/outils/seance", { seance, jour, note }),
 );
 serveur.registerTool(
+  "habitude_du_jour",
+  {
+    description:
+      "Remplit une case du suivi d'habitudes Excel (le tableau du mois, un ✓ par jour). Habitudes : lever, bloc, coucher (déjà remplies par ses règles), blocs (nombre de blocs de 50 min), sport, priere, creatine, business, famille. À appeler dès qu'il dit l'avoir fait (« j'ai prié », « créatine prise »). valeur: false pour décocher, un nombre pour blocs.",
+    inputSchema: { habitude: z.string(), valeur: z.union([z.boolean(), z.number()]).optional(), jour: z.string().optional().describe("AAAA-MM-JJ si ce n'est pas aujourd'hui") },
+  },
+  async (a) => appeler("POST", "/api/outils/habitude", a),
+);
+serveur.registerTool(
+  "ouvrir_lien",
+  {
+    description: "Ouvre un de ses raccourcis directs : notion, super-productivity, ou excel (son tableau de suivi d'habitudes, mis à jour juste avant).",
+    inputSchema: { lien: z.enum(["notion", "super-productivity", "excel"]) },
+  },
+  async (a) => appeler("POST", "/api/outils/lien", a),
+);
+serveur.registerTool(
   "regle_du_jour",
   {
     description:

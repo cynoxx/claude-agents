@@ -2945,3 +2945,9 @@ body[data-obscur="oui"] .j-gestes-msg {
   font-size: 12px;
   color: rgba(214, 190, 255, 0.85);
 }
+
+/* raccourcis directs : Notion, Super Productivity, Excel */
+.j-liens {
+  display: inline-flex;
+  gap: 4px;
+}

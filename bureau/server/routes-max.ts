@@ -19,6 +19,8 @@ import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
 import type { Automatismes } from "./max/automatismes.ts";
 import type { Plan } from "./max/plan.ts";
+import type { Habitudes } from "./max/habitudes.ts";
+import { ouvrirLien } from "./max/liens.ts";
 import { ARTEFACTS } from "../shared/artefacts.ts";
 import type { Plateforme, RegleId } from "../shared/protocol.ts";
 import type { Reveil } from "./max/reveil.ts";
@@ -83,6 +85,7 @@ export function routesMax(o: {
   studio?: Studio;
   automatismes?: Automatismes;
   plan?: Plan;
+  habitudes?: Habitudes;
   reveil?: Reveil;
   ouvrirPage?: () => string;
 }) {
@@ -384,6 +387,15 @@ export function routesMax(o: {
       case "POST /api/outils/ranger-mails":
         return repondre(res, 200, await confirmations.confirmer("rangement", o.assistant?.dernierMessageUtilisateur?.() ?? null));
       // les pôles et le sport
+      case "POST /api/outils/lien": {
+        if (!o.mac) return repondre(res, 503, { ok: false, texte: "Je ne peux pas ouvrir d'appli ici." });
+        return repondre(res, 200, await ouvrirLien(texte("lien"), o.mac, o.config.liens, () => o.habitudes?.synchroniser() ?? Promise.resolve()));
+      }
+      case "POST /api/outils/habitude": {
+        if (!o.habitudes) return repondre(res, 503, { ok: false, texte: "Le suivi d'habitudes n'est pas disponible." });
+        const v = corps.valeur === undefined ? true : typeof corps.valeur === "number" ? corps.valeur : corps.valeur !== false;
+        return repondre(res, 200, await o.habitudes.noter(texte("habitude"), v, texte("jour") || undefined));
+      }
       case "POST /api/outils/regle": {
         if (!o.plan) return repondre(res, 503, { ok: false, texte: "Le plan n'est pas disponible." });
         return repondre(res, 200, o.plan.cocher(texte("regle") as RegleId, corps.tenue !== false));

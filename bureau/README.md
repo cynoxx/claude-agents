@@ -239,6 +239,13 @@ Fruit TV : dépose tes clips dans *Fruit TV › clips* ; un clip horizontal est 
 
 Pourquoi pas de publication 100 % automatique : les API officielles de TikTok et YouTube gardent privées les vidéos envoyées par une appli non vérifiée. Le Studio prépare donc tout, et tu postes en un geste.
 
+## Notion, Super Productivity et ton suivi d'habitudes Excel
+
+Dans la barre de Max, trois boutons directs : 📝 **Notion**, ✅ **Super Productivity** et 📊 **ton tableau Excel**. Ou dis : « Max, ouvre Notion ».
+
+- **Notion / Super Productivity** : le bouton ouvre l'appli du Mac (ou sa page web si elle n'est pas installée). Pour ouvrir une page précise de Notion, copie son lien dans `bureau.config.json` : `"liens": { "notion": "https://www.notion.so/ta-page" }`. Max ne voit pas ce qu'il y a dedans : c'est un raccourci, pas une synchronisation.
+- **Excel** : Max crée et remplit *Documents/Bureau/Suivi habitudes.xlsx*, une feuille par mois, les habitudes en lignes et les jours en colonnes (un ✓ par case, un total à droite). Il coche tout seul tes 3 règles, tes blocs de médecine et ta séance de sport ; pour le reste, dis-le-lui (« j'ai prié », « créatine prise », « j'ai appelé ma famille »). Tu peux aussi cocher toi-même dans Excel : il ne touche jamais aux cases qu'il ne connaît pas. Le fichier doit être fermé dans Excel pendant que Max écrit (sinon il réessaie).
+
 ## Tokyo, ton compagnon pour parler (100 % sur ton Mac)
 
 Un deuxième assistant, à part de Max : pas de business, pas d'outils, juste quelqu'un à qui parler, à la voix. Il tourne avec l'IA de ton Mac (LM Studio), donc rien ne sort de l'ordinateur et il n'y a pas de quota.

@@ -4,6 +4,7 @@
 // icalBuddy) avec ses arguments. Les textes venant de la conversation (nom d'app, message, titre…) sont donnés au
 // script AppleScript en arguments (argv), jamais collés dans le script lui-même.
 import { execFile } from "node:child_process";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -366,6 +367,13 @@ export class Mac {
     const r = await this.executer("open", ["-a", n]);
     if (r.code === 0) return { ok: true, texte: `${n} est ouvert.` };
     return { ok: false, texte: /Unable to find application|introuvable/i.test(r.stderr) ? `Je ne trouve pas d'app appelée « ${n} » sur ce Mac.` : expliquerErreur(r.stderr) };
+  }
+
+  /** Ouvre un fichier avec son appli par défaut (Excel pour un .xlsx). */
+  async ouvrirFichier(chemin: string): Promise<Reponse> {
+    if (this.horsMac()) return this.horsMac()!;
+    if (!fs.existsSync(chemin)) return { ok: false, texte: "Ce fichier n'existe pas encore." };
+    return this.geste("open", [chemin], `${path.basename(chemin)} est ouvert.`);
   }
 
   async fermerApp(nom: string): Promise<Reponse> {

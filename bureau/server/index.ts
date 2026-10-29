@@ -24,6 +24,7 @@ import { Sport } from "./max/sport.ts";
 import { Vie } from "./max/vie.ts";
 import { CerveauLocal, outilsMcp } from "./max/cerveau-local.ts";
 import { Plan } from "./max/plan.ts";
+import { Habitudes } from "./max/habitudes.ts";
 import { Studio } from "./studio/studio.ts";
 import { Automatismes } from "./max/automatismes.ts";
 import { automatismesDeMax, redacteur, redacteurLocal } from "./max/automatismes-actions.ts";
@@ -160,6 +161,7 @@ const assistant = new Assistant({
   vie,
   ...(studio ? { studio } : {}),
   plan,
+  habitudes: { decrire: () => habitudes.decrire() },
   automatismes: { decrire: () => automatismes.decrire() },
   ...(config.musique.intro ? { intro: () => musique.jouerIntro() } : {}),
   reveil,
@@ -167,6 +169,20 @@ const assistant = new Assistant({
 // la page de Max, dans sa propre fenêtre (mode app de Chrome & co) ou dans le navigateur
 const ouvrirMax = () => ouvrirFenetre(`http://localhost:${config.port}`, { config: config.fenetre, dossierDonnees: config.dossierDonnees });
 // le réveil sur le Mac : sa voix sur ta musique, de plus en plus fort
+// le suivi d'habitudes dans Excel : rempli à partir du plan, du coach et du sport (et de ce que tu dis à Max)
+const habitudes = new Habitudes({
+  fichier: config.liens.habitudes,
+  dossier: config.dossierMissions,
+  sources: {
+    regles: () => plan.vue().aujourdhui,
+    blocs: () => Math.floor(coach.vue().aujourdhui / 50),
+    sport: () => {
+      const f = sport.vue().faite;
+      return !!f && f !== "repos";
+    },
+  },
+});
+for (const e of [plan, sport, coach]) e.on("etat", () => habitudes.planifier());
 // les automatismes : ce que Max fait tout seul chaque jour (cap du matin, script vidéo, idées, relance, bilan, revue)
 const automatismes = new Automatismes(
   automatismesDeMax({
@@ -256,6 +272,7 @@ const server = createBureauServer({
   ...(oreillePage ? { oreillePage } : {}),
   automatismes,
   plan,
+  habitudes,
   musique,
   reveil,
   ouvrirPage: ouvrirMax,

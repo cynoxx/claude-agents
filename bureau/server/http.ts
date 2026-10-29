@@ -19,6 +19,8 @@ import type { Vie } from "./max/vie.ts";
 import type { Studio } from "./studio/studio.ts";
 import type { Automatismes } from "./max/automatismes.ts";
 import type { Plan } from "./max/plan.ts";
+import type { Habitudes } from "./max/habitudes.ts";
+import { ouvrirLien } from "./max/liens.ts";
 import { lireIdeesDuJour } from "./max/automatismes-actions.ts";
 import { jourDe } from "./max/coach.ts";
 import { ARTEFACTS } from "../shared/artefacts.ts";
@@ -78,6 +80,7 @@ export function createBureauServer(o: {
   studio?: Studio;
   automatismes?: Automatismes;
   plan?: Plan;
+  habitudes?: Habitudes;
   /** L'oreille dans la page (reconnaissance vocale de Chrome), quand c'est elle qui écoute. */
   oreillePage?: OreillePage;
   musique?: Musique;
@@ -401,6 +404,15 @@ export function createBureauServer(o: {
           }
           const ra = await o.mac.ouvrirSite(art.url);
           r = ra.ok ? { ok: true } : { ok: false, erreur: ra.texte };
+          break;
+        }
+        case "lien": {
+          if (!o.mac) {
+            r = { ok: false, erreur: "Je ne peux pas ouvrir d'appli ici." };
+            break;
+          }
+          const rl = await ouvrirLien(String(msg.id ?? ""), o.mac, o.config.liens, () => o.habitudes?.synchroniser() ?? Promise.resolve());
+          r = rl.ok ? { ok: true } : { ok: false, erreur: rl.texte };
           break;
         }
         case "regle": {
