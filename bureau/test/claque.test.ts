@@ -60,3 +60,17 @@ describe("changer la musique de Max", () => {
     expect(trouverMusique("inconnue", maison)).toBeNull();
   });
 });
+
+describe("retours du détecteur", () => {
+  it("annonce chaque claquement (1, 2, 3), signale les sons trop longs, et donne la crête", () => {
+    const vus: number[] = [];
+    const rejets: number[] = [];
+    const d = new DetecteurClaques({ surClaque: (n) => vus.push(n), surRejet: (n) => rejets.push(n) });
+    const b = signal(4000, [[300, 50, 0.7], [800, 50, 0.7], [1300, 50, 0.7], [2500, 600, 0.4]]);
+    for (let i = 0; i < b.length; i += 3200) d.ajouter(b.subarray(i, i + 3200));
+    expect(vus).toEqual([1, 2, 3]);
+    expect(rejets).toHaveLength(1); // un seul rejet pour tout le son long
+    expect(d.crete()).toBeGreaterThan(0.3);
+    expect(d.crete()).toBe(0);
+  });
+});

@@ -23,6 +23,10 @@ export interface OptionsClaques {
   combien?: number;
   /** Les claquements doivent tenir dans cette durée (ms). */
   fenetreMs?: number;
+  /** Appelé à chaque claquement reconnu (1, 2, 3…), pour montrer qu'il entend. */
+  surClaque?: (numero: number) => void;
+  /** Appelé quand un son fort est refusé parce qu'il dure trop (voix, musique) : aide à régler. */
+  surRejet?: (niveau: number) => void;
 }
 
 /**
@@ -39,10 +43,21 @@ export class DetecteurClaques {
   private dernier = -1e9;
   private claques: number[] = [];
   private muetJusqua = -1;
+  /** Un son long a été refusé : on attend qu'il se termine avant de réécouter (sinon sa fin pourrait compter). */
+  private attente = false;
+  /** Le niveau le plus fort entendu depuis la dernière lecture (0 à 1). */
+  private creteMax = 0;
   private o: Required<OptionsClaques>;
 
   constructor(o: OptionsClaques = {}) {
-    this.o = { seuil: o.seuil ?? 0.12, combien: o.combien ?? 3, fenetreMs: o.fenetreMs ?? 2800 };
+    this.o = { seuil: o.seuil ?? 0.12, combien: o.combien ?? 3, fenetreMs: o.fenetreMs ?? 2800, surClaque: o.surClaque ?? (() => {}), surRejet: o.surRejet ?? (() => {}) };
+  }
+
+  /** Le niveau le plus fort depuis le dernier appel (puis remis à zéro). */
+  crete(): number {
+    const c = this.creteMax;
+    this.creteMax = 0;
+    return c;
   }
 
   /** Renvoie true quand le dernier morceau complète la série de claquements. */
@@ -64,6 +79,11 @@ export class DetecteurClaques {
 
   private traiter(rms: number): boolean {
     const t = this.image++ * IMAGE_MS;
+    if (rms > this.creteMax) this.creteMax = rms;
+    if (this.attente) {
+      if (rms < Math.max(this.fond * 3, this.o.seuil * 0.4)) this.attente = false;
+      return false;
+    }
     if (this.depuis < 0) {
       // le bruit de fond suit doucement l'ambiance (jamais en dessous d'un plancher)
       this.fond = Math.max(0.004, this.fond * 0.98 + rms * 0.02);
@@ -82,6 +102,7 @@ export class DetecteurClaques {
       if (t < this.muetJusqua) return false;
       this.claques = this.claques.filter((c) => t - c <= this.o.fenetreMs);
       this.claques.push(t);
+      this.o.surClaque(this.claques.length);
       if (this.claques.length >= this.o.combien) {
         this.claques = [];
         this.muetJusqua = t + 8000;
@@ -89,7 +110,12 @@ export class DetecteurClaques {
       }
       return false;
     }
-    if (duree > 140) this.depuis = -1; // trop long : de la voix, de la musique, un bruit continu
+    if (duree > 140) {
+      // trop long : de la voix, de la musique, un bruit continu
+      this.depuis = -1;
+      this.attente = true;
+      this.o.surRejet(this.pic);
+    }
     return false;
   }
 }
@@ -98,14 +124,23 @@ async function main(): Promise<void> {
   const racine = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const config = loadConfig(process.env.BUREAU_CONFIG_DIR ?? racine);
   const seuil = Number(process.env.CLAQUE_SEUIL) || config.claque.sensibilite;
-  const detecteur = new DetecteurClaques({ seuil });
+  const niveaux = process.argv.includes("--niveaux") || !!process.env.CLAQUE_NIVEAUX;
+  const detecteur = new DetecteurClaques({
+    seuil,
+    surClaque: (n) => console.log(`${"👏".repeat(n)} ${n}/3`),
+    surRejet: (niveau) => niveaux && console.log(`   (son fort mais trop long, niveau ${niveau.toFixed(2)} : voix ou musique, ignoré)`),
+  });
+  // --niveaux : montre le niveau du micro chaque seconde, pour régler la sensibilité
+  if (niveaux) setInterval(() => console.log(`🎚  niveau ${"█".repeat(Math.min(40, Math.round(detecteur.crete() * 80)))} (seuil ${seuil})`), 1000).unref();
   let ffmpeg: ChildProcess | null = null;
   let silence = 0;
   let averti = false;
 
   const lancerMax = () => {
     console.log(`👏 Trois claquements : j'allume Max (${new Date().toLocaleTimeString("fr-FR")}).`);
-    const p = spawn("bash", [path.join(racine, "scripts", "reveiller-max.sh")], { stdio: "ignore", detached: true, env: { ...process.env, BUREAU_CLAQUE: "1" } });
+    // la sortie du script (ses erreurs, s'il y en a) va dans le même journal
+    const p = spawn("bash", [path.join(racine, "scripts", "reveiller-max.sh")], { stdio: ["ignore", "inherit", "inherit"], detached: true, env: { ...process.env, BUREAU_CLAQUE: "1" } });
+    p.on("exit", (code) => console.log(code === 0 ? "✅ Max est allumé." : `⚠️  Le script de Max a échoué (code ${code}) : regarde ~/Library/Logs/Bureau.log`));
     p.unref();
   };
 
@@ -127,7 +162,13 @@ async function main(): Promise<void> {
       }
       if (detecteur.ajouter(b)) lancerMax();
     });
-    ffmpeg.on("close", () => setTimeout(() => void ecouter(), 5000));
+    const debut = Date.now();
+    ffmpeg.on("close", (code) => {
+      if (Date.now() - debut < 4000) {
+        console.log(`⚠️  ffmpeg s'arrête tout de suite (code ${code}) : en arrière-plan, macOS refuse souvent le micro. Essaie : npm run claque-installer -- terminal`);
+      }
+      setTimeout(() => void ecouter(), 5000);
+    });
     ffmpeg.on("error", (e) => console.log(`⚠️  ffmpeg : ${e.message}`));
   };
   process.on("SIGTERM", () => process.exit(0));

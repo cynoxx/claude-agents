@@ -24,6 +24,7 @@
     "musique": "tsx server/changer-musique.ts",
     "claque": "tsx server/claque.ts",
     "claque-installer": "bash scripts/claque-service.sh installer",
+    "claque-statut": "bash scripts/claque-service.sh statut",
     "claque-desinstaller": "bash scripts/claque-service.sh desinstaller",
     "compagnon": "vite build --logLevel warn && tsx server/compagnon/index.ts",
     "appel": "tsx server/appel-essai.ts"
