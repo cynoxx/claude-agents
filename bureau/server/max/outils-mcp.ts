@@ -412,7 +412,7 @@ serveur.registerTool(
   "habitude_du_jour",
   {
     description:
-      "Remplit une case du suivi d'habitudes Excel (le tableau du mois, un ✓ par jour). Habitudes : lever, bloc, coucher (déjà remplies par ses règles), blocs (nombre de blocs de 50 min), sport, priere, creatine, business, famille. À appeler dès qu'il dit l'avoir fait (« j'ai prié », « créatine prise »). valeur: false pour décocher, un nombre pour blocs.",
+      "Remplit une case du suivi d'habitudes Excel (le tableau du mois, un ✓ par jour). Habitudes : lever, coucher, bloc (déjà remplies par ses règles), blocs (nombre de blocs de 50 min, converti en heures dans son fichier), sport (boxe, muscu), priere, abdos, planif (planification de la journée), etirements, creatine, business (nombre d'HEURES de projets annexes, par ex. 0.5), famille. Max inscrit chacune dans la ligne de son fichier qui porte ce nom (« Réveil à 5h », « Heures de médecine »…) ; une habitude absente de son fichier est gardée par Max. À appeler dès qu'il dit l'avoir fait (« j'ai prié », « abdos faits », « une demi-heure de business »). valeur: false pour décocher.",
     inputSchema: { habitude: z.string(), valeur: z.union([z.boolean(), z.number()]).optional(), jour: z.string().optional().describe("AAAA-MM-JJ si ce n'est pas aujourd'hui") },
   },
   async (a) => appeler("POST", "/api/outils/habitude", a),

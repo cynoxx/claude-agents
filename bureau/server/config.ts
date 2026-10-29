@@ -187,7 +187,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   cerveau: { moteur: "claude", url: "http://localhost:11434/v1", modele: "qwen2.5:7b", cle: "", outils: true },
   compagnon: { nom: "Tokyo", port: 4848, url: "http://127.0.0.1:1234/v1", modele: "auto", cle: "", pauseFinMs: 1300 },
   claque: { sensibilite: 0.12 },
-  liens: { notion: "", superProductivity: "", habitudes: "~/Documents/Bureau/Suivi habitudes.xlsx" },
+  liens: { notion: "", superProductivity: "", habitudes: "~/Documents/Bureau/Suivi_habitudes.xlsx" },
   studio: {
     dossier: "~/Library/Mobile Documents/com~apple~CloudDocs/Max Studio",
     rappels: true,

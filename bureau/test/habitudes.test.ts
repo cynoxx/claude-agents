@@ -84,3 +84,70 @@ describe("les raccourcis directs", () => {
     expect((await ouvrirLien("agenda", mac(j, true), r)).ok).toBe(false);
   });
 });
+
+describe("ton propre fichier de suivi (Mes habitudes / Suivi)", () => {
+  it("remplit seulement les cases du jour, en retrouvant tes habitudes par leur nom, et garde tout le reste", async () => {
+    const { default: JSZip } = await import("jszip");
+    const dossier = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-tableur-"));
+    const fichier = path.join(dossier, "Suivi_habitudes.xlsx");
+    // un gabarit comme le tien : la liste des habitudes (lignes 5 à 16), puis une ligne par date, colonnes D à O
+    const c = new ExcelJS.Workbook();
+    const liste = c.addWorksheet("Mes habitudes");
+    [["Réveil à 5h", "Case"], ["Prière / temps avec Dieu", "Case"], ["Heures de médecine", "Min"], ["Heures projets annexes (max)", "Max"], ["Boxe / muscu", "Case"], ["Coucher avant 23h", "Case"]].forEach(([n, t], i) => {
+      liste.getCell(`C${5 + i}`).value = n;
+      liste.getCell(`D${5 + i}`).value = t;
+    });
+    const suivi = c.addWorksheet("Suivi");
+    suivi.getCell("A1").value = "SUIVI";
+    for (let i = 0; i < 5; i++) {
+      suivi.getCell(`A${5 + i}`).value = new Date(Date.UTC(2026, 10, 2 + i));
+      suivi.getCell(`P${5 + i}`).value = { formula: `SUM(D${5 + i}:O${5 + i})`, result: 0 };
+    }
+    suivi.getCell("H6").value = "garde-moi"; // une case que tu as remplie toi-même, un autre jour
+    c.addWorksheet("Bilan").getCell("A1").value = "Bilan";
+    await c.xlsx.writeFile(fichier);
+    // on y glisse un « graphique » : il doit survivre
+    const zip = await JSZip.loadAsync(fs.readFileSync(fichier));
+    zip.file("xl/charts/chart1.xml", "<chart>à garder</chart>");
+    fs.writeFileSync(fichier, await zip.generateAsync({ type: "nodebuffer" }));
+
+    const h = new Habitudes({
+      fichier,
+      dossier,
+      maintenant: () => new Date("2026-11-02T10:00:00"),
+      sources: { regles: () => ({ lever: true, bloc: false, coucher: false }), blocs: () => 7, sport: () => true },
+    });
+    expect((await h.synchroniser()).texte).toBe("Suivi mis à jour dans ton fichier.");
+    await h.noter("priere");
+    await h.noter("business", 0.5);
+    await h.noter("creatine"); // pas dans ce fichier : gardée par Max
+    await h.noter("priere", true, "2026-11-03");
+
+    const lu = new ExcelJS.Workbook();
+    await lu.xlsx.readFile(fichier);
+    expect(lu.worksheets.map((w) => w.name)).toEqual(["Mes habitudes", "Suivi", "Bilan"]);
+    const s = lu.getWorksheet("Suivi")!;
+    // 2 novembre = ligne 5 : réveil (D), prière (E), médecine en heures (F), annexes (G), boxe (H), coucher non fait (I)
+    expect(["D5", "E5", "F5", "G5", "H5", "I5"].map((r) => s.getCell(r).value)).toEqual(["x", "x", 5.8, 0.5, "x", null]);
+    expect(s.getCell("E6").value).toBe("x"); // la prière du 3
+    expect(s.getCell("H6").value).toBe("garde-moi");
+    expect(s.getCell("P5").value).toMatchObject({ formula: "SUM(D5:O5)" });
+    const apres = await JSZip.loadAsync(fs.readFileSync(fichier));
+    expect(await apres.file("xl/charts/chart1.xml")!.async("string")).toBe("<chart>à garder</chart>");
+    expect(await apres.file("xl/workbook.xml")!.async("string")).toContain('fullCalcOnLoad="1"');
+    expect(fs.existsSync(path.join(dossier, "Suivi_habitudes.avant-max.xlsx"))).toBe(true);
+    expect(h.vue().cases.find((x) => x.id === "creatine")?.valeur).toBe(true);
+  });
+
+  it("retrouve ton fichier dans Téléchargements et le copie à sa place", async () => {
+    const { trouverTableur } = await import("../server/max/habitudes.ts");
+    const maison = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-maison-"));
+    fs.mkdirSync(path.join(maison, "Downloads"));
+    fs.writeFileSync(path.join(maison, "Downloads", "Suivi_habitudes.xlsx"), "contenu");
+    const cible = path.join(maison, "Documents", "Bureau", "Suivi_habitudes.xlsx");
+    expect(trouverTableur(cible, maison)).toBe(path.join(maison, "Downloads", "Suivi_habitudes.xlsx"));
+    expect(fs.readFileSync(cible, "utf8")).toBe("contenu");
+    expect(trouverTableur(cible, maison)).toBe(cible);
+    expect(trouverTableur(path.join(maison, "x", "autre.xlsx"), fs.mkdtempSync(path.join(os.tmpdir(), "vide-")))).toBeNull();
+  });
+});

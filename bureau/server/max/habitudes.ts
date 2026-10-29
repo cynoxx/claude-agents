@@ -4,27 +4,34 @@
 // qu'aux cases qu'il connaît : tes propres modifications dans le fichier restent.
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import ExcelJS from "exceljs";
 import { jourDe } from "./coach.ts";
+import { nomsFeuilles, patcherFeuille, serialExcel, type ValeurCase } from "./xlsx-patch.ts";
 
 export interface Habitude {
   id: string;
   nom: string;
   /** « case » : ✓ ; « nombre » : une quantité (blocs). */
   type: "case" | "nombre";
+  /** Comment reconnaître cette habitude dans TON fichier (par le nom de ta ligne). */
+  motif?: RegExp;
 }
 
 export const HABITUDES: Habitude[] = [
-  { id: "lever", nom: "Levé à l'heure, téléphone hors de la chambre", type: "case" },
+  { id: "lever", nom: "Levé à l'heure, téléphone hors de la chambre", type: "case", motif: /r[ée]veil|lev[ée]/i },
   { id: "bloc", nom: "Premier bloc de médecine avant les réseaux", type: "case" },
-  { id: "coucher", nom: "Couché à l'heure, sans écran au lit", type: "case" },
-  { id: "blocs", nom: "Blocs de médecine (50 min)", type: "nombre" },
-  { id: "sport", nom: "Salle / sport", type: "case" },
-  { id: "priere", nom: "Prière", type: "case" },
-  { id: "creatine", nom: "Créatine", type: "case" },
-  { id: "business", nom: "Business (1 h max)", type: "case" },
-  { id: "famille", nom: "Appel à la famille", type: "case" },
+  { id: "coucher", nom: "Couché à l'heure, sans écran au lit", type: "case", motif: /coucher|dormir/i },
+  { id: "blocs", nom: "Blocs de médecine (50 min)", type: "nombre", motif: /m[ée]decine|[ée]tude|r[ée]vis|cours/i },
+  { id: "sport", nom: "Salle / sport", type: "case", motif: /boxe|muscu|sport|salle|entra[iî]n/i },
+  { id: "priere", nom: "Prière", type: "case", motif: /pri[èe]re|dieu/i },
+  { id: "abdos", nom: "Abdos du matin", type: "case", motif: /abdo/i },
+  { id: "planif", nom: "Planification de la journée", type: "case", motif: /planif/i },
+  { id: "etirements", nom: "Étirements", type: "case", motif: /[ée]tir/i },
+  { id: "creatine", nom: "Créatine", type: "case", motif: /cr[ée]atine/i },
+  { id: "business", nom: "Business / projets annexes (heures)", type: "nombre", motif: /annexe|business|projet/i },
+  { id: "famille", nom: "Appel à la famille", type: "case", motif: /famille|appel/i },
 ];
 
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -102,7 +109,7 @@ export class Habitudes extends EventEmitter {
     const h = this.trouver(cle);
     if (!h) return { ok: false, texte: `Habitude inconnue : ${cle}. Il y a : ${HABITUDES.map((x) => x.id).join(", ")}.` };
     if (!/^\d{4}-\d{2}-\d{2}$/.test(jour)) return { ok: false, texte: "Jour au format AAAA-MM-JJ." };
-    (this.valeurs[jour] ??= {})[h.id] = h.type === "nombre" ? Math.max(0, Math.round(Number(valeur) || 0)) : valeur !== false && valeur !== 0;
+    (this.valeurs[jour] ??= {})[h.id] = h.type === "nombre" ? Math.max(0, h.id === "blocs" ? Math.round(Number(valeur) || 0) : Math.round((Number(valeur) || 0) * 10) / 10) : valeur !== false && valeur !== 0;
     const r = await this.ecrire(jour);
     return r.ok ? { ok: true, texte: `${h.nom} : ${this.valeurs[jour][h.id] === true ? "✓" : this.valeurs[jour][h.id] === false ? "décochée" : this.valeurs[jour][h.id]} le ${jour}.` } : r;
   }
@@ -116,11 +123,57 @@ export class Habitudes extends EventEmitter {
     return tache;
   }
 
+  /** Ton propre fichier (feuilles « Mes habitudes » et « Suivi ») : on ne change que les cases du jour. */
+  private async ecrireDansTonFichier(jours: string[]): Promise<Reponse> {
+    const classeur = new ExcelJS.Workbook();
+    await classeur.xlsx.readFile(this.o.fichier); // lecture seule : le fichier n'est pas réécrit par cette bibliothèque
+    const liste = classeur.getWorksheet("Mes habitudes")!;
+    // tes habitudes : ligne 5 à 16, nom en C, type en D (Case / Min / Max), colonnes D à O dans « Suivi »
+    const tes: { col: string; nom: string; type: string }[] = [];
+    for (let l = 5; l <= 16; l++) {
+      const nom = String(liste.getCell(`C${l}`).value ?? "").trim();
+      if (nom) tes.push({ col: String.fromCharCode(68 + (l - 5)), nom, type: String(liste.getCell(`D${l}`).value ?? "Case").trim() });
+    }
+    const modifs: { ref: string; valeur: ValeurCase }[] = [];
+    const xml = await ligneParJour(this.o.fichier, jours);
+    for (const j of jours) {
+      const ligne = xml.get(j);
+      if (!ligne) continue; // ce jour n'est pas dans ton tableau
+      const vus = new Set<string>();
+      for (const h of HABITUDES) {
+        const v = this.valeurs[j]?.[h.id];
+        if (v === undefined || !h.motif) continue;
+        const cible = tes.find((t) => !vus.has(t.col) && h.motif!.test(t.nom));
+        if (!cible) continue; // pas dans ton fichier : Max la garde pour lui
+        vus.add(cible.col);
+        const numerique = /^(min|max)$/i.test(cible.type);
+        let valeur: ValeurCase;
+        if (numerique) {
+          // en heures : un bloc = 50 minutes
+          const nombre = h.id === "blocs" ? Math.round(((Number(v) * 50) / 60) * 10) / 10 : typeof v === "number" ? v : v ? 1 : 0;
+          valeur = nombre > 0 ? nombre : null;
+        } else valeur = v === true || (typeof v === "number" && v > 0) ? "x" : null;
+        modifs.push({ ref: `${cible.col}${ligne}`, valeur });
+      }
+    }
+    if (!modifs.length) return { ok: true, texte: "Rien à écrire pour l'instant." };
+    // une copie de sécurité, une seule fois, avant la première modification
+    const copie = this.o.fichier.replace(/\.xlsx$/i, ".avant-max.xlsx");
+    if (!fs.existsSync(copie)) fs.copyFileSync(this.o.fichier, copie);
+    await patcherFeuille(this.o.fichier, "Suivi", modifs);
+    this.emit("etat");
+    return { ok: true, texte: "Suivi mis à jour dans ton fichier." };
+  }
+
   private async ecrireFichier(jourCible: string): Promise<Reponse> {
     try {
       fs.mkdirSync(path.dirname(this.json), { recursive: true });
       fs.writeFileSync(this.json, JSON.stringify(this.valeurs, null, 2) + "\n");
       fs.mkdirSync(path.dirname(this.o.fichier), { recursive: true });
+      if (fs.existsSync(this.o.fichier)) {
+        const feuilles = await nomsFeuilles(this.o.fichier).catch(() => [] as string[]);
+        if (feuilles.includes("Suivi") && feuilles.includes("Mes habitudes")) return await this.ecrireDansTonFichier([...new Set([jourCible, this.aujourdhui])]);
+      }
       const classeur = new ExcelJS.Workbook();
       if (fs.existsSync(this.o.fichier)) await classeur.xlsx.readFile(this.o.fichier);
       // les mois qui ont des valeurs (le mois de la case modifiée, et celui d'aujourd'hui)
@@ -189,6 +242,48 @@ export class Habitudes extends EventEmitter {
     const faites = v.cases.filter((c) => c.valeur && c.valeur !== 0).map((c) => (typeof c.valeur === "number" ? `${c.nom} (${c.valeur})` : c.nom));
     return `Suivi d'habitudes Excel (tu le remplis toi-même avec habitude_du_jour) : cochées aujourd'hui : ${faites.join(" ; ") || "aucune"}.`;
   }
+}
+
+/** Pour chaque jour demandé, la ligne de la feuille « Suivi » qui le porte (la colonne A contient la date). */
+async function ligneParJour(fichier: string, jours: string[]): Promise<Map<string, number>> {
+  const { default: JSZip } = await import("jszip");
+  const { cheminFeuille, trouverLigne } = await import("./xlsx-patch.ts");
+  const zip = await JSZip.loadAsync(fs.readFileSync(fichier), { createFolders: false });
+  const chemin = await cheminFeuille(zip, "Suivi");
+  const xml = chemin ? ((await zip.file(chemin)?.async("string")) ?? "") : "";
+  const out = new Map<string, number>();
+  for (const j of jours) {
+    const l = trouverLigne(xml, serialExcel(j));
+    if (l) out.set(j, l);
+  }
+  return out;
+}
+
+/**
+ * Retrouve ton tableau d'habitudes s'il n'est pas à sa place (Téléchargements, Bureau, Documents, iCloud Drive) :
+ * le copie à `cible` (ton fichier d'origine n'est pas touché). Renvoie d'où il vient, ou null.
+ */
+export function trouverTableur(cible: string, maison = os.homedir()): string | null {
+  if (fs.existsSync(cible)) return cible;
+  const motif = /suivi.?habitudes.*\.xlsx$/i;
+  const lieux = ["Downloads", "Desktop", "Documents", path.join("Library", "Mobile Documents", "com~apple~CloudDocs")].map((d) => path.join(maison, d));
+  const trouves: string[] = [];
+  for (const dossier of lieux) {
+    try {
+      for (const n of fs.readdirSync(dossier)) if (motif.test(n) && !/avant-max|max-tmp/i.test(n)) trouves.push(path.join(dossier, n));
+    } catch {
+      // dossier absent : suivant
+    }
+  }
+  trouves.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+  if (!trouves[0]) return null;
+  try {
+    fs.mkdirSync(path.dirname(cible), { recursive: true });
+    fs.copyFileSync(trouves[0], cible);
+  } catch {
+    return null;
+  }
+  return trouves[0];
 }
 
 /** 1 → A, 27 → AA. */

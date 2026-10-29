@@ -24,7 +24,7 @@ import { Sport } from "./max/sport.ts";
 import { Vie } from "./max/vie.ts";
 import { CerveauLocal, outilsMcp } from "./max/cerveau-local.ts";
 import { Plan } from "./max/plan.ts";
-import { Habitudes } from "./max/habitudes.ts";
+import { Habitudes, trouverTableur } from "./max/habitudes.ts";
 import { Studio } from "./studio/studio.ts";
 import { Automatismes } from "./max/automatismes.ts";
 import { automatismesDeMax, redacteur, redacteurLocal } from "./max/automatismes-actions.ts";
@@ -170,6 +170,8 @@ const assistant = new Assistant({
 const ouvrirMax = () => ouvrirFenetre(`http://localhost:${config.port}`, { config: config.fenetre, dossierDonnees: config.dossierDonnees });
 // le réveil sur le Mac : sa voix sur ta musique, de plus en plus fort
 // le suivi d'habitudes dans Excel : rempli à partir du plan, du coach et du sport (et de ce que tu dis à Max)
+const tableurTrouve = trouverTableur(config.liens.habitudes);
+console.log(tableurTrouve ? `📊 Suivi d'habitudes : ${tableurTrouve === config.liens.habitudes ? config.liens.habitudes : `ton fichier ${tableurTrouve} est copié dans ${config.liens.habitudes}`}` : `ℹ️  Pas de tableau d'habitudes : mets ton « Suivi_habitudes.xlsx » dans ${config.liens.habitudes} (sinon Max en crée un).`);
 const habitudes = new Habitudes({
   fichier: config.liens.habitudes,
   dossier: config.dossierMissions,
