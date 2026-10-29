@@ -64,7 +64,12 @@ async function main(): Promise<void> {
   const lance = await sortie("launchctl", ["print", `gui/${os.userInfo().uid}/fr.bureau.claque`]);
   console.log(lance.code === 0 ? "✅ Le service est installé (il écoute en arrière-plan)." : "ℹ️  Le service n'est pas installé : npm run claque-installer -- terminal");
   const ps = await sortie("pgrep", ["-f", "server/claque.ts"]);
-  console.log(ps.code === 0 ? "✅ Le programme d'écoute tourne." : "ℹ️  Le programme d'écoute ne tourne pas en ce moment.");
+  if (ps.code === 0) console.log("✅ Le programme d'écoute tourne.");
+  else {
+    console.log(lance.code === 0 ? "❌ Le service est installé mais l'écoute ne tourne PAS : c'est la cause (relance : npm run claque-installer, il la démarre et vérifie)." : "ℹ️  Le programme d'écoute ne tourne pas en ce moment.");
+    const etat = lance.texte.split("\n").filter((l) => /state =|last exit|runs =|program =/.test(l)).map((l) => `   ${l.trim()}`);
+    if (etat.length) console.log(etat.join("\n"));
+  }
   const journal = path.join(os.homedir(), "Library", "Logs", "Bureau-claque.log");
   if (fs.existsSync(journal)) console.log(`\n— Fin du journal (${journal}) :\n${fs.readFileSync(journal, "utf8").trim().split("\n").slice(-8).join("\n")}`);
   console.log("\nCopie tout ça et envoie-le-moi si ça ne marche toujours pas.");

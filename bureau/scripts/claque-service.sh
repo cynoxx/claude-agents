@@ -5,14 +5,30 @@ set -u
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.volta/bin:$HOME/.local/bin:$PATH"
 if ! command -v node > /dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi
 RACINE="$(cd "$(dirname "$0")/.." && pwd)"
+# Vérifie que l'écoute tourne vraiment (le service peut être « installé » sans démarrer) ; sinon, dit pourquoi.
+verifier() {
+  for _ in $(seq 1 12); do
+    pgrep -f "server/claque.ts" > /dev/null 2>&1 && { echo "✅ L'écoute tourne en ce moment : tu peux claquer trois fois."; return 0; }
+    sleep 1
+  done
+  echo "❌ Le service est installé mais l'écoute ne démarre pas. Ce que dit macOS :"
+  launchctl print "gui/$(id -u)/$NOM" 2> /dev/null | grep -E "state =|last exit|runs =|program =" | sed 's/^/   /'
+  echo "   Fin du journal :"
+  tail -n 8 "$JOURNAL" 2> /dev/null | sed 's/^/   /'
+  echo "   Solution de secours, sans service : ouvre un onglet du Terminal et laisse-y « npm run claque » (il écoute tant que l'onglet est ouvert)."
+  return 1
+}
+
 # Charge le service ; « Bootstrap failed: 5 » arrive quand l'ancien n'est pas encore déchargé : on attend, puis on réessaie à l'ancienne.
 charger() {
   launchctl bootout "gui/$(id -u)/$NOM" > /dev/null 2>&1
   launchctl unload "$PLIST" > /dev/null 2>&1
   sleep 2
-  launchctl bootstrap "gui/$(id -u)" "$PLIST" 2> /dev/null && return 0
-  sleep 2
-  launchctl load -w "$PLIST" 2> /dev/null && return 0
+  if launchctl bootstrap "gui/$(id -u)" "$PLIST" 2> /dev/null || { sleep 2; launchctl load -w "$PLIST" 2> /dev/null; }; then
+    # démarre tout de suite (sans attendre la prochaine ouverture de session)
+    launchctl kickstart -k "gui/$(id -u)/$NOM" > /dev/null 2>&1
+    return 0
+  fi
   echo "⚠️  macOS refuse de charger le service. Essaie de te déconnecter puis reconnecter, ou lance : npm run claque-desinstaller puis npm run claque-installer."
   return 1
 }
@@ -38,7 +54,7 @@ case "${1:-}" in
 </dict></plist>
 PLISTE
       pkill -f "server/claque.ts" > /dev/null 2>&1
-      charger && echo "✅ C'est en place (mode Terminal caché) : claque trois fois. Il se relance à chaque ouverture de session."
+      charger && echo "✅ Installé (mode Terminal caché). Il se relance à chaque ouverture de session." && verifier
       echo "   Si macOS demande d'autoriser le Terminal à utiliser le micro, accepte."
       exit 0
     fi
@@ -62,12 +78,13 @@ PLISTE
   <key>StandardErrorPath</key><string>$JOURNAL</string>
 </dict></plist>
 PLISTE
-    charger && echo "✅ C'est en place : claque trois fois dans tes mains pour allumer Max (il se relance à chaque ouverture de session)."
+    charger && echo "✅ Installé. Il se relance à chaque ouverture de session." && verifier
     echo "   Journal : $JOURNAL (il dit s'il n'entend rien : le micro doit être autorisé)."
     ;;
   statut)
     echo "— Service : $(launchctl print "gui/$(id -u)/$NOM" > /dev/null 2>&1 && echo "installé" || echo "PAS installé (npm run claque-installer)")"
     echo "— Programme d'écoute : $(pgrep -f "server/claque.ts" > /dev/null && echo "en marche" || echo "ARRÊTÉ")"
+    launchctl print "gui/$(id -u)/$NOM" 2> /dev/null | grep -E "state =|last exit|runs =" | sed 's/^/   /'
     echo "— Les 15 dernières lignes du journal ($JOURNAL) :"
     tail -n 15 "$JOURNAL" 2> /dev/null || echo "(vide)"
     ;;
