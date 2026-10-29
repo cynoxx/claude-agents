@@ -42,3 +42,21 @@ describe("trois claquements de mains", () => {
     expect(lancer(signal(6000, six), d)).toBe(1);
   });
 });
+
+describe("changer la musique de Max", () => {
+  it("trouve le mp3 le plus récent par un mot de son nom, ou par son chemin", async () => {
+    const fs = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const { trouverMusique } = await import("../server/changer-musique.ts");
+    const maison = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-maison-"));
+    fs.mkdirSync(path.join(maison, "Downloads"));
+    const f = path.join(maison, "Downloads", "Bella_Ciao_Version_Lenta.mp3");
+    fs.writeFileSync(f, "x");
+    fs.writeFileSync(path.join(maison, "Downloads", "Autre chanson.mp3"), "x");
+    expect(trouverMusique("bella ciao", maison)).toBe(f);
+    expect(trouverMusique("BELLA", maison)).toBe(f);
+    expect(trouverMusique(f, maison)).toBe(f);
+    expect(trouverMusique("inconnue", maison)).toBeNull();
+  });
+});

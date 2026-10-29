@@ -181,7 +181,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   visage: { actif: true },
   tempsParJour: { business: 60 },
   objectifsParJour: { etudes: 360 },
-  musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true, recherche: "real.?gone" },
+  musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true, recherche: "bella.?ciao" },
   fenetre: { mode: "app", navigateur: null },
   obscur: { minutes: 50, raccourciEntree: null, raccourciSortie: null },
   cerveau: { moteur: "claude", url: "http://localhost:11434/v1", modele: "qwen2.5:7b", cle: "", outils: true },
