@@ -34,7 +34,8 @@ export const PAROLE_APRES_MS = 5_500;
 export function argsIntro(source: string, sortie: string): string[] {
   return [
     "-y", "-loglevel", "error", "-i", source,
-    "-af", "atrim=0:14,afade=t=in:d=0.4,volume='if(lt(t,5),1,if(lt(t,6),1-0.75*(t-5),0.25))':eval=frame,afade=t=out:st=11.5:d=2.5",
+    // 5 s de musique pleine, puis elle descend doucement (à 15 %) et reste en fond sous la voix de Max, une minute en tout
+    "-af", "atrim=0:60,afade=t=in:d=0.4,volume='if(lt(t,5),1,if(lt(t,6.5),1-0.85*(t-5)/1.5,0.15))':eval=frame,afade=t=out:st=51:d=9",
     "-ac", "2", "-ar", "44100", sortie,
   ];
 }

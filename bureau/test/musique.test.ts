@@ -14,7 +14,7 @@ describe("musique de Max", () => {
   it("prépare l'intro : forte au début, puis baissée sous la voix, fondu final", () => {
     const a = argsIntro("/m.mp3", "/o.wav");
     expect(a).toContain("/m.mp3");
-    expect(a.join(" ")).toMatch(/atrim=0:14.*if\(lt\(t,5\),1.*0\.25.*afade=t=out/);
+    expect(a.join(" ")).toMatch(/atrim=0:60.*if\(lt\(t,5\),1.*0\.15.*afade=t=out/);
     const r = argsMixReveil("/m.mp3", "/v.wav", "/r.mp3", 20);
     expect(r.join(" ")).toContain("adelay=4000|4000");
     expect(r.join(" ")).toContain("atrim=0:28");
