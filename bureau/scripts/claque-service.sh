@@ -5,6 +5,17 @@ set -u
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.volta/bin:$HOME/.local/bin:$PATH"
 if ! command -v node > /dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi
 RACINE="$(cd "$(dirname "$0")/.." && pwd)"
+# Charge le service ; « Bootstrap failed: 5 » arrive quand l'ancien n'est pas encore déchargé : on attend, puis on réessaie à l'ancienne.
+charger() {
+  launchctl bootout "gui/$(id -u)/$NOM" > /dev/null 2>&1
+  launchctl unload "$PLIST" > /dev/null 2>&1
+  sleep 2
+  launchctl bootstrap "gui/$(id -u)" "$PLIST" 2> /dev/null && return 0
+  sleep 2
+  launchctl load -w "$PLIST" 2> /dev/null && return 0
+  echo "⚠️  macOS refuse de charger le service. Essaie de te déconnecter puis reconnecter, ou lance : npm run claque-desinstaller puis npm run claque-installer."
+  return 1
+}
 NOM="fr.bureau.claque"
 PLIST="$HOME/Library/LaunchAgents/$NOM.plist"
 JOURNAL="$HOME/Library/Logs/Bureau-claque.log"
@@ -26,9 +37,8 @@ case "${1:-}" in
   <key>RunAtLoad</key><true/>
 </dict></plist>
 PLISTE
-      launchctl bootout "gui/$(id -u)/$NOM" > /dev/null 2>&1
       pkill -f "server/claque.ts" > /dev/null 2>&1
-      launchctl bootstrap "gui/$(id -u)" "$PLIST" && echo "✅ C'est en place (mode Terminal caché) : claque trois fois. Il se relance à chaque ouverture de session."
+      charger && echo "✅ C'est en place (mode Terminal caché) : claque trois fois. Il se relance à chaque ouverture de session."
       echo "   Si macOS demande d'autoriser le Terminal à utiliser le micro, accepte."
       exit 0
     fi
@@ -52,8 +62,7 @@ PLISTE
   <key>StandardErrorPath</key><string>$JOURNAL</string>
 </dict></plist>
 PLISTE
-    launchctl bootout "gui/$(id -u)/$NOM" > /dev/null 2>&1
-    launchctl bootstrap "gui/$(id -u)" "$PLIST" && echo "✅ C'est en place : claque trois fois dans tes mains pour allumer Max (il se relance à chaque ouverture de session)."
+    charger && echo "✅ C'est en place : claque trois fois dans tes mains pour allumer Max (il se relance à chaque ouverture de session)."
     echo "   Journal : $JOURNAL (il dit s'il n'entend rien : le micro doit être autorisé)."
     ;;
   statut)
