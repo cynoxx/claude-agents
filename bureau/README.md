@@ -239,6 +239,16 @@ Fruit TV : dépose tes clips dans *Fruit TV › clips* ; un clip horizontal est 
 
 Pourquoi pas de publication 100 % automatique : les API officielles de TikTok et YouTube gardent privées les vidéos envoyées par une appli non vérifiée. Le Studio prépare donc tout, et tu postes en un geste.
 
+## Allumer Max en claquant trois fois dans tes mains
+
+Quand Max est éteint, il ne peut rien entendre : c'est un tout petit programme à part qui écoute le micro (le son est analysé au vol, sur le Mac, jamais enregistré ni envoyé) et qui lance Max, comme « Dis Siri, Max au rapport », quand il entend 3 claquements. La parole et la musique ne le déclenchent pas.
+
+1. Pour l'essayer : `npm run claque`, puis claque trois fois (un claquement toutes les demi-secondes environ).
+2. Pour qu'il tourne tout seul à chaque ouverture de session : `npm run claque-installer` (`npm run claque-desinstaller` pour le retirer). Journal : `~/Library/Logs/Bureau-claque.log`.
+3. Trop sensible ou pas assez : `"claque": { "sensibilite": 0.12 }` dans `bureau.config.json` (plus bas = plus sensible ; essaie 0.08 si ça ne répond pas, 0.2 si ça se déclenche tout seul).
+
+Si Max est déjà allumé, les claquements ne font qu'afficher sa fenêtre. Le micro doit être autorisé (Réglages Système › Confidentialité › Microphone) ; s'il ne l'est pas, le journal le dit au bout de 12 secondes. Le Mac doit être allumé et ta session ouverte.
+
 ## Notion, Super Productivity et ton suivi d'habitudes Excel
 
 Dans la barre de Max, trois boutons directs : 📝 **Notion**, ✅ **Super Productivity** et 📊 **ton tableau Excel**. Ou dis : « Max, ouvre Notion ».

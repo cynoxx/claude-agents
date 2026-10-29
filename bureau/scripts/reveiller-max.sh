@@ -42,7 +42,10 @@ if [ -n "${BUREAU_OUVRIR:-}" ]; then
   "$BUREAU_OUVRIR" "http://localhost:$PORT"
 else
   # Le Bureau ouvre Max dans sa propre fenêtre (réglage « fenetre ») ; un ancien Bureau ne sait pas : on ouvre la page.
-  REPONSE="$(curl -fs -X POST -H "x-bureau-jeton: $JETON" -H "content-type: application/json" -d '{"ouvrir":true}' "$URL/api/reveil" 2> /dev/null)"
+  # BUREAU_CLAQUE : lancé par les claquements de mains ; s'il est déjà éveillé, on n'ouvre que la fenêtre (pas d'intro)
+  CORPS='{"ouvrir":true}'
+  [ -n "${BUREAU_CLAQUE:-}" ] && CORPS='{"ouvrir":true,"discret":true}'
+  REPONSE="$(curl -fs -X POST -H "x-bureau-jeton: $JETON" -H "content-type: application/json" -d "$CORPS" "$URL/api/reveil" 2> /dev/null)"
   case "$REPONSE" in
     *'"fenetre"'*) ;;
     *) open "http://localhost:$PORT" ;;

@@ -143,7 +143,9 @@ export function routesMax(o: {
       case "POST /api/reveil":
         if (!o.assistant) return repondre(res, 503, { ok: false, texte: "Max n'est pas disponible." });
         // déjà réveillé : « Max au rapport » rejoue quand même l'intro (musique et animation)
-        if (o.assistant.rejouerIntro && o.assistant.vue().etat !== "veille") o.assistant.rejouerIntro();
+        if (o.assistant.rejouerIntro && o.assistant.vue().etat !== "veille") {
+          if (corps.discret !== true) o.assistant.rejouerIntro();
+        }
         else o.assistant.reveiller();
         o.assistant.allerA?.("jarvis");
         return repondre(res, 200, { ok: true, texte: "Max est réveillé.", fenetre });
