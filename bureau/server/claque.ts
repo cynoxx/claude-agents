@@ -138,6 +138,9 @@ async function main(): Promise<void> {
 
   const lancerMax = () => {
     console.log(`👏 Trois claquements : j'allume Max (${new Date().toLocaleTimeString("fr-FR")}).`);
+    // un son et une notification tout de suite : tu sais qu'il t'a entendu, même si Max met une minute à démarrer
+    spawn("afplay", ["/System/Library/Sounds/Ping.aiff"], { stdio: "ignore" }).on("error", () => {});
+    spawn("osascript", ["-e", 'display notification "Je démarre, ça prend un moment…" with title "Max"'], { stdio: "ignore" }).on("error", () => {});
     // la sortie du script (ses erreurs, s'il y en a) va dans le même journal
     const p = spawn("bash", [path.join(racine, "scripts", "reveiller-max.sh")], { stdio: ["ignore", "inherit", "inherit"], detached: true, env: { ...process.env, BUREAU_CLAQUE: "1" } });
     p.on("exit", (code) => console.log(code === 0 ? "✅ Max est allumé." : `⚠️  Le script de Max a échoué (code ${code}) : regarde ~/Library/Logs/Bureau.log`));

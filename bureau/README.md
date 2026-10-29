@@ -248,6 +248,8 @@ Quand Max est éteint, il ne peut rien entendre : c'est un tout petit programme 
 3. Trop sensible ou pas assez : `"claque": { "sensibilite": 0.12 }` dans `bureau.config.json` (plus bas = plus sensible ; essaie 0.08 si ça ne répond pas, 0.2 si ça se déclenche tout seul).
 
 **Si ça ne marche pas :**
+- **`npm run claque-diagnostic`** : fait tout le tour en 10 secondes (ffmpeg, micro choisi, autorisation, niveau, service, journal) et dit ce qui coince. Lance-le d'abord.
+- Au bout des 3 claquements, tu entends un « ping » et une notification : s'ils viennent mais que Max ne s'ouvre pas, c'est le démarrage de Max qui bloque (regarde `~/Library/Logs/Bureau.log`), pas l'écoute.
 - `npm run claque -- --niveaux` : montre le niveau du micro chaque seconde et chaque claquement entendu (👏 1/3, 2/3, 3/3). Si la barre ne bouge pas quand tu claques, c'est le micro ; si elle bouge sans que ça compte, baisse la sensibilité.
 - `npm run claque-statut` : dit si le service est installé, s'il tourne, et affiche son journal.
 - Ça marche dans le Terminal mais pas en service ? macOS refuse souvent le micro aux programmes sans fenêtre : `npm run claque-installer -- terminal` le fait lancer par le Terminal (qui a déjà l'autorisation), dans une fenêtre cachée.
