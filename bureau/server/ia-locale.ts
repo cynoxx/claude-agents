@@ -15,7 +15,8 @@ const ecrire = (cerveau: Record<string, unknown>) => {
 };
 
 /** Le meilleur modèle installé pour Max (bon en français et avec les outils), sinon le premier. */
-export function choisirModele(modeles: string[]): string | null {
+export function choisirModele(tous: string[]): string | null {
+  const modeles = tous.filter((m) => !/embed/i.test(m));
   const ordre = [/qwen2\.5.*(14|7)b/i, /qwen3/i, /qwen/i, /mistral-small|mistral-nemo/i, /llama3\.[123].*8b/i, /mistral/i, /llama/i, /gemma/i];
   for (const r of ordre) {
     const m = modeles.find((x) => r.test(x));

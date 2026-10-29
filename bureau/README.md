@@ -239,6 +239,15 @@ Fruit TV : dépose tes clips dans *Fruit TV › clips* ; un clip horizontal est 
 
 Pourquoi pas de publication 100 % automatique : les API officielles de TikTok et YouTube gardent privées les vidéos envoyées par une appli non vérifiée. Le Studio prépare donc tout, et tu postes en un geste.
 
+## Lumen, ton compagnon pour parler (100 % sur ton Mac)
+
+Un deuxième assistant, à part de Max : pas de business, pas d'outils, juste quelqu'un à qui parler, à la voix. Il tourne avec l'IA de ton Mac (LM Studio), donc rien ne sort de l'ordinateur et il n'y a pas de quota.
+
+1. Dans LM Studio, charge un modèle (par exemple `qwen3.5-9b` pour la vitesse, `qwen3.8-27b` pour la qualité), puis onglet **Developer** › **Start Server** (adresse `http://127.0.0.1:1234`).
+2. `npm run compagnon` : sa fenêtre s'ouvre. Parle simplement (pas besoin de dire son nom) ; ✋ ou « stop » le coupe ; ⏸ met l'écoute en pause.
+
+Il se souvient de vos conversations (*Documents/Bureau/compagnon/souvenirs.md*, modifiable) et connaît ton profil (`moi.md`). Il ne remplace ni tes proches ni un psychologue, et il te le dira quand il le faut. Son nom, le modèle et l'adresse se changent dans `bureau.config.json` : `"compagnon": { "nom": "…", "modele": "…", "url": "…" }`.
+
 ## Max avec l'IA de ton Mac (sans Claude)
 
 Max peut penser avec une IA locale au lieu de Claude : rien ne sort de ton Mac, pas de quota. Il garde ses outils (mémoire, projets, journal, minuteur, réveil…), mais il n'a plus la recherche web, et une IA locale est moins fine que Claude.

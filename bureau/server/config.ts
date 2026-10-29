@@ -89,6 +89,8 @@ export interface BureauConfig {
    * compatible OpenAI (Ollama : http://localhost:11434/v1, LM Studio : http://localhost:1234/v1, AnythingLLM…).
    */
   cerveau: { moteur: "claude" | "local"; url: string; modele: string; cle: string; outils: boolean };
+  /** Le compagnon (npm run compagnon) : un deuxième assistant pour parler, avec l'IA locale (LM Studio par défaut). */
+  compagnon: { nom: string; port: number; url: string; modele: string; cle: string; pauseFinMs: number };
   /** Le Studio vidéo : un dossier (iCloud Drive, pour y accéder depuis l'iPhone) et tes comptes. */
   studio: StudioConfig;
 }
@@ -179,6 +181,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   fenetre: { mode: "app", navigateur: null },
   obscur: { minutes: 50, raccourciEntree: null, raccourciSortie: null },
   cerveau: { moteur: "claude", url: "http://localhost:11434/v1", modele: "qwen2.5:7b", cle: "", outils: true },
+  compagnon: { nom: "Lumen", port: 4848, url: "http://127.0.0.1:1234/v1", modele: "auto", cle: "", pauseFinMs: 1300 },
   studio: {
     dossier: "~/Library/Mobile Documents/com~apple~CloudDocs/Max Studio",
     rappels: true,
@@ -248,6 +251,7 @@ export function loadConfig(dir: string): BureauConfig {
     fenetre: { ...DEFAULT_CONFIG.fenetre, ...user.fenetre },
     obscur: { ...DEFAULT_CONFIG.obscur, ...user.obscur },
     cerveau: { ...DEFAULT_CONFIG.cerveau, ...user.cerveau },
+    compagnon: { ...DEFAULT_CONFIG.compagnon, ...user.compagnon },
     studio: { ...DEFAULT_CONFIG.studio, ...user.studio, comptes: Array.isArray(user.studio?.comptes) ? user.studio.comptes : DEFAULT_CONFIG.studio.comptes },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };

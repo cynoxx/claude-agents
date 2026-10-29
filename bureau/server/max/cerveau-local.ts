@@ -65,6 +65,45 @@ export interface OptionsCerveauLocal {
 
 const HISTORIQUE = 24;
 
+/**
+ * Enlève la réflexion à voix basse des modèles qui « pensent » (Qwen 3, DeepSeek : <think>…</think>), même coupée
+ * entre deux morceaux du flux. Renvoie le texte à garder.
+ */
+export class FiltrePensee {
+  private dedans = false;
+  private reste = "";
+  filtrer(morceau: string): string {
+    let t = this.reste + morceau;
+    this.reste = "";
+    let out = "";
+    for (;;) {
+      if (this.dedans) {
+        const f = t.indexOf("</think>");
+        if (f < 0) {
+          this.reste = t.slice(-7); // une balise peut être coupée en deux
+          return out;
+        }
+        t = t.slice(f + 8);
+        this.dedans = false;
+      } else {
+        const d = t.indexOf("<think>");
+        if (d < 0) {
+          // garder de côté un début de balise possible
+          const p = t.lastIndexOf("<");
+          if (p >= 0 && "<think>".startsWith(t.slice(p))) {
+            this.reste = t.slice(p);
+            return out + t.slice(0, p);
+          }
+          return out + t;
+        }
+        out += t.slice(0, d);
+        t = t.slice(d + 7);
+        this.dedans = true;
+      }
+    }
+  }
+}
+
 export class CerveauLocal extends EventEmitter {
   private _actif = false;
   private historique: Message[] = [];
@@ -186,6 +225,7 @@ export class CerveauLocal extends EventEmitter {
     });
     if (!rep.ok || !rep.body) throw new Error(`IA locale : ${rep.status} ${(await rep.text().catch(() => "")).slice(0, 200)}`);
     let texte = "";
+    const filtre = new FiltrePensee();
     const appels: { id: string; type: "function"; function: { name: string; arguments: string } }[] = [];
     let tampon = "";
     const lecteur = rep.body.getReader();
@@ -208,9 +248,14 @@ export class CerveauLocal extends EventEmitter {
           continue;
         }
         const d = m.choices?.[0]?.delta;
-        if (d?.content) {
-          texte += d.content;
-          this.emit("texte", d.content);
+        const garde = d?.content ? filtre.filtrer(d.content) : "";
+        if (garde) {
+          // les premiers mots après la réflexion arrivent souvent précédés de blancs
+          const t = texte ? garde : garde.replace(/^\s+/, "");
+          if (t) {
+            texte += t;
+            this.emit("texte", t);
+          }
         }
         for (const t of d?.tool_calls ?? []) {
           const k = t.index ?? appels.length;

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lumen</title>
+    <link rel="stylesheet" href="./compagnon.css" />
+  </head>
+  <body data-etat="ecoute">
+    <main class="c-scene">
+      <header class="c-haut">
+        <h1 id="c-nom">Lumen</h1>
+        <span id="c-etat" class="c-etat">Je t'écoute</span>
+      </header>
+      <div class="c-orbe-zone">
+        <canvas id="c-orbe" class="c-orbe" aria-hidden="true"></canvas>
+      </div>
+      <p id="c-phrase" class="c-phrase" aria-live="polite"></p>
+      <p id="j-entendu" class="c-entendu" aria-live="polite"></p>
+      <p id="c-probleme" class="c-probleme" hidden></p>
+      <ol id="c-fil" class="c-fil"></ol>
+      <form id="c-form" class="c-form">
+        <input id="c-texte" autocomplete="off" placeholder="Parle, ou écris ici…" />
+        <button type="button" id="c-taire" title="Le faire taire (ou dis « stop »)">✋</button>
+        <button type="button" id="c-pause" title="Mettre l'écoute en pause">⏸</button>
+      </form>
+    </main>
+    <script type="module" src="./compagnon.ts"></script>
+  </body>
+</html>
