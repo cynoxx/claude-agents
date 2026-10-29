@@ -82,7 +82,7 @@ Max s'ouvre dans **une vraie fenêtre à part**, comme une app : pas d'onglets, 
 "fenetre": { "mode": "app" }
 ```
 
-`"app"` (fenêtre à part, par défaut), `"plein-ecran"` (fenêtre à part, plein écran, le plus spectaculaire) ou `"navigateur"` (un onglet de ton navigateur habituel, comme avant). Pour forcer un navigateur : `"navigateur": "Brave Browser"`.
+`"plein-ecran"` (fenêtre à part, **en plein écran, par défaut**) ; pour en sortir : Cmd + Ctrl + F, ou ⌘ + Q pour fermer. `"app"` (fenêtre à part, de taille normale) ou `"navigateur"` (un onglet de ton navigateur habituel, comme avant). Pour forcer un navigateur : `"navigateur": "Brave Browser"`.
 
 ## Mettre à jour
 
