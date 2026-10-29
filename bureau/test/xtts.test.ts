@@ -64,6 +64,6 @@ describe("XTTS dans la config", () => {
     fs.writeFileSync(c.pret, "");
     expect(moteurVoix(loadConfig(dir))).toBe("xtts");
     enregistrerLocuteurXtts(path.join(dir, "bureau.config.json"), "Viktor Eka");
-    expect(loadConfig(dir).voix.xtts).toEqual({ locuteur: "Viktor Eka", vitesse: 1, appareil: "auto" });
+    expect(loadConfig(dir).voix.xtts).toEqual({ locuteur: "Viktor Eka", vitesse: 1, appareil: "cpu" });
   });
 });

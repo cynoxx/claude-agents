@@ -20,6 +20,7 @@
     "voix": "tsx server/installer-voix.ts",
     "voix-humaine": "tsx server/choisir-voix.ts",
     "voix-xtts": "tsx server/installer-xtts.ts",
+    "ia-locale": "tsx server/ia-locale.ts",
     "appel": "tsx server/appel-essai.ts"
   },
   "dependencies": {

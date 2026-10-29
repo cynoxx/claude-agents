@@ -239,6 +239,16 @@ Fruit TV : dépose tes clips dans *Fruit TV › clips* ; un clip horizontal est 
 
 Pourquoi pas de publication 100 % automatique : les API officielles de TikTok et YouTube gardent privées les vidéos envoyées par une appli non vérifiée. Le Studio prépare donc tout, et tu postes en un geste.
 
+## Max avec l'IA de ton Mac (sans Claude)
+
+Max peut penser avec une IA locale au lieu de Claude : rien ne sort de ton Mac, pas de quota. Il garde ses outils (mémoire, projets, journal, minuteur, réveil…), mais il n'a plus la recherche web, et une IA locale est moins fine que Claude.
+
+1. Installe Ollama et un modèle bon en français : `brew install ollama`, puis `ollama serve` (dans un terminal à part), puis `ollama pull qwen2.5:7b` (environ 5 Go ; `qwen2.5:14b` est meilleur si ton Mac a 32 Go de mémoire). LM Studio marche aussi (Developer › Start Server).
+2. `npm run ia-locale` : vérifie que l'IA répond, choisit le modèle et passe Max dessus.
+3. Relance Max. Pour revenir à Claude : `npm run ia-locale -- claude`.
+
+AnythingLLM : mets son adresse compatible OpenAI et ta clé dans `bureau.config.json` (`"cerveau": { "moteur": "local", "url": "…", "cle": "…", "modele": "…" }`).
+
 ## Les automatismes (Max les fait tout seul)
 
 | Heure | Automatisme | Ce qu'il fait |

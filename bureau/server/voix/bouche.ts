@@ -47,7 +47,7 @@ export interface OptionsBouche {
 }
 
 /** Combien de temps une phrase attend la vraie voix qui se charge, avant d'être dite par la voix du Mac. */
-const ATTENTE_VOIX_MS = 150_000;
+const ATTENTE_VOIX_MS = 12_000;
 
 interface Phrase {
   texte: string;
@@ -111,7 +111,6 @@ export class Bouche extends EventEmitter {
     // les phrases dites pendant le chargement attendent la vraie voix (pas de voix du Mac qui jure avec la sienne)
     this.chargement = this.preparer().then((d) => {
       surPrete(d);
-      void this.prechauffer(PHRASES_COURANTES);
       this.chargement = null;
       return this.avecPiper;
     });

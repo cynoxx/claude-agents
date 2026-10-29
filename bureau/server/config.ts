@@ -84,6 +84,11 @@ export interface BureauConfig {
    * lancer en entrant et en sortant (par exemple activer puis couper la Concentration « Ne pas déranger »).
    */
   obscur: { minutes: number; raccourciEntree: string | null; raccourciSortie: string | null };
+  /**
+   * Le cerveau de Max en conversation : « claude » (par défaut), ou « local » = une IA sur ton Mac via un serveur
+   * compatible OpenAI (Ollama : http://localhost:11434/v1, LM Studio : http://localhost:1234/v1, AnythingLLM…).
+   */
+  cerveau: { moteur: "claude" | "local"; url: string; modele: string; cle: string; outils: boolean };
   /** Le Studio vidéo : un dossier (iCloud Drive, pour y accéder depuis l'iPhone) et tes comptes. */
   studio: StudioConfig;
 }
@@ -154,7 +159,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
     micro: null,
     moteur: "auto",
     elevenlabs: { cle: "", voix: null, nomVoix: null, modele: "eleven_multilingual_v2", stabilite: 0.45, similarite: 0.8, style: 0.2, vitesse: 1 },
-    xtts: { locuteur: "Damien Black", vitesse: 1, appareil: "auto" },
+    xtts: { locuteur: "Damien Black", vitesse: 1, appareil: "cpu" },
     voixPiper: "fr_FR-tom-medium",
     vitessePiper: 1,
     voixMac: null,
@@ -173,6 +178,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   musique: { fichier: "~/Documents/Bureau/musique/max.mp3", intro: true, recherche: "real.?gone" },
   fenetre: { mode: "app", navigateur: null },
   obscur: { minutes: 50, raccourciEntree: null, raccourciSortie: null },
+  cerveau: { moteur: "claude", url: "http://localhost:11434/v1", modele: "qwen2.5:7b", cle: "", outils: true },
   studio: {
     dossier: "~/Library/Mobile Documents/com~apple~CloudDocs/Max Studio",
     rappels: true,
@@ -241,6 +247,7 @@ export function loadConfig(dir: string): BureauConfig {
     reveil: { ...DEFAULT_CONFIG.reveil, ...user.reveil, twilio: { ...DEFAULT_CONFIG.reveil.twilio, ...user.reveil?.twilio } },
     fenetre: { ...DEFAULT_CONFIG.fenetre, ...user.fenetre },
     obscur: { ...DEFAULT_CONFIG.obscur, ...user.obscur },
+    cerveau: { ...DEFAULT_CONFIG.cerveau, ...user.cerveau },
     studio: { ...DEFAULT_CONFIG.studio, ...user.studio, comptes: Array.isArray(user.studio?.comptes) ? user.studio.comptes : DEFAULT_CONFIG.studio.comptes },
     conseillers: Array.isArray(user.conseillers) && user.conseillers.length ? user.conseillers.map(completerConseiller) : DEFAULT_CONFIG.conseillers,
   };

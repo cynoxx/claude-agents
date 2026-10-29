@@ -65,7 +65,7 @@ export class Automatismes extends EventEmitter {
   }
 
   demarrer(intervalleMs = 30_000): void {
-    void this.verifier();
+    // pas au démarrage : on laisse Max se lancer et répondre d'abord
     this.minuterie = setInterval(() => void this.verifier(), intervalleMs);
   }
 

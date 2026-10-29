@@ -22,10 +22,11 @@ import { TriMails } from "./max/tri-mails.ts";
 import { TrieurAuto } from "./max/trieur.ts";
 import { Sport } from "./max/sport.ts";
 import { Vie } from "./max/vie.ts";
+import { CerveauLocal, outilsMcp } from "./max/cerveau-local.ts";
 import { Plan } from "./max/plan.ts";
 import { Studio } from "./studio/studio.ts";
 import { Automatismes } from "./max/automatismes.ts";
-import { automatismesDeMax, redacteur } from "./max/automatismes-actions.ts";
+import { automatismesDeMax, redacteur, redacteurLocal } from "./max/automatismes-actions.ts";
 import { Musique } from "./max/musique.ts";
 import { Reveil } from "./max/reveil.ts";
 import { creerTwilio, preparateurReveil } from "./max/reveil-montage.ts";
@@ -134,7 +135,11 @@ const reveil = new Reveil({
 const assistant = new Assistant({
   oreille,
   bouche,
-  creerCerveau: (consigne) => new Cerveau({ bin, modele: config.modeles.conversation, consigne, mcpConfig, cwd: config.dossierMissions }),
+  // Claude, ou l'IA locale du Mac (config « cerveau »)
+  creerCerveau: (consigne) =>
+    config.cerveau.moteur === "local"
+      ? new CerveauLocal({ url: config.cerveau.url, modele: config.cerveau.modele, cle: config.cerveau.cle, consigne, outils: config.cerveau.outils ? outilsMcp(mcpConfig) : null })
+      : new Cerveau({ bin, modele: config.modeles.conversation, consigne, mcpConfig, cwd: config.dossierMissions }),
   manager,
   carnet: () => lireCarnet(config.dossierMissions),
   missions: () => listMissions(config.dossierMissions),
@@ -172,7 +177,10 @@ const automatismes = new Automatismes(
     reglerReveil: (h) => reveil.regler(h).texte,
     seance: () => seance(sport.vue().prevue)?.nom ?? null,
     profil,
-    rediger: redacteur({ bin, modele: config.modeles.robots, dossier: config.dossierMissions }),
+    rediger:
+      config.cerveau.moteur === "local"
+        ? redacteurLocal({ url: config.cerveau.url, modele: config.cerveau.modele, cle: config.cerveau.cle })
+        : redacteur({ bin, modele: config.modeles.robots, dossier: config.dossierMissions }),
     demander: (t, info) => assistant.demander(t, info),
     dossier: config.dossierMissions,
   }),
@@ -288,7 +296,7 @@ server.listen(config.port, "127.0.0.1", async () => {
     verrou.demander();
     console.log("🔒 Max est verrouillé : regarde la caméra pour le déverrouiller.");
   }
-  if ((await claudePret) && !process.env.BUREAU_SANS_REVEIL) assistant.reveiller();
+  if ((config.cerveau.moteur === "local" || (await claudePret)) && !process.env.BUREAU_SANS_REVEIL) assistant.reveiller();
 });
 
 const fermer = () => {

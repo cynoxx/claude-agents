@@ -228,3 +228,26 @@ export function redacteur(o: { bin: string; modele: string; dossier: string }) {
     return schema && r.structured ? JSON.stringify(r.structured) : r.texte;
   };
 }
+
+/** La même chose avec l'IA locale du Mac (serveur compatible OpenAI) : rien ne sort de l'ordinateur. */
+export function redacteurLocal(o: { url: string; modele: string; cle?: string }) {
+  return async (prompt: string, schema?: object): Promise<string | null> => {
+    try {
+      const rep = await fetch(`${o.url.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(o.cle ? { authorization: `Bearer ${o.cle}` } : {}) },
+        body: JSON.stringify({
+          model: o.modele,
+          messages: [{ role: "user", content: schema ? `${prompt}\n\nRéponds uniquement avec un objet JSON qui suit ce schéma : ${JSON.stringify(schema)}` : prompt }],
+          ...(schema ? { response_format: { type: "json_object" } } : {}),
+        }),
+        signal: AbortSignal.timeout(4 * 60_000),
+      });
+      if (!rep.ok) return null;
+      const d = (await rep.json()) as { choices?: { message?: { content?: string } }[] };
+      return d.choices?.[0]?.message?.content?.trim() || null;
+    } catch {
+      return null;
+    }
+  };
+}
