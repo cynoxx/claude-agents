@@ -26,14 +26,16 @@ const mots = (t: string) =>
 
 /**
  * Pendant que Max parle, le micro entend aussi sa voix (elle sort des haut-parleurs). Ce qui ressemble à ce qu'il
- * est en train de dire, c'est lui ; ce qui n'y ressemble pas (au moins 2 mots, dont plus de la moitié absents de ses
- * phrases), c'est toi qui lui coupes la parole.
+ * est en train de dire, c'est lui ; dès qu'un mot (de plus de deux lettres, pas un chiffre) n'est dans aucune de ses
+ * phrases et pèse un tiers de ce qui est entendu, c'est toi qui lui coupes la parole : il se tait tout de suite,
+ * sans attendre la fin de ta phrase ni la fin de la sienne.
  */
 export function tuLuiCoupesLaParole(entendu: string, phrasesDeMax: string[]): boolean {
   if (estCoupure(entendu)) return true;
   const m = mots(entendu);
-  if (m.length < 2) return false;
+  if (!m.length) return false;
   const siens = new Set(phrasesDeMax.flatMap(mots));
-  const etrangers = m.filter((x) => !siens.has(x)).length;
-  return etrangers / m.length > 0.5;
+  // les nombres sont écrits « 14 » par la reconnaissance et « quatorze » dans sa phrase : on ne les compte pas
+  const etrangers = m.filter((x) => x.length > 2 && !/\d/.test(x) && !siens.has(x)).length;
+  return etrangers >= 1 && etrangers / m.length >= 0.34;
 }

@@ -44,4 +44,15 @@ describe("couper la parole à Max", () => {
     expect(tuLuiCoupesLaParole("mets-moi un minuteur de vingt minutes", max)).toBe(true);
     expect(tuLuiCoupesLaParole("stop", max)).toBe(true);
   });
+
+  it("se coupe dès le premier mot qui n'est pas de lui, sans attendre la fin de ta phrase", async () => {
+    const { tuLuiCoupesLaParole } = await import("../web/ecoute-pur.ts");
+    const max = ["Ta séance de biochimie commence à quatorze heures, pense à prendre tes fiches."];
+    expect(tuLuiCoupesLaParole("minuteur", max)).toBe(true);
+    expect(tuLuiCoupesLaParole("Max combien", max)).toBe(true);
+    // un seul mot de travers dans une longue phrase à lui : c'est lui, mal entendu
+    expect(tuLuiCoupesLaParole("ta séance de biochimie commence à quatorze hure pense à prendre tes fiches", max)).toBe(false);
+    // les nombres écrits en chiffres ne comptent pas
+    expect(tuLuiCoupesLaParole("à 14 heures", max)).toBe(false);
+  });
 });

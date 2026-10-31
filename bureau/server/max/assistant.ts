@@ -10,7 +10,7 @@ import type { FinReponse } from "./cerveau.ts";
 import { dureeParlee, type FinMinuteur, type LimitePole } from "./coach.ts";
 
 /** Au-delà, Max ne dit plus sa réponse à voix haute : la suite est à l'écran (il ne parle pas trop). */
-const PAROLE_MAX = 320;
+const PAROLE_MAX = 200;
 const CERVEAU_MAX_MS = 2 * 3600_000;
 
 export interface OreilleLike extends EventEmitter {
