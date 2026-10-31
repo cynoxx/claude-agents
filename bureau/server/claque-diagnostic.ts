@@ -61,12 +61,13 @@ async function main(): Promise<void> {
   }
 
   console.log("");
-  const lance = await sortie("launchctl", ["print", `gui/${os.userInfo().uid}/fr.bureau.claque`]);
-  console.log(lance.code === 0 ? "✅ Le service est installé (il écoute en arrière-plan)." : "ℹ️  Le service n'est pas installé : npm run claque-installer -- terminal");
+  const app = fs.existsSync(path.join(os.homedir(), "Applications", "Max Oreille.app"));
+  const lance = { code: app ? 0 : 1, texte: "" };
+  console.log(app ? "✅ L'app « Max Oreille » est installée (elle écoute en arrière-plan)." : "ℹ️  L'app « Max Oreille » n'est pas installée : npm run claque-installer");
   const ps = await sortie("pgrep", ["-f", "server/claque.ts"]);
   if (ps.code === 0) console.log("✅ Le programme d'écoute tourne.");
   else {
-    console.log(lance.code === 0 ? "❌ Le service est installé mais l'écoute ne tourne PAS : c'est la cause (relance : npm run claque-installer, il la démarre et vérifie)." : "ℹ️  Le programme d'écoute ne tourne pas en ce moment.");
+    console.log(lance.code === 0 ? "❌ L'app est installée mais l'écoute ne tourne PAS : relance npm run claque-installer (il la démarre et vérifie)." : "ℹ️  Le programme d'écoute ne tourne pas en ce moment.");
     const etat = lance.texte.split("\n").filter((l) => /state =|last exit|runs =|program =/.test(l)).map((l) => `   ${l.trim()}`);
     if (etat.length) console.log(etat.join("\n"));
   }

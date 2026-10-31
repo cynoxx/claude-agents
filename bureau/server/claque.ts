@@ -161,14 +161,15 @@ async function main(): Promise<void> {
       silence = b.every((x) => x === 0) ? silence + b.length : 0;
       if (silence > TAUX * 2 * 12 && !averti) {
         averti = true;
-        console.log("⚠️  Je n'entends rien du tout : le micro n'est sans doute pas autorisé. Réglages Système › Confidentialité › Microphone.");
+        console.log("⚠️  Je n'entends rien du tout : le micro n'est sans doute pas autorisé. Réglages Système › Confidentialité › Microphone (coche « Max Oreille » ou le Terminal).");
+        spawn("osascript", ["-e", 'display notification "Micro muet : autorise « Max Oreille » dans Réglages › Confidentialité › Microphone." with title "Max n\'entend pas tes claquements"'], { stdio: "ignore" }).on("error", () => {});
       }
       if (detecteur.ajouter(b)) lancerMax();
     });
     const debut = Date.now();
     ffmpeg.on("close", (code) => {
       if (Date.now() - debut < 4000) {
-        console.log(`⚠️  ffmpeg s'arrête tout de suite (code ${code}) : en arrière-plan, macOS refuse souvent le micro. Essaie : npm run claque-installer -- terminal`);
+        console.log(`⚠️  ffmpeg s'arrête tout de suite (code ${code}) : en arrière-plan, macOS refuse souvent le micro. Relance : npm run claque-installer (l'app Max Oreille a le droit au micro)`);
       }
       setTimeout(() => void ecouter(), 5000);
     });

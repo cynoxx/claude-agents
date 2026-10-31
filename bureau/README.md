@@ -244,15 +244,15 @@ Pourquoi pas de publication 100 % automatique : les API officielles de TikTok et
 Quand Max est éteint, il ne peut rien entendre : c'est un tout petit programme à part qui écoute le micro (le son est analysé au vol, sur le Mac, jamais enregistré ni envoyé) et qui lance Max, comme « Dis Siri, Max au rapport », quand il entend 3 claquements. La parole et la musique ne le déclenchent pas.
 
 1. Pour l'essayer : `npm run claque`, puis claque trois fois (un claquement toutes les demi-secondes environ).
-2. Pour qu'il tourne tout seul à chaque ouverture de session : `npm run claque-installer` (`npm run claque-desinstaller` pour le retirer). Journal : `~/Library/Logs/Bureau-claque.log`.
+2. Pour qu'il tourne tout seul, sans Terminal : `npm run claque-installer`. Il crée une petite app invisible, **Max Oreille** (dans ton dossier Applications perso), qui se lance à chaque ouverture de session. macOS demande une fois « Max Oreille souhaite accéder au micro » : clique sur **OK**. Pourquoi une app ? macOS ne donne le micro qu'aux apps : un programme lancé en arrière-plan reçoit du silence. `npm run claque-desinstaller` pour la retirer. Journal : `~/Library/Logs/Bureau-claque.log`.
 3. Trop sensible ou pas assez : `"claque": { "sensibilite": 0.12 }` dans `bureau.config.json` (plus bas = plus sensible ; essaie 0.08 si ça ne répond pas, 0.2 si ça se déclenche tout seul).
 
 **Si ça ne marche pas :**
 - **`npm run claque-diagnostic`** : fait tout le tour en 10 secondes (ffmpeg, micro choisi, autorisation, niveau, service, journal) et dit ce qui coince. Lance-le d'abord.
 - Au bout des 3 claquements, tu entends un « ping » et une notification : s'ils viennent mais que Max ne s'ouvre pas, c'est le démarrage de Max qui bloque (regarde `~/Library/Logs/Bureau.log`), pas l'écoute.
 - `npm run claque -- --niveaux` : montre le niveau du micro chaque seconde et chaque claquement entendu (👏 1/3, 2/3, 3/3). Si la barre ne bouge pas quand tu claques, c'est le micro ; si elle bouge sans que ça compte, baisse la sensibilité.
-- `npm run claque-statut` : dit si le service est installé, s'il tourne, et affiche son journal.
-- Ça marche dans le Terminal mais pas en service ? macOS refuse souvent le micro aux programmes sans fenêtre : `npm run claque-installer -- terminal` le fait lancer par le Terminal (qui a déjà l'autorisation), dans une fenêtre cachée.
+- `npm run claque-statut` : dit si l'app est installée, si l'écoute tourne, et affiche son journal.
+- Pas de question pour le micro ? Réglages Système › Confidentialité et sécurité › Microphone : coche « Max Oreille », puis relance `npm run claque-installer`.
 
 Si Max est déjà allumé, les claquements ne font qu'afficher sa fenêtre. Le micro doit être autorisé (Réglages Système › Confidentialité › Microphone) ; s'il ne l'est pas, le journal le dit au bout de 12 secondes. Le Mac doit être allumé et ta session ouverte.
 
