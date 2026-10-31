@@ -157,7 +157,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   voix: {
     active: true,
     ecoute: "page",
-    pauseFinMs: 1200,
+    pauseFinMs: 850,
     ffmpeg: "ffmpeg",
     whisper: "whisper-cli",
     say: "say",

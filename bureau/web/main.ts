@@ -9,6 +9,7 @@ import { EcranVerrou } from "./verrou.ts";
 import { Hud } from "./hud.ts";
 import { QG, brancherAutreSeance } from "./poles.ts";
 import { Intro } from "./intro.ts";
+import { EvenementsSysteme } from "./systeme-evenements.ts";
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/pixelify-sans/700.css";
 import "@fontsource/press-start-2p/400.css";
@@ -31,6 +32,7 @@ const verrou = new EcranVerrou(envoyer);
 const hud = new Hud();
 const qg = new QG(envoyer);
 const intro = new Intro();
+const systeme = new EvenementsSysteme();
 brancherAutreSeance(envoyer);
 
 // les polices pixel sont chargées avant le jeu, pour que les textes du bureau les utilisent
@@ -75,6 +77,7 @@ function connecter(): void {
       ecoute.rendre(msg.etat);
       qg.rendre(msg.etat);
       intro.rendre(msg.etat);
+      systeme.rendre(msg.etat);
       conversation.rendre(msg.etat.assistant);
       scene.sync(msg.etat.mission, msg.etat.assistant);
       scene.syncConseillers(msg.etat.conseillers);

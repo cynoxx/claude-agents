@@ -58,7 +58,7 @@ interface Phrase {
 }
 
 /** Les phrases courtes que Max dit souvent : préparées dès que sa voix est prête. */
-export const PHRASES_COURANTES = ["Oui ?", "D'accord.", "Je regarde.", "C'est noté.", "Je m'en occupe.", "Bonne question.", "Je t'écoute."];
+export const PHRASES_COURANTES = ["Oui ?", "D'accord.", "Je regarde.", "C'est noté.", "Je m'en occupe.", "Bonne question.", "Je t'écoute.", "Compris."];
 const COURTE = 40;
 
 /** Événements : `debut` (il se met à parler), `phrase` (chaque phrase dite), `fin` (il a fini ou s'est tu). */
@@ -112,6 +112,8 @@ export class Bouche extends EventEmitter {
     this.chargement = this.preparer().then((d) => {
       surPrete(d);
       this.chargement = null;
+      // ses phrases d'ouverture, préparées une à une quand il ne parle pas : sa voix part tout de suite ensuite
+      this.prechaufferQuandLibre(PHRASES_COURANTES);
       return this.avecPiper;
     });
     return say.ok ? { ok: true, detail: `Voix : ${this.o.piper.nom} en chargement` } : say;
@@ -142,6 +144,18 @@ export class Bouche extends EventEmitter {
     if (!dos || texte.length > COURTE) return null;
     fs.mkdirSync(dos, { recursive: true });
     return path.join(dos, `${createHash("sha1").update(`${this.o.piper!.nom}|${texte}`).digest("hex").slice(0, 16)}.wav`);
+  }
+
+  /** Comme `prechauffer`, mais seulement quand Max se tait : jamais devant une vraie phrase. */
+  prechaufferQuandLibre(phrases: string[], delaiMs = 15_000): void {
+    const reste = [...phrases];
+    const suivante = () => {
+      if (!reste.length || !this.avecPiper) return;
+      if (this.parle) return void setTimeout(suivante, 5000).unref();
+      const p = reste.shift()!;
+      void this.prechauffer([p]).finally(() => setTimeout(suivante, 400).unref());
+    };
+    setTimeout(suivante, delaiMs).unref();
   }
 
   /** Prépare d'avance les phrases courtes (en arrière-plan, une à une). */

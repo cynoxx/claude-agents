@@ -3462,3 +3462,232 @@ body[data-obscur="oui"] .j-gestes-msg {
 .jarvis .j-plan h3 {
   letter-spacing: 0.2em;
 }
+
+/* l'oreille : plus de texte, juste un signe qui s'allume quand Max t'entend */
+.j-entendu {
+  min-height: 0;
+  height: 18px;
+  display: flex;
+  justify-content: center;
+}
+.j-entendu::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: rgba(79, 183, 255, 0.35);
+  box-shadow: 0 0 6px rgba(79, 183, 255, 0.4);
+  transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.j-entendu[data-entend="oui"]::before {
+  background: #c6ecff;
+  box-shadow: 0 0 14px #4fb7ff, 0 0 30px rgba(79, 183, 255, 0.7);
+  transform: scale(1.5);
+}
+.j-entendu[data-ok="non"]::before {
+  background: rgba(255, 138, 107, 0.6);
+  box-shadow: none;
+}
+
+/* --- l'ambiance du Système : poussière de mana bleue qui monte, halo sur les bords ------------------ */
+.sys-ambiance {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 120%, rgba(40, 110, 255, 0.16), transparent 55%), radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0, 8, 30, 0.55) 100%);
+}
+body[data-obscur="oui"] .sys-ambiance {
+  display: none;
+}
+.sys-ambiance i {
+  position: absolute;
+  inset: -100% 0 0 0;
+  background-image: radial-gradient(1.6px 1.6px at 12% 18%, rgba(140, 210, 255, 0.9) 50%, transparent 52%), radial-gradient(1.2px 1.2px at 32% 64%, rgba(110, 190, 255, 0.8) 50%, transparent 52%),
+    radial-gradient(2px 2px at 58% 38%, rgba(160, 225, 255, 0.85) 50%, transparent 52%), radial-gradient(1.3px 1.3px at 78% 82%, rgba(110, 190, 255, 0.8) 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 90% 12%, rgba(140, 210, 255, 0.85) 50%, transparent 52%);
+  background-size: 520px 520px;
+  opacity: 0.35;
+  animation: sys-mana 38s linear infinite;
+}
+.sys-ambiance i + i {
+  background-size: 780px 780px;
+  opacity: 0.22;
+  animation-duration: 60s;
+  filter: blur(0.6px);
+}
+@keyframes sys-mana {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(50%);
+  }
+}
+
+/* --- les grandes fenêtres du Système (quête attribuée, niveau supérieur, quête accomplie) ----------- */
+.sys-pop-fond {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+  display: grid;
+  place-items: center;
+  background: rgba(1, 4, 14, 0.72);
+  backdrop-filter: blur(3px);
+  font-family: var(--sys-police);
+  color: var(--sys-clair);
+}
+.sys-pop {
+  position: relative;
+  width: min(640px, 90vw);
+  border: 1px solid var(--sys);
+  background: linear-gradient(180deg, rgba(12, 30, 66, 0.95), rgba(4, 10, 26, 0.96));
+  box-shadow: 0 0 30px rgba(79, 183, 255, 0.55), 0 0 100px rgba(79, 183, 255, 0.2), inset 0 0 36px rgba(79, 183, 255, 0.16);
+  transform: scale(1, 0.004);
+  opacity: 0;
+}
+.sys-pop::before,
+.sys-pop::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--sys-clair);
+  filter: drop-shadow(0 0 6px var(--sys));
+}
+.sys-pop::before {
+  top: -3px;
+  left: -3px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.sys-pop::after {
+  bottom: -3px;
+  right: -3px;
+  border-left: 0;
+  border-top: 0;
+}
+.sys-pop-fond.ouvre .sys-pop {
+  animation: sys-pop-ouvre 0.55s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+.sys-pop-fond.sort .sys-pop {
+  animation: sys-ferme 0.4s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+.sys-pop-fond.sort {
+  animation: sys-sort 0.45s ease-in forwards;
+}
+@keyframes sys-pop-ouvre {
+  0% {
+    transform: scale(0.2, 0.004);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(1, 0.004);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1, 1);
+    opacity: 1;
+  }
+}
+.sys-pop-corps {
+  padding: 22px 32px 8px;
+  display: grid;
+  gap: 10px;
+  font-size: 19px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.sys-pop-corps p {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.sys-pop-corps strong {
+  color: #fff;
+  text-shadow: 0 0 12px var(--sys);
+}
+.sys-pop-corps small {
+  font-size: 13px;
+  opacity: 0.7;
+}
+.sys-gros {
+  font-size: 42px;
+}
+.sys-case {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--sys);
+  box-shadow: 0 0 6px rgba(79, 183, 255, 0.5);
+}
+.sys-pop-ok {
+  display: block;
+  margin: 14px auto 22px;
+  padding: 8px 34px;
+  font-family: var(--sys-police);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--sys-clair);
+  background: rgba(79, 183, 255, 0.12);
+  border: 1px solid var(--sys);
+  box-shadow: 0 0 14px rgba(79, 183, 255, 0.35);
+  cursor: pointer;
+}
+.sys-pop-ok:hover {
+  background: rgba(79, 183, 255, 0.28);
+}
+
+/* --- les notifications du Système, en haut à droite -------------------------------------------------- */
+.sys-toasts {
+  position: fixed;
+  top: 76px;
+  right: 18px;
+  z-index: 1800;
+  display: grid;
+  gap: 8px;
+  width: min(360px, 80vw);
+  pointer-events: none;
+}
+.sys-toast {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border: 1px solid var(--sys);
+  background: rgba(6, 16, 38, 0.94);
+  box-shadow: 0 0 18px rgba(79, 183, 255, 0.4);
+  font-family: var(--sys-police);
+  color: var(--sys-clair);
+  animation: sys-toast 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sys-toast b {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+}
+.sys-toast p {
+  margin: 3px 0 0;
+  font-size: 14px;
+  color: #e8f6ff;
+}
+.sys-toast.part {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: all 0.45s;
+}
+.sys-toast .sys-alerte {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+}
+@keyframes sys-toast {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scaleY(0.2);
+  }
+}

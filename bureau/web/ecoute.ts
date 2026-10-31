@@ -5,7 +5,7 @@
 //   « attends », « chut » : Max se tait tout de suite.
 // - Elle redémarre toute seule quand Chrome la coupe (silence, réseau), et dit ce qui coince.
 import type { ClientMessage, EtatBureau } from "../shared/protocol.ts";
-import { estCoupure, texteFinal } from "./ecoute-pur.ts";
+import { texteFinal, tuLuiCoupesLaParole } from "./ecoute-pur.ts";
 
 type Resultat = { isFinal: boolean; 0: { transcript: string } };
 interface Reconnaissance {
@@ -37,6 +37,9 @@ export class Ecoute {
   private echecs = 0;
   private probleme: string | null = null;
   private ligne = document.getElementById("j-entendu");
+  /** Les dernières phrases dites par Max : ce que le micro entend de lui (pour le reconnaître). */
+  private phrasesMax: string[] = [];
+  private signe = 0;
 
   constructor(private envoyer: (m: ClientMessage) => void) {
     const C = (window as unknown as { SpeechRecognition?: new () => Reconnaissance; webkitSpeechRecognition?: new () => Reconnaissance }).SpeechRecognition ??
@@ -71,6 +74,7 @@ export class Ecoute {
     if (page && !this.rec) this.signaler("Ce navigateur ne sait pas écouter : ouvre Max dans Chrome (npm start l'ouvre tout seul).");
     if (a?.ecoute) this.pauseFinMs = a.ecoute.pauseFinMs;
     const parle = a?.etat === "parle";
+    if (a?.phrase && a.phrase !== this.phrasesMax.at(-1)) this.phrasesMax = [...this.phrasesMax.slice(-3), a.phrase];
     if (this.parle && !parle) this.finParole = Date.now();
     this.parle = parle;
     if (parle) this.vider(); // ce qu'il a entendu pendant qu'il parlait, c'était lui
@@ -109,16 +113,17 @@ export class Ecoute {
     }
     const sourd = this.parle || Date.now() - this.finParole < ECHO_MS;
     if (sourd) {
-      // il parle : seule une coupure compte
-      if (this.parle && estCoupure(provisoire + " " + finals.join(" "))) {
-        this.envoyer({ type: "taire" });
-        this.afficher("✋ Max se tait", true);
-      }
-      return;
+      // il parle (ou sa voix résonne encore) : ce qui ressemble à ses phrases, c'est lui ; sinon c'est toi qui lui
+      // coupes la parole : il se tait tout de suite et t'écoute (ce que tu as commencé à dire est gardé)
+      if (!tuLuiCoupesLaParole(provisoire + " " + finals.join(" "), this.phrasesMax)) return;
+      if (this.parle) this.envoyer({ type: "taire" });
+      this.parle = false;
+      this.finParole = 0;
+      this.afficher();
     }
     this.tampon.push(...finals.map((f) => f.trim()).filter(Boolean));
     const tout = texteFinal([...this.tampon, provisoire]);
-    if (tout) this.afficher(tout, false);
+    if (tout) this.afficher();
     // la phrase part après une vraie pause : tant qu'il parle encore (provisoire), on attend
     clearTimeout(this.minuterie);
     if (this.tampon.length) this.minuterie = window.setTimeout(() => this.envoyerPhrase(), provisoire.trim() ? this.pauseFinMs + 400 : this.pauseFinMs);
@@ -136,11 +141,13 @@ export class Ecoute {
     this.tampon = [];
   }
 
-  private afficher(texte: string, fort: boolean): void {
+  /** Tes paroles ne s'écrivent pas à l'écran : seul un signe montre qu'il t'entend. */
+  private afficher(): void {
     if (!this.ligne) return;
-    this.ligne.textContent = `🎙 ${texte}`;
-    this.ligne.dataset.pourMax = fort || /\bmax\b/i.test(texte) ? "oui" : "non";
+    this.ligne.dataset.entend = "oui";
     this.ligne.dataset.directA = String(Date.now());
+    clearTimeout(this.signe);
+    this.signe = window.setTimeout(() => this.ligne && (this.ligne.dataset.entend = "non"), 900);
   }
 
   private erreur(code: string): void {

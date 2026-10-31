@@ -164,17 +164,13 @@ export class Jarvis {
     $("j-statut").dataset.etat = e;
     $("j-reveil").textContent = e === "veille" ? "👂 Réveiller" : "😴 Veille";
     $("j-dit").textContent = textePrincipal(a) || (e === "veille" ? "Dis « Max » quand tu as besoin de moi." : "Je t'écoute.");
-    const toi = texteToi(a);
-    $("j-toi").textContent = toi ? `« ${toi} »` : "";
+    // tes paroles ne s'affichent pas : seul le signe 🎙 s'allume quand il t'entend (et dit si le micro a un souci)
+    $("j-toi").textContent = "";
     const soucis = a ? [a.oreille, a.bouche, a.cerveau].filter((d) => !d.ok && d.detail).map((d) => `⚠️ ${d.detail}`) : [];
     $("j-soucis").textContent = soucis.join(" · ");
-    // ce que le micro a entendu en dernier : la preuve qu'il t'écoute (estompé si ce n'était pas pour Max)
     const ent = $("j-entendu");
-    const en = a?.entendu;
-    // la page écrit en direct ce qu'elle entend : on ne l'écrase pas pendant quelques secondes
-    if (Date.now() - Number(ent.dataset.directA ?? 0) > 4000)
-      ent.textContent = !a?.oreille.ok ? `🎙 ${a?.oreille.detail ?? "micro coupé"}` : en ? `🎙 ${new Date(en.heure).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · « ${en.texte} »` : "🎙 j'écoute…";
-    if (Date.now() - Number(ent.dataset.directA ?? 0) > 4000) ent.dataset.pourMax = en?.pourMax ? "oui" : "non";
+    ent.textContent = "";
+    ent.dataset.ok = a?.oreille.ok ? "oui" : "non";
 
     // panneaux
     const j = etat.jarvis;

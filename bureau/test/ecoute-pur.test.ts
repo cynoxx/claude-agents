@@ -27,3 +27,21 @@ describe("l'écoute de la page", () => {
     expect(erreurs).toEqual(["pas de micro"]);
   });
 });
+
+describe("couper la parole à Max", () => {
+  it("reconnaît sa propre voix (ses phrases) et ne se coupe pas", async () => {
+    const { tuLuiCoupesLaParole } = await import("../web/ecoute-pur.ts");
+    const max = ["D'accord.", "Ta séance de biochimie commence à quatorze heures, pense à prendre tes fiches."];
+    expect(tuLuiCoupesLaParole("ta séance de biochimie commence", max)).toBe(false);
+    expect(tuLuiCoupesLaParole("pense à prendre tes fiches", max)).toBe(false);
+    expect(tuLuiCoupesLaParole("biochimie", max)).toBe(false);
+  });
+
+  it("t'entend quand tu parles par-dessus, ou quand tu dis stop", async () => {
+    const { tuLuiCoupesLaParole } = await import("../web/ecoute-pur.ts");
+    const max = ["Ta séance de biochimie commence à quatorze heures."];
+    expect(tuLuiCoupesLaParole("attends non plutôt la physiologie", max)).toBe(true);
+    expect(tuLuiCoupesLaParole("mets-moi un minuteur de vingt minutes", max)).toBe(true);
+    expect(tuLuiCoupesLaParole("stop", max)).toBe(true);
+  });
+});

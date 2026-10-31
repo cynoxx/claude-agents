@@ -35,7 +35,7 @@ describe("loadConfig", () => {
     expect(c.voix).toEqual({
       active: true,
       ecoute: "page",
-      pauseFinMs: 1200,
+      pauseFinMs: 850,
       ffmpeg: "ffmpeg",
       whisper: "whisper-cli",
       say: "say",
