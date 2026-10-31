@@ -37,16 +37,16 @@ export function brancherAmbianceSysteme(): void {
     { passive: true },
   );
   // une onde du Système là où tu cliques
-  document.addEventListener(
-    "pointerdown",
-    (e) => {
-      const o = document.createElement("i");
-      o.className = "sys-onde";
-      o.style.left = `${e.clientX}px`;
-      o.style.top = `${e.clientY}px`;
-      document.body.appendChild(o);
-      window.setTimeout(() => o.remove(), 650);
-    },
-    { passive: true },
-  );
+  document.addEventListener("pointerdown", (e) => onde(e.clientX, e.clientY), { passive: true });
+}
+
+/** Une onde de lumière du Système à cet endroit de l'écran (un clic, de la souris ou de la main). */
+export function onde(x: number, y: number): void {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const o = document.createElement("i");
+  o.className = "sys-onde";
+  o.style.left = `${x}px`;
+  o.style.top = `${y}px`;
+  document.body.appendChild(o);
+  window.setTimeout(() => o.remove(), 650);
 }

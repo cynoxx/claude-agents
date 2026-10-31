@@ -1,5 +1,5 @@
 import { Ecoute } from "./ecoute.ts";
-import { Gestes } from "./gestes.ts";
+import { PointeurMainPage } from "./pointeur.ts";
 import Phaser from "phaser";
 import type { ClientMessage, ServerMessage } from "../shared/protocol.ts";
 import { HAUTEUR, LARGEUR, OfficeScene } from "./office-scene.ts";
@@ -74,7 +74,7 @@ function ceder(): void {
   setTimeout(() => location.replace("/ailleurs.html"), 300);
 }
 
-const gestes = new Gestes((m) => ws?.send(JSON.stringify(m)));
+new PointeurMainPage();
 const ecoute = new Ecoute((m) => ws?.readyState === 1 && ws.send(JSON.stringify(m)));
 
 function connecter(): void {
@@ -91,7 +91,6 @@ function connecter(): void {
       ui.rendre(msg.etat);
       hud.rendre(msg.etat.assistant?.coach);
       jarvis.rendre(msg.etat);
-      gestes.rendre(msg.etat);
       ecoute.rendre(msg.etat);
       qg.rendre(msg.etat);
       intro.rendre(msg.etat);
