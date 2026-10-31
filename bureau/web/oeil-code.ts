@@ -28,6 +28,26 @@ const entree = (x: number) => x * x * x;
 const frac = (x: number) => x - Math.floor(x);
 /** Une ouverture avec un léger rebond, comme une paupière. */
 const rebond = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : 1 + 2.2 * (x - 1) ** 3 + 1.2 * (x - 1) ** 2);
+/** L'œil s'entrouvre, se referme (il cligne, comme s'il se réveillait), puis s'ouvre en grand. */
+export function ouverture(s: number): number {
+  if (s < 0.95) return 0.32 * doux(entre(s, 0.4, 0.62)) * (1 - doux(entre(s, 0.72, 0.9)));
+  return rebond(entre(s, 0.95, 1.75));
+}
+/** Les battements de cœur (double battement, comme un cœur) : 0 au repos, 1 au coup. */
+export const BATTEMENTS = [1.0, 1.85, 2.7];
+function battement(s: number): number {
+  let b = 0;
+  for (const t of BATTEMENTS) {
+    for (const [d, f] of [
+      [0, 1],
+      [0.2, 0.6],
+    ]) {
+      const x = s - t - d;
+      if (x >= 0 && x < 0.35) b = Math.max(b, f * Math.exp(-x * 14));
+    }
+  }
+  return b;
+}
 const MONO = "ui-monospace, Menlo, monospace";
 
 /** Les lignes du terminal, déchiffrées pendant que l'œil s'ouvre. */
@@ -131,6 +151,11 @@ export class OeilCode {
   private flux = Array.from({ length: 70 }, () => ({ ang: Math.random() * Math.PI * 2, phase: Math.random(), g: glyphe(), v: 0.6 + Math.random() * 0.8 }));
   /** Les dumps mémoire qui défilent sur les côtés. */
   private dumps: string[] = Array.from({ length: 64 }, () => `0x${hex(4)}  ${hex(2)} ${hex(2)} ${hex(2)} ${hex(2)}  ${hex(2)} ${hex(2)}`);
+  /** Des braises qui montent lentement. */
+  private braises = Array.from({ length: 90 }, () => ({ x: Math.random(), y: Math.random(), v: 0.03 + Math.random() * 0.08, t: 1 + Math.random() * 2.5, ph: Math.random() * 6 }));
+  /** Le halo de toute l'image (bloom) : l'image réduite, floutée, ajoutée par-dessus. */
+  private halo = document.createElement("canvas");
+  private hctx = this.halo.getContext("2d")!;
   private lignes: string[] = [];
   private fini: (() => void) | null = null;
 
@@ -179,8 +204,69 @@ export class OeilCode {
     // l'iris : des anneaux de code, de la pupille vers le bord, en sens alternés, préparés une fois
     const R = Math.min(L * 0.26, H * 0.3);
     this.anneaux = Array.from({ length: 7 }, (_, i) => this.anneau(R * (0.34 + i * 0.105), i));
+    this.halo.width = Math.max(1, Math.round(L / 4));
+    this.halo.height = Math.max(1, Math.round(H / 4));
     this.ctx.fillStyle = FOND;
     this.ctx.fillRect(0, 0, L, H);
+  }
+
+  /** Une onde de choc (cercle et hexagone) partie du centre de l'œil à l'instant `t0`. */
+  private onde(s: number, t0: number, cx: number, cy: number, R: number, couleur: string): void {
+    const x = entre(s, t0, t0 + 0.9);
+    if (x <= 0 || x >= 1) return;
+    const { ctx } = this;
+    const r = R * (0.4 + 3.2 * sortie(x));
+    ctx.save();
+    ctx.globalAlpha = (1 - x) ** 1.5;
+    ctx.strokeStyle = `rgb(${couleur})`;
+    ctx.lineWidth = this.pas * 0.35 * (1 - x) + 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = Math.max(1, this.pas / 10);
+    ctx.beginPath();
+    for (let k = 0; k <= 6; k++) {
+      const a = (k / 6) * Math.PI * 2 + x * 0.6;
+      const px = cx + Math.cos(a) * r * 0.82;
+      const py = cy + Math.sin(a) * r * 0.82;
+      if (k) ctx.lineTo(px, py);
+      else ctx.moveTo(px, py);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** Un glitch : des bandes de l'image décalées, avec une séparation rouge et cyan. */
+  private glitch(force: number): void {
+    if (force <= 0.02) return;
+    const { ctx, toile } = this;
+    const L = toile.width;
+    const H = toile.height;
+    for (let k = 0; k < 7; k++) {
+      const y = Math.random() * H;
+      const h = (0.01 + Math.random() * 0.06) * H;
+      const dx = (Math.random() - 0.5) * this.pas * 5 * force;
+      ctx.drawImage(toile, 0, y, L, h, dx, y, L, h);
+    }
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.35 * force;
+    ctx.drawImage(toile, this.pas * 0.4 * force, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  /** Le halo de lumière sur toute l'image (bloom), très peu coûteux : calculé sur une image 4 fois plus petite. */
+  private lumiere(force: number): void {
+    const { hctx, halo, ctx, toile } = this;
+    hctx.globalCompositeOperation = "copy";
+    hctx.filter = "blur(5px)";
+    hctx.drawImage(toile, 0, 0, halo.width, halo.height);
+    hctx.filter = "none";
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = force;
+    ctx.drawImage(halo, 0, 0, toile.width, toile.height);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
   }
 
   /** Un anneau de code dessiné une fois (avec son halo) dans sa propre toile : ensuite on ne fait que le tourner. */
@@ -223,7 +309,8 @@ export class OeilCode {
     const cy = H * 0.46;
     const P = this.pas;
     // les temps forts
-    const ouvert = rebond(entre(s, 0.55, 1.65)); // les paupières s'ouvrent, avec un petit rebond
+    const ouvert = ouverture(s); // l'œil cligne, puis s'ouvre en grand avec un petit rebond
+    const coeur = battement(s);
     const scan = doux(entre(s, 1.9, 3.3));
     const reconnu = s > 3.25;
     const plonge = entree(entre(s, 3.45, 4.3)); // la caméra plonge dans la pupille
@@ -296,14 +383,29 @@ export class OeilCode {
       ctx.fillStyle = "rgba(6, 0, 0, 0.95)";
       ctx.fill();
       ctx.clip();
-      // les anneaux de l'iris : de simples images tournées
+      // des rayons de lumière qui tournent derrière l'iris
+      if ("createConicGradient" in ctx) {
+        const cg = ctx.createConicGradient(s * 0.25, cx, cy);
+        for (let k = 0; k <= 24; k++) cg.addColorStop(k / 24, k % 2 ? `rgba(${ROUGE}, ${0.1 + 0.12 * coeur})` : "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = cg;
+        ctx.fillRect(cx - W / 2, cy - W / 2, W, W);
+      }
+      // les anneaux de l'iris : de simples images tournées (ils s'illuminent à la reconnaissance)
+      const flash = entre(s, 3.25, 3.3) * (1 - entre(s, 3.3, 3.7));
+      if (flash > 0) ctx.globalCompositeOperation = "lighter";
       for (const a of this.anneaux) {
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(s * a.vitesse * a.sens);
         ctx.drawImage(a.toile, -a.toile.width / 2, -a.toile.height / 2);
+        if (flash > 0) {
+          ctx.globalAlpha = flash;
+          ctx.drawImage(a.toile, -a.toile.width / 2, -a.toile.height / 2);
+          ctx.globalAlpha = 1;
+        }
         ctx.restore();
       }
+      ctx.globalCompositeOperation = "source-over";
       // le scintillement : une poignée de caractères vifs, posés sur les anneaux (ils tournent avec eux)
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -320,7 +422,7 @@ export class OeilCode {
       }
       const R0 = this.anneaux[0].r;
       const R6 = this.anneaux[6].r * 1.06;
-      const pupille = R0 * (0.78 - 0.26 * Math.sin(scan * Math.PI) + 0.04 * Math.sin(s * 3.1));
+      const pupille = R0 * (0.78 - 0.26 * Math.sin(scan * Math.PI) + 0.04 * Math.sin(s * 3.1) + 0.1 * coeur);
       // les fibres de l'iris
       ctx.strokeStyle = `rgba(${ROUGE}, 0.18)`;
       ctx.lineWidth = Math.max(1, P / 14);
@@ -441,7 +543,32 @@ export class OeilCode {
         ctx.stroke();
       }
     }
+    // les ondes de choc : quand l'œil s'ouvre en grand, et quand il te reconnaît
+    const Ronde = Math.min(L * 0.26, H * 0.3);
+    this.onde(s, 1.0, cx, cy, Ronde, CLAIR);
+    this.onde(s, 3.25, cx, cy, Ronde, BLANC);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // les braises qui montent, devant tout
+    ctx.globalCompositeOperation = "lighter";
+    for (const b of this.braises) {
+      b.y -= b.v * dt;
+      if (b.y < -0.02) {
+        b.y = 1.02;
+        b.x = Math.random();
+      }
+      const scint = 0.5 + 0.5 * Math.sin(s * 6 + b.ph);
+      ctx.fillStyle = `rgba(255, ${Math.round(70 + 90 * scint)}, 40, ${(0.25 + 0.5 * scint) * fondu})`;
+      const x = b.x * L + Math.sin(s * 1.3 + b.ph) * P;
+      ctx.fillRect(x, b.y * H, b.t * (L / 1500), b.t * (L / 1500));
+    }
+    ctx.globalCompositeOperation = "source-over";
+
+    // le halo de lumière sur toute l'image, plus fort au battement du cœur et à la reconnaissance
+    this.lumiere(0.55 + 0.35 * coeur + 0.6 * entre(s, 3.25, 3.3) * (1 - entre(s, 3.3, 3.8)));
+
+    // des glitchs, aux moments forts
+    this.glitch(Math.max(1 - entre(s, 0.4, 0.55), entre(s, 0.95, 1.0) * (1 - entre(s, 1.0, 1.2)), entre(s, 3.22, 3.27) * (1 - entre(s, 3.27, 3.45))) * (Math.random() < 0.7 ? 1 : 0));
 
     // 4. la plongée : des traînées de code jaillissent du centre (vitesse lumière)
     if (plonge > 0 && plonge < 1) {

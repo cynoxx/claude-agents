@@ -4,6 +4,7 @@
 import type { EtatBureau } from "../shared/protocol.ts";
 import { niveau } from "../shared/niveau.ts";
 import { son } from "./sons.ts";
+import { eclat } from "./eclat.ts";
 
 const echapper = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const lire = (cle: string) => {
@@ -37,6 +38,21 @@ export function evenementsSysteme(
   const blocs = Math.floor((a.coach?.aujourdhui ?? 0) / 50);
   if (p && memoire.queteAccomplie !== memoire.aujourdhui && p.regles.every((r) => p.aujourdhui[r.id]) && blocs >= p.blocs) out.push("accomplie");
   return out;
+}
+
+/** Le titre de la fenêtre se déchiffre : des caractères au hasard qui se figent un à un. */
+function dechiffrerTitre(el: HTMLElement | null): void {
+  if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const final = el.textContent ?? "";
+  const signes = "01アイウエオカキ<>/#$%&*+=ABCDEF0123456789ΣΔΨΩ";
+  const debut = performance.now();
+  const tic = (t: number) => {
+    const p = Math.min(1, (t - debut) / 600);
+    const n = Math.floor(p * final.length);
+    el.textContent = final.slice(0, n) + [...final.slice(n)].map((c) => (c === " " ? " " : signes[Math.floor(Math.random() * signes.length)])).join("");
+    if (p < 1) requestAnimationFrame(tic);
+  };
+  requestAnimationFrame(tic);
 }
 
 export class EvenementsSysteme {
@@ -139,6 +155,10 @@ export class EvenementsSysteme {
     void this.fond.offsetWidth;
     this.fond.classList.add("ouvre");
     son(sonNom === "niveau" ? "quete" : "systeme", 0.08);
+    // les grands moments (niveau, quête accomplie) : rayons de lumière et explosion d'étincelles
+    this.fond.classList.toggle("grand", sonNom === "niveau");
+    if (sonNom === "niveau") window.setTimeout(() => eclat(), 250);
+    dechiffrerTitre(this.fond.querySelector(".sys-tete span:last-child"));
     const fermer = () => {
       this.fond.classList.add("sort");
       window.setTimeout(() => {

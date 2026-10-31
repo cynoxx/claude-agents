@@ -4,8 +4,8 @@
 // scanne le Joueur. Environ 7 secondes, en même temps que la musique.
 import type { EtatBureau } from "../shared/protocol.ts";
 import { niveau } from "../shared/niveau.ts";
-import { son } from "./sons.ts";
-import { DUREE_OEIL_MS, OeilCode } from "./oeil-code.ts";
+import { bandeSonOeil, son } from "./sons.ts";
+import { BATTEMENTS, DUREE_OEIL_MS, OeilCode } from "./oeil-code.ts";
 
 const RECENTE_MS = 8000;
 /** La fenêtre du Système, après l'œil. */
@@ -39,6 +39,23 @@ export function annonceIntro(e: EtatBureau): { joueur: string; niveau: number; q
     niveau: niveau(e.assistant?.coach?.total ?? 0).niveau,
     quete: p ? `${p.blocs} blocs de médecine · 3 règles` : "Quête du jour",
   };
+}
+
+const SIGNES = "01アイウエオカキクケコ<>/#$%&*+=ABCDEF0123456789ΣΔΨΩ";
+
+/** Le texte se déchiffre : des caractères au hasard qui se figent un à un, de gauche à droite. */
+function dechiffrer(el: HTMLElement | null, dureeMs: number): void {
+  if (!el) return;
+  const final = el.textContent ?? "";
+  const debut = performance.now();
+  const tic = (t: number) => {
+    const p = Math.min(1, (t - debut) / dureeMs);
+    const fige = Math.floor(p * final.length);
+    el.textContent = final.slice(0, fige) + [...final.slice(fige)].map((c) => (c === " " ? " " : SIGNES[Math.floor(Math.random() * SIGNES.length)])).join("");
+    if (p < 1) requestAnimationFrame(tic);
+    else el.textContent = final;
+  };
+  requestAnimationFrame(tic);
 }
 
 export class Intro {
@@ -80,6 +97,9 @@ export class Intro {
       .join("");
     this.el.innerHTML = `
 <canvas class="sys-oeil"></canvas>
+<div class="sys-crt"></div>
+<div class="sys-onde-choc"></div>
+<div class="sys-faisceau"></div>
 <div class="sys-poussiere"></div>
 <div class="sys-fenetre">
   <div class="sys-tete"><span class="sys-alerte">!</span><span>NOTIFICATION</span></div>
@@ -103,13 +123,16 @@ export class Intro {
     this.oeil?.arreter();
     this.oeil = new OeilCode(this.el.querySelector<HTMLCanvasElement>(".sys-oeil")!, a.joueur);
     this.oeil.jouer(() => {});
-    this.plus(150, () => son("ouvre", 0.05));
-    this.plus(3250, () => son("deverrouille", 0.07));
-    this.plus(3500, () => son("ouvre", 0.04));
+    bandeSonOeil(BATTEMENTS);
+    this.plus(3250, () => son("deverrouille", 0.08));
     // 2. puis la fenêtre du Système
     this.plus(DUREE_OEIL_MS, () => {
       void this.el.offsetWidth;
       this.el.classList.add("joue");
+      // les textes du Système se déchiffrent au moment où ils apparaissent
+      this.plus(550, () => dechiffrer(this.el.querySelector(".sys-tete span:last-child"), 500));
+      this.plus(1750, () => dechiffrer(this.el.querySelector(".sys-joueur strong"), 450));
+      this.plus(2350, () => dechiffrer(this.el.querySelector(".sys-quete b"), 550));
       const debut = performance.now() + 800;
       const pct = this.el.querySelector<HTMLElement>(".sys-barre b")!;
       const tic = (t: number) => {
