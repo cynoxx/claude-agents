@@ -369,7 +369,11 @@ export class OeilCode {
     // 3. l'œil, vu par une caméra qui avance doucement puis plonge
     const W = Math.min(L * 0.74, H * 1.2);
     const demiH = W * 0.26 * Math.max(0, ouvert);
-    ctx.setTransform(zoom, 0, 0, zoom, cx * (1 - zoom), cy * (1 - zoom));
+    // la caméra tremble au battement du cœur et à l'onde de choc de la reconnaissance
+    const secousse = P * (0.35 * coeur + 0.9 * entre(s, 3.25, 3.28) * (1 - entre(s, 3.28, 3.6)));
+    const sx = (Math.random() - 0.5) * secousse;
+    const sy = (Math.random() - 0.5) * secousse;
+    ctx.setTransform(zoom, 0, 0, zoom, cx * (1 - zoom) + sx, cy * (1 - zoom) + sy);
     if (ouvert > 0.005) {
       const amande = () => {
         ctx.beginPath();

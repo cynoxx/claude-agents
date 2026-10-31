@@ -20,8 +20,23 @@ export function brancherAmbianceSysteme(): void {
   };
   tic();
   window.setInterval(tic, 1000);
-  // une onde du Système là où tu cliques
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // la profondeur : les couches de l'ambiance suivent la souris (variables CSS, une fois par image au plus)
+  let attente = 0;
+  window.addEventListener(
+    "pointermove",
+    (e) => {
+      if (attente) return;
+      attente = requestAnimationFrame(() => {
+        attente = 0;
+        const r = document.documentElement.style;
+        r.setProperty("--sys-px", ((e.clientX / innerWidth - 0.5) * 2).toFixed(3));
+        r.setProperty("--sys-py", ((e.clientY / innerHeight - 0.5) * 2).toFixed(3));
+      });
+    },
+    { passive: true },
+  );
+  // une onde du Système là où tu cliques
   document.addEventListener(
     "pointerdown",
     (e) => {

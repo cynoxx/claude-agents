@@ -6,6 +6,7 @@ import type { EtatBureau } from "../shared/protocol.ts";
 import { niveau } from "../shared/niveau.ts";
 import { bandeSonOeil, son } from "./sons.ts";
 import { BATTEMENTS, DUREE_OEIL_MS, OeilCode } from "./oeil-code.ts";
+import { convergence } from "./eclat.ts";
 
 const RECENTE_MS = 8000;
 /** La fenêtre du Système, après l'œil. */
@@ -128,6 +129,11 @@ export class Intro {
     // 2. puis la fenêtre du Système
     this.plus(DUREE_OEIL_MS, () => {
       void this.el.offsetWidth;
+      // des particules venues de partout dessinent le cadre de la fenêtre, qui s'ouvre en même temps
+      const f = this.el.querySelector<HTMLElement>(".sys-fenetre")!;
+      const l = f.offsetWidth;
+      const h = f.offsetHeight;
+      convergence({ x: (innerWidth - l) / 2, y: (innerHeight - h) / 2, l, h });
       this.el.classList.add("joue");
       // les textes du Système se déchiffrent au moment où ils apparaissent
       this.plus(550, () => dechiffrer(this.el.querySelector(".sys-tete span:last-child"), 500));

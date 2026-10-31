@@ -4044,3 +4044,80 @@ body[data-obscur="oui"] .sys-onde {
   position: relative;
   z-index: 1;
 }
+.sys-eclat-haut {
+  z-index: 2100;
+}
+
+/* --- une lumière qui court le long du cadre des fenêtres, chacune à son rythme ------------------------ */
+@property --sys-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.jarvis .j-carte {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(180deg, rgba(10, 26, 58, 0.9), rgba(4, 11, 28, 0.92)) padding-box,
+    conic-gradient(from var(--sys-angle), rgba(79, 183, 255, 0.35) 0deg, rgba(79, 183, 255, 0.35) 250deg, rgba(198, 236, 255, 1) 300deg, #fff 315deg, rgba(79, 183, 255, 0.35) 340deg) border-box;
+  animation: sys-cadre 7s linear infinite;
+}
+.jarvis .j-carte:nth-child(2n) {
+  animation-duration: 9s;
+  animation-direction: reverse;
+}
+.jarvis .j-carte:nth-child(3n) {
+  animation-duration: 11s;
+}
+@keyframes sys-cadre {
+  to {
+    --sys-angle: 360deg;
+  }
+}
+body[data-obscur="oui"] .jarvis .j-carte {
+  background:
+    linear-gradient(180deg, rgba(30, 6, 8, 0.9), rgba(12, 3, 4, 0.92)) padding-box,
+    conic-gradient(from var(--sys-angle), rgba(255, 50, 50, 0.3) 0deg, rgba(255, 50, 50, 0.3) 250deg, rgba(255, 160, 150, 1) 310deg, rgba(255, 50, 50, 0.3) 340deg) border-box;
+}
+/* les fenêtres réagissent quand on les survole : elles s'illuminent et se soulèvent un peu */
+.jarvis .j-carte {
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+.jarvis .j-carte:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 26px rgba(79, 183, 255, 0.45), inset 0 0 28px rgba(79, 183, 255, 0.14);
+}
+
+/* --- la profondeur : les couches de l'ambiance suivent la souris, chacune à sa distance ---------------- */
+.sys-ambiance > i,
+.sys-ambiance > .sys-grille {
+  translate: calc(var(--sys-px, 0) * 14px) calc(var(--sys-py, 0) * 10px);
+  transition: translate 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sys-ambiance > i + i {
+  translate: calc(var(--sys-px, 0) * 30px) calc(var(--sys-py, 0) * 22px);
+}
+.sys-ambiance > .sys-grille {
+  translate: calc(var(--sys-px, 0) * -8px) calc(var(--sys-py, 0) * -6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .jarvis .j-carte {
+    animation: none;
+  }
+}
+/* les tuiles des pôles : un reflet de lumière les traverse au survol */
+.jarvis .qg-tuile {
+  position: relative;
+  overflow: hidden;
+}
+.jarvis .qg-tuile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(198, 236, 255, 0.22) 50%, transparent 65%);
+  translate: -120% 0;
+  pointer-events: none;
+}
+.jarvis .qg-tuile:hover::after {
+  translate: 120% 0;
+  transition: translate 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
