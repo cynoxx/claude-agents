@@ -1,0 +1,3925 @@
+/* Le Bureau, façon jeu vidéo : polices pixel, fenêtres de RPG, boutons d'arcade, HUD du joueur. */
+:root {
+  --fond: #0e0c1d;
+  --surface: #1b1838;
+  --surface-2: #2a2656;
+  --texte: #f4f4f4;
+  --discret: #a9a6d6;
+  --or: #ffcd3c;
+  --or-fonce: #c77d0a;
+  --cyan: #7df9ff;
+  --vert: #47d16c;
+  --rouge: #e43b44;
+  --contour: #05040c;
+  --cadre: #f4f4f4;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --pixel: "Pixelify Sans", system-ui, sans-serif;
+  --titre: "Press Start 2P", var(--mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  color: var(--texte);
+  font-family: var(--pixel);
+  font-size: 16px;
+}
+body {
+  min-height: 100vh;
+  background-color: var(--fond);
+  /* un ciel d'étoiles en pixels, et une grille très discrète */
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff8 50%, transparent 51%),
+    radial-gradient(1px 1px at 120px 90px, #fff6 50%, transparent 51%),
+    radial-gradient(2px 2px at 190px 150px, #7df9ff55 50%, transparent 51%),
+    radial-gradient(1px 1px at 260px 40px, #fff5 50%, transparent 51%),
+    linear-gradient(#ffffff05 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff05 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 0%, #2a2460 0%, transparent 60%);
+  background-size: 300px 200px, 300px 200px, 300px 200px, 300px 200px, 24px 24px, 24px 24px, 100% 100%;
+}
+
+/* --- boutons d'arcade -------------------------------------------------------------------------- */
+button {
+  font-family: var(--pixel);
+  font-size: 15px;
+  color: var(--texte);
+  background: linear-gradient(#433d86 0 50%, #37327a 50% 100%);
+  border: 0;
+  border-radius: 0;
+  padding: 7px 13px 9px;
+  box-shadow:
+    0 0 0 2px var(--contour),
+    inset 0 2px 0 #ffffff30,
+    inset 0 -3px 0 #00000055,
+    0 4px 0 2px var(--contour);
+  cursor: pointer;
+  transition: transform 0.05s, filter 0.1s;
+}
+button:hover:not(:disabled) {
+  filter: brightness(1.25);
+}
+button:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    0 0 0 2px var(--contour),
+    inset 0 2px 0 #ffffff30,
+    inset 0 -2px 0 #00000055,
+    0 1px 0 2px var(--contour);
+}
+button:focus-visible {
+  outline: 3px solid var(--or);
+  outline-offset: 4px;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button.danger {
+  background: linear-gradient(#c6303c 0 50%, #a8252f 50% 100%);
+}
+.bouton-action {
+  color: #1b1b2f;
+  font-weight: 700;
+  background: linear-gradient(#ffd94f 0 50%, #f5b81c 50% 100%);
+}
+[hidden] {
+  display: none !important;
+}
+input,
+textarea {
+  font-family: var(--pixel);
+  font-size: 16px;
+}
+
+/* --- le HUD du haut --------------------------------------------------------------------------- */
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 10px 18px 12px;
+  background: linear-gradient(#1f1b47, #15122f);
+  box-shadow:
+    0 3px 0 #3f388f,
+    0 6px 0 var(--contour);
+  position: relative;
+  z-index: 5;
+}
+.hud-logo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  font-family: var(--titre);
+  color: var(--or);
+  text-shadow:
+    2px 2px 0 var(--or-fonce),
+    4px 4px 0 var(--contour);
+}
+.hud-logo-haut {
+  font-size: 9px;
+  letter-spacing: 0.5em;
+  color: var(--cyan);
+  text-shadow: 2px 2px 0 var(--contour);
+  margin-bottom: 4px;
+}
+.hud-logo-bas {
+  font-size: 18px;
+}
+.hud-joueur {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #0b0a1a;
+  box-shadow:
+    0 0 0 2px #3f388f,
+    0 0 0 4px var(--contour);
+}
+.hud-joueur.monte {
+  animation: niveau-gagne 1.2s ease-out;
+}
+@keyframes niveau-gagne {
+  20% {
+    box-shadow:
+      0 0 0 2px var(--or),
+      0 0 24px 6px var(--or);
+  }
+}
+.hud-niv {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(#ffd94f, #f0a818);
+  color: #1b1b2f;
+  box-shadow:
+    0 0 0 2px var(--contour),
+    inset 0 -3px 0 #00000040;
+  line-height: 1;
+}
+.hud-niv span {
+  font-family: var(--titre);
+  font-size: 7px;
+  margin-top: 4px;
+}
+.hud-niv strong {
+  font-family: var(--titre);
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+.hud-xp {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.hud-xp-barre {
+  width: 150px;
+  height: 14px;
+  background: #241f4d;
+  box-shadow: 0 0 0 2px var(--contour);
+  position: relative;
+  overflow: hidden;
+}
+.hud-xp-plein {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #47d16c 0 8px, #3bb35b 8px 10px);
+  box-shadow: inset 0 3px 0 #ffffff40;
+  transition: width 0.8s steps(12);
+}
+.hud-xp-texte {
+  font-size: 12px;
+  color: var(--discret);
+  font-variant-numeric: tabular-nums;
+}
+.hud-pastille {
+  font-size: 14px;
+  padding: 4px 8px;
+  background: #241f4d;
+  box-shadow: 0 0 0 2px var(--contour);
+  white-space: nowrap;
+}
+.hud-pastille[data-chaud="oui"] {
+  color: #ffb347;
+}
+.hud-quete {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+  min-width: 0;
+}
+.hud-quete-titre {
+  font-family: var(--titre);
+  font-size: 8px;
+  color: #1b1b2f;
+  background: var(--cyan);
+  padding: 4px 6px;
+  box-shadow: 0 0 0 2px var(--contour);
+}
+#phase {
+  font-weight: 700;
+  font-size: 17px;
+}
+#chrono {
+  font-family: var(--titre);
+  font-size: 10px;
+  color: var(--or);
+}
+#titre-mission {
+  color: var(--discret);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40ch;
+}
+.hud-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bandeau {
+  padding: 10px 16px;
+  background: #5c1d24;
+  box-shadow: 0 3px 0 var(--contour);
+}
+
+/* --- la carte « ZONE : LE BUREAU » ------------------------------------------------------------ */
+.carte-zone {
+  position: fixed;
+  left: 50%;
+  top: 38%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 34px;
+  transform: translate(-50%, -50%);
+  background: #05040cdd;
+  box-shadow:
+    0 0 0 3px var(--cadre),
+    0 0 0 6px var(--contour);
+  pointer-events: none;
+  opacity: 0;
+}
+.carte-zone.visible {
+  animation: zone 2.5s ease-in-out forwards;
+}
+.carte-zone small {
+  font-family: var(--titre);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--cyan);
+}
+.carte-zone strong {
+  font-family: var(--titre);
+  font-size: 26px;
+  color: var(--or);
+  text-shadow:
+    3px 3px 0 var(--or-fonce),
+    6px 6px 0 var(--contour);
+}
+.carte-zone span {
+  color: var(--discret);
+}
+@keyframes zone {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.4em;
+  }
+  18%,
+  75% {
+    opacity: 1;
+    letter-spacing: normal;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* --- la borne d'arcade autour du jeu ---------------------------------------------------------- */
+main {
+  padding: 18px 16px 0;
+}
+.borne {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 14px 14px;
+  background: linear-gradient(#26224f, #17142f);
+  box-shadow:
+    0 0 0 4px var(--contour),
+    inset 0 3px 0 #4b44a3,
+    inset 0 -4px 0 #0b0a1a,
+    0 10px 0 4px #00000066;
+}
+.borne-haut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  padding: 10px 0;
+  font-family: var(--titre);
+  font-size: 13px;
+  color: var(--or);
+  text-shadow:
+    0 0 8px #ffcd3c88,
+    2px 2px 0 var(--contour);
+}
+.borne-etoile {
+  color: var(--cyan);
+  animation: scintille 1.6s steps(2) infinite;
+}
+.borne-direct {
+  position: absolute;
+  right: 4px;
+  font-size: 8px;
+  color: #ff8a8a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-shadow: none;
+}
+.borne-direct i {
+  width: 8px;
+  height: 8px;
+  background: var(--rouge);
+  box-shadow: 0 0 8px var(--rouge);
+  animation: scintille 1s steps(2) infinite;
+}
+@keyframes scintille {
+  50% {
+    opacity: 0.25;
+  }
+}
+#jeu {
+  position: relative;
+  line-height: 0;
+  box-shadow:
+    0 0 0 3px var(--contour),
+    0 0 0 6px #4b44a3,
+    0 0 0 8px var(--contour);
+  margin: 0 8px;
+}
+/* un léger effet d'écran cathodique : lignes de balayage et bords assombris */
+#jeu::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(#0000 0 2px, #00000014 2px 3px),
+    radial-gradient(ellipse at 50% 50%, transparent 65%, #00000055 100%);
+}
+.aide {
+  text-align: center;
+  color: var(--discret);
+  font-size: 14px;
+  margin: 14px 0 0;
+}
+
+/* --- les fenêtres de RPG ------------------------------------------------------------------- */
+.fenetre {
+  position: relative;
+  background: linear-gradient(180deg, #221e63 0%, #15123a 100%);
+  box-shadow:
+    0 0 0 3px var(--cadre),
+    0 0 0 6px var(--contour),
+    inset 0 0 0 3px #3b35a0,
+    0 10px 0 6px #00000055;
+}
+.fenetre-titre {
+  position: absolute;
+  top: -14px;
+  left: 18px;
+  font-family: var(--titre);
+  font-size: 9px;
+  color: #1b1b2f;
+  background: var(--or);
+  padding: 6px 9px;
+  box-shadow: 0 0 0 3px var(--contour);
+}
+.conversation {
+  max-width: 960px;
+  margin: 34px auto 0;
+  padding: 24px 18px 16px;
+}
+@media (min-width: 1000px) {
+  .conversation {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+.conv-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-bottom: 10px;
+}
+.voyant {
+  font-weight: 700;
+  padding: 5px 10px;
+  background: #0b0a1a;
+  box-shadow: 0 0 0 2px var(--contour);
+}
+.voyant[data-etat="ecoute"] {
+  background: #1d5a34;
+}
+.voyant[data-etat="reflechit"] {
+  background: #6a4e12;
+}
+.voyant[data-etat="parle"] {
+  background: #23407e;
+}
+.organes {
+  font-size: 13px;
+  color: #ffb4a8;
+}
+.espace {
+  flex: 1;
+}
+.coach {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+.coach[hidden] {
+  display: none;
+}
+.puce-coach {
+  font-size: 14px;
+  padding: 4px 9px;
+  background: #0b0a1a;
+  box-shadow: 0 0 0 2px var(--contour);
+  font-variant-numeric: tabular-nums;
+}
+.puce-coach[hidden] {
+  display: none;
+}
+#coach-minuteur[data-type="travail"] {
+  background: #6b1f2c;
+  font-weight: 700;
+}
+#coach-minuteur[data-type="pause"] {
+  background: #1d5a34;
+}
+.messages {
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #0b0a1acc;
+  box-shadow: inset 0 0 0 2px var(--contour);
+  display: grid;
+  gap: 10px;
+}
+.messages:empty::before {
+  content: "Dis « Max, … » ou écris-lui ci-dessous.";
+  color: var(--discret);
+}
+.messages li {
+  max-width: 85%;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  box-shadow: 0 0 0 2px var(--contour);
+}
+.messages li p {
+  margin: 3px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+.messages .qui {
+  font-weight: 700;
+  font-size: 13px;
+  margin-right: 6px;
+}
+.messages time {
+  font-size: 12px;
+  color: var(--discret);
+}
+.messages .de-toi {
+  justify-self: end;
+  background: #23407e;
+}
+.messages .de-max {
+  background: #2a2656;
+  box-shadow:
+    0 0 0 2px var(--contour),
+    inset 4px 0 0 var(--or);
+}
+.messages .de-max .qui {
+  color: var(--or);
+}
+/* la dernière réplique de Max finit par un ▼ qui clignote, comme dans un RPG */
+.messages .de-max:last-child p::after {
+  content: " ▼";
+  color: var(--or);
+  animation: scintille 0.8s steps(2) infinite;
+}
+.messages .de-bureau {
+  justify-self: center;
+  max-width: 100%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--discret);
+  font-size: 14px;
+  padding: 0;
+}
+.messages .de-bureau .qui,
+.messages .de-bureau time {
+  display: none;
+}
+.form-max {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+#texte-max,
+#texte {
+  flex: 1;
+  min-width: 0;
+  color: var(--texte);
+  background: #0b0a1a;
+  border: 0;
+  box-shadow: 0 0 0 2px var(--contour), inset 0 0 0 2px #3b35a0;
+  padding: 10px 12px;
+}
+#texte-max:focus,
+#texte:focus {
+  outline: 3px solid var(--or);
+  outline-offset: 2px;
+}
+.mission-directe {
+  max-width: 960px;
+  margin: 30px auto 34px;
+  padding: 14px 18px;
+}
+.mission-directe summary {
+  cursor: pointer;
+  color: var(--discret);
+  font-size: 15px;
+}
+.mission-directe[open] summary {
+  margin-bottom: 12px;
+}
+#mission {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+}
+#texte {
+  resize: vertical;
+  min-height: 56px;
+}
+.boutons {
+  display: flex;
+  gap: 8px;
+}
+#btn-lancer {
+  padding: 0 18px;
+}
+
+/* --- le panneau de côté (robot, résultat, quêtes) ------------------------------------------- */
+.panneau {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  background: linear-gradient(180deg, #221e63 0%, #110f2e 100%);
+  box-shadow:
+    -3px 0 0 var(--cadre),
+    -6px 0 0 var(--contour),
+    -18px 0 30px #00000088;
+  padding: 18px 22px;
+  overflow-y: auto;
+  z-index: 10;
+  animation: glisse 0.18s steps(4);
+}
+@keyframes glisse {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+}
+.panneau.large {
+  width: min(780px, 100vw);
+}
+.panneau .fermer {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  padding: 2px 10px 4px;
+  font-size: 20px;
+}
+.panneau h2 {
+  margin: 4px 48px 14px 0;
+  font-size: 20px;
+}
+.panneau h3 {
+  margin: 20px 0 8px;
+  font-family: var(--titre);
+  font-size: 9px;
+  color: var(--or);
+  letter-spacing: 0.08em;
+}
+.puce {
+  font-size: 13px;
+  font-weight: normal;
+  background: #0b0a1a;
+  box-shadow: 0 0 0 2px var(--contour);
+  padding: 2px 8px;
+  vertical-align: middle;
+}
+.pastille {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 0 2px var(--contour);
+  margin-right: 8px;
+}
+.tache {
+  white-space: pre-wrap;
+  background: #0b0a1a;
+  box-shadow: 0 0 0 2px var(--contour);
+  padding: 9px 11px;
+  margin: 0;
+}
+.erreur {
+  background: #5c1d24;
+  box-shadow: 0 0 0 2px var(--contour);
+  padding: 9px 11px;
+}
+.discret {
+  color: var(--discret);
+}
+.actions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 55vh;
+  overflow-y: auto;
+  font-size: 14px;
+}
+.actions li {
+  padding: 6px 0;
+  border-bottom: 2px dotted #3b35a0;
+  overflow-wrap: anywhere;
+}
+.actions time {
+  color: var(--cyan);
+  margin-right: 6px;
+}
+.actions-resultat {
+  margin: 0 48px 14px 0;
+}
+.retour {
+  margin-bottom: 14px;
+}
+.historique {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.historique button {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 2px;
+}
+.historique span {
+  font-size: 13px;
+  color: var(--discret);
+}
+
+.markdown {
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+.markdown h1 {
+  font-family: var(--pixel);
+  font-size: 24px;
+  color: var(--or);
+  margin-top: 0;
+}
+.markdown h2 {
+  font-family: var(--pixel);
+  font-size: 19px;
+  margin: 20px 0 8px;
+}
+.markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  display: block;
+  overflow-x: auto;
+}
+.markdown th,
+.markdown td {
+  border: 1px solid var(--surface-2);
+  padding: 6px 8px;
+  text-align: left;
+}
+.markdown th {
+  background: var(--surface-2);
+}
+.markdown pre {
+  background: var(--fond);
+  padding: 10px;
+  overflow-x: auto;
+}
+.markdown code {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.markdown blockquote {
+  border-left: 4px solid var(--or);
+  margin: 0;
+  padding: 4px 12px;
+  color: var(--discret);
+}
+.markdown a {
+  color: var(--cyan);
+}
+
+/* --- la notification ------------------------------------------------------------------------ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  background: linear-gradient(#221e63, #15123a);
+  box-shadow:
+    0 0 0 3px var(--or),
+    0 0 0 6px var(--contour),
+    0 8px 0 6px #00000066;
+  padding: 12px 18px 12px 46px;
+  max-width: calc(100vw - 40px);
+  z-index: 20;
+  animation: monte 0.2s steps(4);
+}
+.toast::before {
+  content: "!";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-family: var(--titre);
+  font-size: 11px;
+  color: #1b1b2f;
+  background: var(--or);
+  box-shadow: 0 0 0 2px var(--contour);
+}
+@keyframes monte {
+  from {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .hud {
+    padding: 10px 14px 12px;
+  }
+  .hud-xp-barre {
+    width: 110px;
+  }
+  .hud-quete {
+    flex-basis: 100%;
+  }
+  #mission {
+    flex-direction: column;
+  }
+  .boutons button {
+    flex: 1;
+    padding: 10px;
+  }
+  #titre-mission {
+    display: none;
+  }
+  .borne {
+    padding: 0 6px 8px;
+  }
+  .borne-direct {
+    display: none;
+  }
+  #jeu {
+    margin: 0 4px;
+  }
+  .carte-zone strong {
+    font-size: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .borne-etoile,
+  .borne-direct i,
+  .messages .de-max:last-child p::after,
+  .carte-zone.visible,
+  .panneau,
+  .toast {
+    animation: none;
+  }
+  .carte-zone.visible {
+    opacity: 1;
+  }
+}
+
+/* --- l'écran Jarvis ------------------------------------------------------------------------------ */
+.jarvis,
+.verrou,
+.v-reglages {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.jarvis button,
+.verrou button,
+.v-reglages button,
+.jarvis input,
+.v-reglages input {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.jarvis {
+  --j-cyan: #7df9ff;
+  --j-fond: #05070f;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  gap: 12px;
+  background: radial-gradient(ellipse at 50% 45%, #0d1a2e 0%, var(--j-fond) 65%);
+  color: #dff9ff;
+  overflow: auto;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.jarvis[hidden] {
+  display: none;
+}
+.jarvis.plonge {
+  opacity: 0;
+  transform: scale(1.6);
+  pointer-events: none;
+}
+.jarvis.revient {
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.jarvis button {
+  background: rgba(125, 249, 255, 0.08);
+  border: 1px solid rgba(125, 249, 255, 0.45);
+  box-shadow: 0 0 12px rgba(125, 249, 255, 0.15);
+  color: #dff9ff;
+  border-radius: 8px;
+}
+.j-nom {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  color: var(--j-cyan);
+  text-shadow: 0 0 12px rgba(125, 249, 255, 0.7);
+}
+.j-statut {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 249, 255, 0.35);
+  color: #9fd8e6;
+}
+.j-statut[data-etat="ecoute"] {
+  color: var(--j-cyan);
+  border-color: var(--j-cyan);
+}
+.j-statut[data-etat="reflechit"] {
+  color: var(--or);
+  border-color: var(--or);
+}
+.j-centre {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr minmax(180px, 240px);
+  gap: 16px;
+  align-items: center;
+  min-height: 0;
+}
+.j-cote {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.j-carte {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(125, 249, 255, 0.05);
+  border: 1px solid rgba(125, 249, 255, 0.22);
+  box-shadow: inset 0 0 18px rgba(125, 249, 255, 0.05);
+}
+.j-carte h3 {
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #7fb8c8;
+}
+.j-heure {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--j-cyan);
+  text-shadow: 0 0 14px rgba(125, 249, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+.j-date {
+  color: #9fd8e6;
+  text-transform: capitalize;
+}
+.j-meteo,
+.j-gros {
+  font-size: 18px;
+  font-weight: 600;
+}
+.j-petit {
+  font-size: 13px;
+  color: #9fd8e6;
+  margin-top: 4px;
+}
+.j-minuteur {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: #ffb0bb;
+  font-variant-numeric: tabular-nums;
+}
+.j-agenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.j-agenda span {
+  font-family: var(--mono);
+  color: var(--j-cyan);
+  margin-right: 4px;
+}
+.j-agenda .vide {
+  color: #7fb8c8;
+}
+.j-agenda .en-cours {
+  color: #05070f;
+  background: var(--j-cyan);
+  padding: 2px 6px;
+  margin: 0 -6px;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(125, 249, 255, 0.5);
+}
+.j-agenda .en-cours span {
+  color: #05070f;
+}
+.j-agenda .passe {
+  opacity: 0.45;
+}
+.j-defile {
+  max-height: 34vh;
+  overflow-y: auto;
+}
+.j-mails-resume {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.j-mails-cat {
+  margin-top: 6px;
+  font-size: 14px;
+}
+.j-mails-cat summary {
+  cursor: pointer;
+}
+.j-mails-cat summary b {
+  font-family: var(--mono);
+  color: var(--j-cyan);
+  margin-left: 4px;
+}
+.j-mails-cat ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0 0 0 4px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: #b9dce6;
+}
+.j-mails-cat li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.j-mails-cat li.non-lu strong {
+  color: #fff;
+}
+.j-mission {
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.j-mission span {
+  color: #9fd8e6;
+  font-size: 12px;
+}
+.j-sphere-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.j-sphere {
+  width: min(42vh, 100%);
+  aspect-ratio: 1;
+}
+.j-toi {
+  margin: 4px 0 0;
+  min-height: 1.2em;
+  color: #7fb8c8;
+  font-style: italic;
+  text-align: center;
+}
+.j-dit {
+  margin: 6px 0 0;
+  max-width: 640px;
+  min-height: 2.6em;
+  font-size: 19px;
+  line-height: 1.4;
+  text-align: center;
+  color: #eafcff;
+}
+.j-soucis {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #ffb4a8;
+  text-align: center;
+}
+.j-form {
+  display: flex;
+  gap: 8px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+.j-form input {
+  flex: 1;
+  font: inherit;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 249, 255, 0.4);
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+}
+.j-form input:focus {
+  outline: 2px solid var(--j-cyan);
+}
+body[data-vue="jarvis"] {
+  overflow: hidden;
+}
+@media (max-width: 760px) {
+  .jarvis {
+    padding: 12px 16px;
+  }
+  .j-centre {
+    grid-template-columns: 1fr;
+    align-items: start;
+    flex: none;
+  }
+  .j-sphere-zone {
+    order: -1;
+  }
+  .j-sphere {
+    width: min(70vw, 340px);
+  }
+  .j-cote {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .j-cote > * {
+    flex: 1 1 140px;
+  }
+  .j-heure {
+    font-size: 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jarvis,
+  .jarvis.revient {
+    transition: none;
+  }
+}
+
+/* --- l'écran verrouillé et la reconnaissance du visage ------------------------------------------- */
+.verrou,
+.v-reglages {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow: auto;
+  color: #dff9ff;
+}
+.verrou {
+  background: radial-gradient(ellipse at 50% 40%, #0d1a2e 0%, #05070f 70%);
+}
+.v-reglages {
+  z-index: 70;
+  background: rgba(5, 7, 15, 0.85);
+}
+.verrou[hidden],
+.v-reglages[hidden] {
+  display: none;
+}
+.v-boite {
+  position: relative;
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.v-reglages .v-boite {
+  padding: 20px;
+  border-radius: 14px;
+  background: #0b1424;
+  border: 1px solid rgba(125, 249, 255, 0.35);
+}
+.v-cadenas {
+  font-size: 44px;
+}
+.verrou h1,
+.v-reglages h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.v-cadre {
+  width: 220px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(125, 249, 255, 0.35);
+  box-shadow: 0 0 30px rgba(125, 249, 255, 0.15);
+  background: #000;
+  display: none;
+}
+.v-cadre[data-actif="oui"] {
+  display: block;
+  animation: v-pulse 1.6s ease-in-out infinite;
+}
+.v-cadre video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+@keyframes v-pulse {
+  50% {
+    border-color: #7df9ff;
+    box-shadow: 0 0 40px rgba(125, 249, 255, 0.45);
+  }
+}
+.v-statut {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 16px;
+}
+.v-statut[data-ok="oui"] {
+  color: #7dffb0;
+  font-weight: 700;
+}
+.v-note {
+  margin: 0;
+  font-size: 12px;
+  color: #7fb8c8;
+}
+.verrou button,
+.v-reglages button {
+  background: rgba(125, 249, 255, 0.08);
+  border: 1px solid rgba(125, 249, 255, 0.45);
+  color: #dff9ff;
+  box-shadow: 0 0 12px rgba(125, 249, 255, 0.15);
+}
+.v-reglages button.danger {
+  border-color: rgba(228, 59, 68, 0.6);
+}
+.v-fermer {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 10px;
+}
+.v-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.v-prenom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+}
+.v-prenom[hidden] {
+  display: none;
+}
+.v-prenom input {
+  font: inherit;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(125, 249, 255, 0.4);
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+}
+body[data-verrou="oui"] {
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .v-cadre[data-actif="oui"] {
+    animation: none;
+  }
+}
+
+/* --- le QG : barre du haut, tuiles des pôles, fiche d'un pôle, fenêtre des mails ------------------------- */
+.qg-barre {
+  display: flex;
+  align-items: center;
+  gap: 10px 14px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(125, 249, 255, 0.15);
+}
+.qg-joueur {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.qg-niv strong {
+  color: var(--or);
+  font-size: 16px;
+}
+.qg-xp {
+  display: inline-block;
+  width: 90px;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(125, 249, 255, 0.12);
+  overflow: hidden;
+}
+.qg-xp i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #ffd23f, #ff8a2b);
+  transition: width 0.6s;
+}
+.qg-pastille {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 249, 255, 0.3);
+  color: #cdefff;
+  white-space: nowrap;
+}
+.qg-pastille[data-chaud="oui"] {
+  border-color: #ff8a2b;
+  color: #ffc28a;
+}
+.qg-minuteur {
+  border-color: #ff8fa3;
+  color: #ffd0d8;
+  font-weight: 700;
+}
+.qg-minuteur[data-type="pause"] {
+  border-color: var(--vert);
+  color: #bdf5cc;
+}
+.qg-corps {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.qg-corps > .j-centre {
+  flex: 1;
+}
+.qg-jauge {
+  display: block;
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(125, 249, 255, 0.12);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.qg-jauge i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: var(--pole, var(--j-cyan));
+  box-shadow: 0 0 10px var(--pole, var(--j-cyan));
+  transition: width 0.6s;
+}
+.qg-jauge.rouge i {
+  background: #ff5d5d;
+  box-shadow: 0 0 10px #ff5d5d;
+}
+.qg-mails-carte {
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.qg-mails-carte .j-mails-resume {
+  display: block;
+}
+
+/* les tuiles des pôles */
+.qg-poles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.jarvis .qg-tuile {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "emoji nom" "emoji agent" "ligne ligne" "jauge jauge";
+  align-items: center;
+  gap: 0 10px;
+  padding: 10px 12px 12px;
+  text-align: left;
+  border-radius: 12px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pole) 18%, transparent), rgba(5, 7, 15, 0.6));
+  border: 1px solid color-mix(in srgb, var(--pole) 55%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--pole) 18%, transparent);
+  color: #eafcff;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.jarvis .qg-tuile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--pole) 45%, transparent);
+}
+.jarvis .qg-tuile.active {
+  border-width: 2px;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--pole) 60%, transparent);
+}
+.qg-tuile.alerte::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff5d5d;
+  box-shadow: 0 0 8px #ff5d5d;
+  animation: qg-clignote 1.4s infinite;
+}
+@keyframes qg-clignote {
+  50% {
+    opacity: 0.25;
+  }
+}
+.qt-emoji {
+  grid-area: emoji;
+  font-size: 26px;
+}
+.qt-nom {
+  grid-area: nom;
+  font-weight: 700;
+  font-size: 15px;
+}
+.qt-agent {
+  grid-area: agent;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--pole) 70%, #fff);
+}
+.qt-ligne {
+  grid-area: ligne;
+  margin-top: 6px;
+  font-size: 13px;
+  font-family: var(--mono);
+  color: #cdefff;
+}
+.qg-tuile .qt-jauge {
+  grid-area: jauge;
+  display: block;
+  height: 5px;
+  margin-top: 6px;
+  border-radius: 99px;
+  background: rgba(125, 249, 255, 0.12);
+  overflow: hidden;
+}
+.qt-jauge i {
+  display: block;
+  height: 100%;
+  background: var(--pole);
+}
+.qg-tuile.alerte .qt-jauge i {
+  background: #ff5d5d;
+}
+.qt-pense {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--or);
+  margin-top: 4px;
+}
+
+/* la fiche d'un pôle */
+.qg-fiche {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  padding: 4px 2px 8px;
+  animation: qf-entre 0.25s ease-out;
+}
+@keyframes qf-entre {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.qf-tete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--pole) 25%, transparent), transparent 70%);
+  border: 1px solid color-mix(in srgb, var(--pole) 50%, transparent);
+}
+.qf-emoji {
+  font-size: 36px;
+}
+.qf-titre h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.qf-titre p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #b9dce6;
+}
+.qf-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.qf-grille.qf-sport {
+  grid-template-columns: minmax(280px, 1.1fr) minmax(260px, 1fr) minmax(240px, 0.9fr);
+}
+.qf-colonne {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qf-colonne:empty {
+  display: none;
+}
+.qg-fiche .j-carte h3 small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.qf-liste {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.qf-reponse {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.45;
+  max-height: 30vh;
+  overflow: auto;
+  margin: 0;
+}
+.qf-boutons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.qf-boutons select {
+  font: inherit;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+  border: 1px solid rgba(125, 249, 255, 0.4);
+}
+.jarvis .qf-fait {
+  background: color-mix(in srgb, var(--vert) 30%, transparent);
+  border-color: var(--vert);
+  font-weight: 700;
+}
+.qf-temps-ligne strong {
+  font-size: 22px;
+  font-family: var(--mono);
+}
+.qf-rouge {
+  color: #ff8a8a !important;
+}
+.qf-barres {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  height: 70px;
+  margin-top: 10px;
+  align-items: end;
+}
+.qf-barres span {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  gap: 3px;
+}
+.qf-barres i {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--pole, var(--j-cyan));
+  opacity: 0.85;
+}
+.qf-barres span:last-child i {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--pole, var(--j-cyan));
+}
+.qf-barres small {
+  font-size: 10px;
+  color: #7fb8c8;
+  text-transform: uppercase;
+}
+.qf-question {
+  display: flex;
+  gap: 8px;
+}
+.qf-question input {
+  flex: 1;
+  font: inherit;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pole) 60%, transparent);
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+}
+
+/* le sport : la semaine, les muscles, le corps 3D */
+.qf-semaine {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.jarvis .qf-jour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+.qf-jour small {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #9fd8e6;
+}
+.qf-jour em {
+  font-style: normal;
+  font-size: 12px;
+  min-height: 1em;
+}
+.jarvis .qf-jour.faite {
+  border-color: var(--vert);
+  background: color-mix(in srgb, var(--vert) 22%, transparent);
+}
+.jarvis .qf-jour.manquee {
+  border-color: #ff6b6b;
+  opacity: 0.75;
+}
+.jarvis .qf-jour.aujourdhui {
+  border-width: 2px;
+  border-color: var(--or);
+  box-shadow: 0 0 12px rgba(255, 205, 60, 0.4);
+}
+.jarvis .qf-jour.repos {
+  opacity: 0.7;
+}
+.qf-muscles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.qf-muscles li {
+  display: grid;
+  grid-template-columns: 88px 1fr 92px;
+  align-items: center;
+  gap: 8px;
+}
+.qf-muscles .qg-jauge {
+  margin: 0;
+}
+.qf-muscles .qg-jauge i {
+  background: linear-gradient(90deg, #2bd4ff, #ffd23f, #ff8a2b);
+}
+.qf-muscles small {
+  color: #9fd8e6;
+  text-align: right;
+}
+.qf-corps {
+  display: flex;
+  flex-direction: column;
+}
+.qf-corps-scene {
+  position: relative;
+  height: max(300px, calc(100vh - 420px));
+  min-height: 300px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 60%, rgba(43, 212, 255, 0.12), transparent 70%);
+}
+.qf-corps-scene canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  cursor: grab;
+}
+.qf-corps-scene canvas:active {
+  cursor: grabbing;
+}
+.qf-legende {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9fd8e6;
+}
+.qf-legende span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qf-legende i {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  border-radius: 4px;
+}
+.qf-legende .qf-eteint {
+  background: #22385c;
+}
+.qf-degrade i {
+  width: 90px;
+  background: linear-gradient(90deg, #2bd4ff, #ffd23f, #ff8a2b, #ff4d4d);
+}
+.qf-corps-pied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #b9dce6;
+}
+.qf-video {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 110px;
+  border-radius: 8px;
+  border: 1px solid rgba(125, 249, 255, 0.5);
+  transform: scaleX(-1);
+  opacity: 0.85;
+}
+.qf-curseur {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  border: 2px solid var(--j-cyan);
+  box-shadow: 0 0 12px var(--j-cyan);
+  pointer-events: none;
+  transition: transform 0.1s;
+}
+.qf-curseur[data-etat="pince"] {
+  transform: scale(0.6);
+  background: var(--or);
+  border-color: var(--or);
+  box-shadow: 0 0 16px var(--or);
+}
+/* « montre-moi mon corps » : le corps prend toute la largeur */
+.qf-focus-corps .qf-grille.qf-sport {
+  grid-template-columns: minmax(300px, 2fr) minmax(260px, 1fr);
+}
+.qf-focus-corps .qf-grille.qf-sport > .qf-colonne:last-child {
+  display: none;
+}
+.qf-focus-corps .qf-corps-scene {
+  height: min(66vh, 680px);
+}
+
+/* la fenêtre des mails */
+.mails-fenetre {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(2, 4, 10, 0.6);
+  backdrop-filter: blur(3px);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.mails-boite {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: #07101d;
+  color: #eafcff;
+  border: 1px solid rgba(125, 249, 255, 0.5);
+  box-shadow: 0 0 40px rgba(125, 249, 255, 0.25);
+  animation: qf-entre 0.25s ease-out;
+}
+.mails-boite h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+.mf-resume {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #cdefff;
+}
+.mf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.mails-boite button {
+  font-family: inherit;
+  background: rgba(125, 249, 255, 0.08);
+  border: 1px solid rgba(125, 249, 255, 0.45);
+  box-shadow: none;
+  color: #dff9ff;
+  border-radius: 8px;
+}
+.mails-boite .j-mails-cat ul {
+  white-space: normal;
+}
+@media (max-width: 760px) {
+  .qg-corps,
+  .qg-corps > .j-centre,
+  .qg-fiche {
+    flex: none;
+    overflow: visible;
+  }
+  .qg-poles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .qf-grille.qf-sport,
+  .qf-focus-corps .qf-grille.qf-sport {
+    grid-template-columns: 1fr;
+  }
+  .qf-corps-scene {
+    height: 60vh;
+  }
+  .qg-xp {
+    width: 60px;
+  }
+}
+
+/* --- mise en page sans chevauchement, et passages accueil ↔ fiche ------------------------------------- */
+/* l'écran de Max en 4 rangées : barre, contenu (qui défile s'il ne tient pas), tuiles, champ de texte */
+.jarvis {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+.qg-corps {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  gap: 12px;
+}
+.qg-corps > .j-centre {
+  flex: 1 0 auto;
+}
+.j-sphere {
+  transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.j-dit {
+  transition: font-size 0.3s;
+}
+/* sur une fiche : Max en petit, en bandeau au-dessus de la fiche */
+.jarvis[data-mode="fiche"] #qg-accueil {
+  flex: none;
+  display: block;
+}
+.jarvis[data-mode="fiche"] .j-cote {
+  display: none;
+}
+.jarvis[data-mode="fiche"] .j-sphere-zone {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(125, 249, 255, 0.05);
+  border: 1px solid rgba(125, 249, 255, 0.18);
+}
+.jarvis[data-mode="fiche"] .j-sphere {
+  width: 54px;
+  flex: none;
+}
+.jarvis[data-mode="fiche"] .j-dit {
+  margin: 0;
+  min-height: 0;
+  max-width: none;
+  font-size: 15px;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.jarvis[data-mode="fiche"] .j-toi,
+.jarvis[data-mode="fiche"] .j-soucis {
+  display: none;
+}
+.jarvis[data-mode="fiche"] .qg-fiche {
+  flex: none;
+  overflow: visible;
+}
+.qg-entre {
+  animation: qg-entre 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes qg-entre {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.qg-fiche {
+  animation: none;
+}
+/* une fiche s'ouvre comme un hologramme : elle se déplie de haut en bas, une ligne de balayage la parcourt */
+.qg-fiche.qg-entre {
+  position: relative;
+  animation: qg-holo 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.qg-fiche.qg-entre::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #7fdcff 20%, #fff 50%, #7fdcff 80%, transparent);
+  box-shadow: 0 0 18px 4px rgba(86, 200, 255, 0.55);
+  animation: qg-balayage 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  pointer-events: none;
+}
+@keyframes qg-holo {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.3;
+    filter: brightness(2.2) saturate(1.4);
+  }
+  70% {
+    filter: brightness(1.25);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: none;
+  }
+}
+@keyframes qg-balayage {
+  from {
+    top: 0;
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.qg-icone {
+  min-width: 34px;
+  padding-inline: 8px;
+}
+.qg-icone[data-actif="non"] {
+  opacity: 0.4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .qg-fiche.qg-entre,
+  .qg-fiche.qg-entre::after,
+  .qg-entre,
+  .j-sphere {
+    animation: none;
+    transition: none;
+  }
+}
+/* le bandeau de Max reste en haut quand on fait défiler la fiche */
+.jarvis[data-mode="fiche"] #qg-accueil {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding-bottom: 6px;
+  background: linear-gradient(#060a14 75%, transparent);
+}
+@media (max-width: 760px) {
+  /* sur téléphone, c'est toute la page qui défile */
+  .jarvis {
+    display: flex;
+  }
+  .qg-corps {
+    overflow: visible;
+  }
+}
+@media (max-width: 760px) {
+  .jarvis[data-mode="fiche"] #qg-accueil {
+    position: static;
+  }
+}
+.qf-titre {
+  flex: 1;
+  min-width: 0;
+}
+.qf-titre p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qf-tete .espace {
+  display: none;
+}
+
+/* --- l'intro au lancement de Max -------------------------------------------------------------------- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 50%, #0d1a2e 0%, #02040a 70%);
+  font-family: var(--mono);
+  color: #dff9ff;
+  cursor: pointer;
+}
+.intro.sort {
+  animation: intro-sort 0.7s cubic-bezier(0.6, 0, 0.8, 0.2) forwards;
+}
+@keyframes intro-sort {
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+/* l'éclair rouge et or qui traverse l'écran */
+.intro-eclair {
+  position: absolute;
+  top: 46%;
+  left: -60%;
+  width: 60%;
+  height: 10px;
+  transform: skewX(-30deg);
+  background: linear-gradient(90deg, transparent, #e4252b 30%, #ffcd3c 70%, #fff8d0);
+  box-shadow: 0 0 24px #ffb300, 0 0 60px #e4252b;
+  opacity: 0;
+}
+.intro-eclair.deux {
+  top: 52%;
+  height: 4px;
+}
+.intro.joue .intro-eclair {
+  animation: intro-eclair 0.75s cubic-bezier(0.3, 0, 0.2, 1) 0.1s forwards;
+}
+.intro.joue .intro-eclair.deux {
+  animation-delay: 0.22s;
+}
+@keyframes intro-eclair {
+  0% {
+    left: -60%;
+    opacity: 1;
+  }
+  100% {
+    left: 130%;
+    opacity: 1;
+  }
+}
+.intro-coeur {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 22px;
+}
+.intro-anneaux {
+  position: relative;
+  width: min(46vh, 70vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.intro-anneaux i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #7df9ff;
+  border-left-color: rgba(125, 249, 255, 0.4);
+  box-shadow: 0 0 22px rgba(125, 249, 255, 0.25);
+  opacity: 0;
+}
+.intro-anneaux i:nth-child(2) {
+  inset: 12%;
+  border-top-color: #ffcd3c;
+  border-right-color: rgba(255, 205, 60, 0.4);
+}
+.intro-anneaux i:nth-child(3) {
+  inset: 26%;
+  border-bottom-color: #7df9ff;
+}
+.intro.joue .intro-anneaux i {
+  animation: intro-anneau 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, intro-tourne 3s linear infinite;
+}
+.intro.joue .intro-anneaux i:nth-child(2) {
+  animation-delay: 0.45s, 0s;
+  animation-direction: normal, reverse;
+}
+.intro.joue .intro-anneaux i:nth-child(3) {
+  animation-delay: 0.6s, 0s;
+}
+.intro.joue .intro-anneaux i:nth-child(1) {
+  animation-delay: 0.3s, 0s;
+}
+@keyframes intro-anneau {
+  from {
+    opacity: 0;
+    transform: scale(0.3) rotate(-120deg);
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes intro-tourne {
+  to {
+    rotate: 360deg;
+  }
+}
+.intro-nom {
+  position: absolute;
+  top: calc(min(46vh, 70vw) / 2 - 0.6em);
+  font-size: min(9vh, 64px);
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  padding-left: 0.35em;
+  color: #7df9ff;
+  text-shadow: 0 0 18px rgba(125, 249, 255, 0.8);
+}
+.intro-nom span {
+  display: inline-block;
+  opacity: 0;
+}
+.intro.joue .intro-nom span {
+  animation: intro-lettre 0.5s steps(4) forwards;
+}
+.intro.joue .intro-nom span:nth-child(1) {
+  animation-delay: 1s;
+}
+.intro.joue .intro-nom span:nth-child(2) {
+  animation-delay: 1.2s;
+}
+.intro.joue .intro-nom span:nth-child(3) {
+  animation-delay: 1.4s;
+}
+@keyframes intro-lettre {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px);
+    color: #ffcd3c;
+  }
+  60% {
+    opacity: 1;
+    color: #fff;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.intro-lignes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 250px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+.intro-lignes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  opacity: 0;
+}
+.intro.joue .intro-lignes li {
+  animation: intro-ligne 0.35s ease-out forwards;
+  animation-delay: calc(1.9s + var(--i) * 0.26s);
+}
+@keyframes intro-ligne {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+.intro-lignes b.ok {
+  color: var(--vert);
+}
+.intro-lignes b.ko {
+  color: #ffb4a8;
+}
+/* à la sortie de l'intro : les tuiles des pôles arrivent l'une après l'autre */
+.jarvis.qg-arrive .qg-tuile {
+  animation: qg-entre 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis.qg-arrive .qg-tuile:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.jarvis.qg-arrive .qg-tuile:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.jarvis.qg-arrive .qg-tuile:nth-child(4) {
+  animation-delay: 0.24s;
+}
+.jarvis.qg-arrive .qg-tuile:nth-child(5) {
+  animation-delay: 0.32s;
+}
+.jarvis.qg-arrive .j-cote,
+.jarvis.qg-arrive .qg-barre {
+  animation: qg-entre 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis .qg-alarme {
+  cursor: pointer;
+  padding: 3px 10px;
+  box-shadow: none;
+  font-size: 13px;
+}
+.jarvis .qg-alarme[data-etat="non-configure"] {
+  opacity: 0.6;
+}
+.jarvis .qg-alarme[data-etat="en-cours"] {
+  border-color: var(--or);
+  color: var(--or);
+  animation: qg-clignote 1.2s infinite;
+}
+
+/* --- le style hologramme : fond de montagnes, cartes en verre fumé ---------------------------------- */
+.j-fond {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.jarvis > :not(.j-fond) {
+  position: relative;
+  z-index: 1;
+}
+.jarvis {
+  background: radial-gradient(ellipse at 50% 30%, #0b1830 0%, #03060d 70%);
+}
+.jarvis .j-carte,
+.jarvis .qg-tuile,
+.qf-tete {
+  background-color: rgba(4, 9, 20, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.jarvis .qg-tuile {
+  background-image: linear-gradient(160deg, color-mix(in srgb, var(--pole) 20%, transparent), transparent);
+}
+.j-sphere {
+  width: min(48vh, 100%);
+}
+.j-dit {
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.9);
+}
+
+/* --- le réveil qui sonne sur le Mac ----------------------------------------------------------------- */
+.alarme-ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 45%, rgba(255, 120, 30, 0.35), rgba(3, 6, 13, 0.95) 65%);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #fff;
+  animation: al-pulse 1.6s ease-in-out infinite;
+}
+@keyframes al-pulse {
+  50% {
+    background-color: rgba(255, 80, 20, 0.12);
+  }
+}
+.al-boite {
+  text-align: center;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+.al-icone {
+  font-size: 72px;
+  animation: al-sonne 0.5s ease-in-out infinite alternate;
+}
+@keyframes al-sonne {
+  from {
+    transform: rotate(-12deg);
+  }
+  to {
+    transform: rotate(12deg);
+  }
+}
+.al-boite h1 {
+  margin: 0;
+  font-size: clamp(42px, 9vw, 96px);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 30px #ff8a2b;
+}
+.al-heure {
+  font-family: var(--mono);
+  font-size: clamp(36px, 7vw, 72px);
+  color: #ffd23f;
+}
+.al-aide {
+  margin: 8px 0 0;
+  color: #ffe2c4;
+}
+.alarme-ecran button {
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  padding: 16px 34px;
+  border-radius: 999px;
+  border: 0;
+  color: #1b1b2f;
+  background: linear-gradient(#ffd94f, #f5a21c);
+  box-shadow: 0 0 30px rgba(255, 170, 40, 0.7);
+  cursor: pointer;
+}
+.verrou.v-alarme {
+  background: radial-gradient(ellipse at 50% 40%, rgba(255, 110, 30, 0.35), #05070f 70%);
+}
+.verrou.v-alarme #v-titre {
+  color: #ffd23f;
+  animation: qg-clignote 1.2s infinite;
+}
+
+/* --- le guet : verrouillé, Max repère ton arrivée -------------------------------------------------- */
+.verrou[data-guet="oui"] .v-cadre {
+  display: block;
+  position: relative;
+  background: radial-gradient(circle, rgba(125, 249, 255, 0.08), #02060c 70%);
+  animation: none;
+}
+.verrou[data-guet="oui"] .v-cadre video {
+  opacity: 0;
+}
+/* le radar : un balayage qui tourne, et des cercles */
+.verrou[data-guet="oui"] .v-cadre::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(125, 249, 255, 0.45), transparent 22%, transparent);
+  animation: v-radar 2.4s linear infinite;
+}
+.verrou[data-guet="oui"] .v-cadre::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0 26px, rgba(125, 249, 255, 0.18) 27px 28px);
+}
+@keyframes v-radar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.verrou .v-guet {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  opacity: 0.8;
+}
+.verrou .v-guet[data-actif="oui"] {
+  border-color: var(--j-cyan, #7df9ff);
+  color: #7df9ff;
+}
+
+/* --- le scanner : pendant la reconnaissance, l'écran entier devient un scanner facial -------------------- */
+.v-scan {
+  display: none;
+}
+.verrou[data-scan="oui"],
+.verrou[data-scan="accorde"] {
+  padding: 0;
+  overflow: hidden;
+  background: #01060c;
+}
+.verrou[data-scan="oui"] .v-cadre,
+.verrou[data-scan="accorde"] .v-cadre {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+  z-index: 0;
+}
+/* la caméra en fond : assombrie, teintée de bleu, comme sur un écran de contrôle */
+.verrou[data-scan="oui"] .v-cadre video,
+.verrou[data-scan="accorde"] .v-cadre video {
+  filter: grayscale(1) contrast(1.25) brightness(0.5) sepia(1) hue-rotate(155deg) saturate(2.6);
+  transition: opacity 1.2s ease, filter 0.6s ease;
+}
+.verrou[data-scan="accorde"] .v-cadre video {
+  opacity: 0.25;
+  filter: grayscale(1) contrast(1.2) brightness(0.6) sepia(1) hue-rotate(5deg) saturate(2);
+}
+.verrou[data-scan="oui"] .v-scan,
+.verrou[data-scan="accorde"] .v-scan {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+/* le reste de l'écran verrouillé s'efface ; la consigne reste en bas, lisible */
+.verrou[data-scan="oui"] .v-boite > :not(#v-statut, .v-cadre, .v-scan),
+.verrou[data-scan="accorde"] .v-boite > :not(#v-statut, .v-cadre, .v-scan) {
+  visibility: hidden;
+}
+.verrou[data-scan="oui"] #v-statut,
+.verrou[data-scan="accorde"] #v-statut {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: min(560px, calc(100% - 140px));
+  padding: 10px 18px;
+  border: 1px solid rgba(125, 249, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(1, 8, 16, 0.7);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+.verrou[data-scan="accorde"] #v-statut {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+/* la sortie : l'écran s'ouvre sur Max */
+.verrou.v-sort {
+  animation: v-sort 0.45s ease-in both;
+}
+@keyframes v-sort {
+  to {
+    opacity: 0;
+    transform: scale(1.06);
+    filter: blur(6px);
+  }
+}
+@media (max-width: 600px) {
+  .verrou[data-scan="oui"] #v-statut {
+    width: calc(100% - 32px);
+    bottom: 16px;
+  }
+}
+
+/* --- Max Ultime : le mode obscur -------------------------------------------------------------------------- */
+.ultime {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 90;
+  pointer-events: none;
+}
+.ultime[hidden] {
+  display: none;
+}
+body.ultime-secousse .jarvis {
+  animation: ultime-secousse 0.12s steps(2) infinite;
+}
+@keyframes ultime-secousse {
+  0% {
+    transform: translate(3px, -2px);
+    filter: hue-rotate(-30deg) saturate(1.6);
+  }
+  50% {
+    transform: translate(-4px, 2px);
+  }
+  100% {
+    transform: translate(2px, 3px);
+  }
+}
+.qg-obscur {
+  border-color: rgba(255, 60, 60, 0.55) !important;
+  color: #ffb3ad !important;
+  letter-spacing: 0.04em;
+}
+.qg-obscur[data-actif="oui"] {
+  background: rgba(255, 30, 30, 0.18) !important;
+  box-shadow: 0 0 18px rgba(255, 30, 30, 0.45) !important;
+}
+/* l'écran passe au rouge sang : le fond, et les panneaux (le cyan devient rouge, les canevas gardent leurs couleurs) */
+body[data-obscur="oui"] .jarvis {
+  background: radial-gradient(ellipse at 50% 42%, #1a0204 0%, #040001 62%, #000 100%);
+  color: #ffe0dc;
+}
+/* le décor s'enfonce dans l'ombre, et les bords du QG sont engloutis par le noir */
+body[data-obscur="oui"] #j-fond {
+  filter: brightness(0.62) contrast(1.15);
+}
+body[data-obscur="oui"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.82) 100%);
+}
+body[data-obscur="oui"] .jarvis .qg-barre > :not(.qg-obscur),
+body[data-obscur="oui"] .jarvis .j-carte,
+body[data-obscur="oui"] .jarvis #j-form,
+body[data-obscur="oui"] .jarvis .j-dit,
+body[data-obscur="oui"] .jarvis .j-statut {
+  filter: hue-rotate(170deg) saturate(1.5);
+}
+body[data-obscur="oui"] .jarvis .qg-barre {
+  border-bottom-color: rgba(255, 50, 50, 0.3);
+}
+/* la concentration : plus de tuiles, plus de mails ; le chrono en grand sous Max */
+body[data-obscur="oui"] #qg-poles,
+body[data-obscur="oui"] #mails-fenetre {
+  display: none !important;
+}
+/* la colonne de gauche s'efface mais garde sa place : Max reste au centre */
+body[data-obscur="oui"] .jarvis .j-gauche {
+  visibility: hidden;
+}
+body[data-obscur="oui"] #j-minuteur:not([hidden]) {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 10px 26px;
+  font: 700 clamp(22px, 4vw, 42px) / 1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.08em;
+  color: #ffd9d4;
+  background: rgba(30, 0, 4, 0.75);
+  border: 1px solid rgba(255, 50, 50, 0.6);
+  box-shadow: 0 0 34px rgba(255, 20, 20, 0.35), inset 0 0 18px rgba(255, 20, 20, 0.2);
+  filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.ultime-secousse .jarvis {
+    animation: none;
+  }
+}
+
+/* --- le contrôle de Max par la main (bouton 🖐) ------------------------------------------------------------- */
+.qg-gestes {
+  position: relative;
+  --progres: 0;
+}
+.qg-gestes[data-actif="oui"] {
+  border-color: var(--j-cyan, #7df9ff);
+  background: conic-gradient(rgba(125, 249, 255, 0.55) calc(var(--progres) * 1%), rgba(125, 249, 255, 0.06) 0);
+}
+.qg-gestes[data-pause="oui"] {
+  opacity: 0.45;
+}
+.j-gestes-msg {
+  position: fixed;
+  left: 50%;
+  top: 74px;
+  transform: translateX(-50%);
+  z-index: 80;
+  max-width: calc(100% - 32px);
+  padding: 8px 18px;
+  border: 1px solid rgba(125, 249, 255, 0.5);
+  border-radius: 999px;
+  background: rgba(3, 12, 22, 0.88);
+  color: #dff9ff;
+  font: 600 14px ui-monospace, "SF Mono", Menlo, monospace;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 0 22px rgba(125, 249, 255, 0.25);
+}
+.j-gestes-msg[hidden] {
+  display: none;
+}
+body[data-obscur="oui"] .j-gestes-msg {
+  border-color: rgba(255, 60, 60, 0.6);
+  color: #ffd9d4;
+  box-shadow: 0 0 22px rgba(255, 30, 30, 0.3);
+}
+
+.j-entendu {
+  text-align: center;
+  margin: 4px 0 0;
+  font: 12px/1.4 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: rgba(150, 210, 255, 0.45);
+  min-height: 1.4em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.j-entendu[data-pour-max="oui"] {
+  color: rgba(150, 230, 255, 0.95);
+}
+
+/* --- Ta vie : cap du jour, projets, Studio, journal --------------------------------------------- */
+.j-nom {
+  cursor: pointer;
+}
+.j-nom[data-muet="oui"]::after {
+  content: " 🔇";
+  font-size: 0.7em;
+}
+.j-cap {
+  position: relative;
+  border-color: rgba(125, 249, 255, 0.45);
+  background: linear-gradient(135deg, rgba(125, 249, 255, 0.1), rgba(125, 249, 255, 0.02) 60%);
+}
+/* coins de visée, façon HUD */
+.j-cap::before,
+.j-cap::after,
+.qf-projets::before,
+.qf-studio::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--j-cyan);
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px var(--j-cyan));
+}
+.j-cap::before,
+.qf-projets::before,
+.qf-studio::before {
+  top: -1px;
+  left: -1px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.j-cap::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: 0;
+  border-top: 0;
+}
+.qf-projets,
+.qf-studio {
+  position: relative;
+}
+.vp-cap {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: cap;
+}
+.vp-cap li {
+  counter-increment: cap;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  padding: 5px 0;
+  border-bottom: 1px dashed rgba(125, 249, 255, 0.14);
+}
+.vp-cap li::before {
+  content: counter(cap, decimal-leading-zero);
+  grid-row: span 2;
+  font: 600 11px/1.6 var(--mono);
+  color: var(--j-cyan);
+}
+.vp-cap-action {
+  color: #eaf6ff;
+  font-size: 14px;
+}
+.vp-cap small,
+.vp-pub {
+  color: rgba(200, 225, 255, 0.55);
+  font-size: 11px;
+}
+.vp-pub {
+  margin: 8px 0 0;
+  font-family: var(--mono);
+}
+.urgent,
+.vp-echeance.urgent {
+  color: #ff7a6b;
+}
+.vp-cat h4 {
+  margin: 8px 0 4px;
+  font: 600 10px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(125, 249, 255, 0.6);
+}
+.vp-liste,
+.vs-liste,
+.vj-notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vp-projet {
+  position: relative;
+  padding: 6px 34px 6px 10px;
+  margin-bottom: 4px;
+  border-left: 2px solid var(--pole, var(--j-cyan));
+  background: rgba(125, 249, 255, 0.04);
+}
+.vp-projet[data-statut="pause"] {
+  opacity: 0.55;
+}
+.vp-nom {
+  color: #eaf6ff;
+  font-size: 13px;
+}
+.vp-action {
+  color: rgba(200, 225, 255, 0.7);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.vp-echeance,
+.vp-statut {
+  font: 600 10px var(--mono);
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  margin-left: 4px;
+  color: rgba(125, 249, 255, 0.8);
+}
+.vp-fait {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+}
+.vs-montage {
+  font: 12px var(--mono);
+  color: #ffd23f;
+  animation: vs-pulse 1.4s ease-in-out infinite;
+}
+@keyframes vs-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.vs-pub {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(125, 249, 255, 0.14);
+}
+.vs-quand {
+  font: 600 11px var(--mono);
+  color: var(--j-cyan);
+}
+.vs-titre small {
+  display: block;
+  color: rgba(200, 225, 255, 0.55);
+  font-size: 11px;
+}
+.vs-boutons {
+  display: flex;
+  gap: 4px;
+}
+.vj-bilan {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #eaf6ff;
+}
+.vj-humeur {
+  margin-left: 6px;
+  color: var(--j-cyan);
+  letter-spacing: 2px;
+}
+.vj-notes li {
+  font-size: 12px;
+  color: rgba(200, 225, 255, 0.75);
+  padding: 2px 0;
+}
+.vj-notes span {
+  font: 10px var(--mono);
+  color: rgba(125, 249, 255, 0.6);
+  margin-right: 4px;
+}
+.j-journal-form input {
+  width: 100%;
+  margin-top: 6px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(125, 249, 255, 0.3);
+  background: rgba(5, 7, 15, 0.7);
+  color: #eafcff;
+}
+.j-journal-form input:focus {
+  outline: 1px solid var(--j-cyan);
+}
+@media (max-width: 700px) {
+  .vs-pub {
+    grid-template-columns: 1fr auto;
+  }
+  .vs-quand {
+    grid-column: span 2;
+  }
+}
+
+/* tes artefacts claude.ai, dans le bureau */
+.hud-artefacts {
+  display: inline-flex;
+  gap: 6px;
+}
+.hud-artefacts button {
+  border-color: rgba(255, 210, 63, 0.6);
+  box-shadow: 0 0 10px rgba(255, 210, 63, 0.25);
+}
+
+/* automatismes et idées du jour */
+.va-liste,
+.vi-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.va {
+  display: grid;
+  grid-template-columns: 42px 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 12px;
+  color: rgba(200, 225, 255, 0.8);
+}
+.va[data-actif="non"] {
+  opacity: 0.45;
+}
+.va-heure {
+  font: 600 11px var(--mono);
+  color: var(--j-cyan);
+}
+.va button {
+  padding: 0 6px;
+  min-height: 22px;
+  font-size: 10px;
+}
+.va-interrupteur {
+  width: 30px;
+  border-radius: 999px;
+  position: relative;
+}
+.va-interrupteur::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: rgba(200, 225, 255, 0.4);
+  transition: left 0.2s;
+}
+.va-interrupteur[aria-pressed="true"]::after {
+  left: 16px;
+  background: var(--j-cyan);
+  box-shadow: 0 0 6px var(--j-cyan);
+}
+.vi-liste li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(125, 249, 255, 0.14);
+  font-size: 12px;
+  color: rgba(200, 225, 255, 0.75);
+}
+.vi-liste b {
+  color: #eaf6ff;
+  font-size: 13px;
+}
+.vi-liste small {
+  color: #ffd23f;
+}
+
+/* le plan : tes 3 règles */
+.j-plan {
+  border-color: rgba(180, 108, 255, 0.5);
+  background: linear-gradient(135deg, rgba(180, 108, 255, 0.12), rgba(125, 249, 255, 0.02) 70%);
+}
+.vr-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.vr-liste li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 12.5px;
+  color: #eaf6ff;
+}
+.vr-case {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1;
+}
+.vr-case[aria-pressed="true"] {
+  background: #b46cff;
+  border-color: #b46cff;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(180, 108, 255, 0.6);
+}
+.vr-pied {
+  margin: 8px 0 2px;
+  font: 11px var(--mono);
+  color: rgba(200, 225, 255, 0.7);
+}
+.vr-identite {
+  margin: 4px 0 0;
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(214, 190, 255, 0.85);
+}
+
+/* raccourcis directs : Notion, Super Productivity, Excel */
+.j-liens {
+  display: inline-flex;
+  gap: 4px;
+}
+
+/* =====================================================================================================
+   LE SYSTÈME : l'interface de Max façon « fenêtres du Système » (bleu, lumière, crochets, notifications)
+   ===================================================================================================== */
+:root {
+  --sys: #4fb7ff;
+  --sys-clair: #c6ecff;
+  --sys-doux: rgba(79, 183, 255, 0.35);
+  --sys-fond: rgba(6, 14, 34, 0.9);
+  --sys-police: "Rajdhani", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+
+/* --- l'entrée : la fenêtre du Système s'ouvre --------------------------------------------------------- */
+.sys-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 45%, #061024 0%, #010309 70%);
+  font-family: var(--sys-police);
+  color: var(--sys-clair);
+  cursor: pointer;
+  overflow: hidden;
+}
+.sys-poussiere {
+  position: absolute;
+  inset: -10%;
+  background-image: radial-gradient(1.5px 1.5px at 20% 30%, var(--sys) 50%, transparent 51%), radial-gradient(1px 1px at 70% 60%, var(--sys-clair) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 40% 80%, var(--sys) 50%, transparent 51%), radial-gradient(1px 1px at 85% 20%, var(--sys) 50%, transparent 51%),
+    radial-gradient(1px 1px at 10% 70%, var(--sys-clair) 50%, transparent 51%);
+  background-size: 340px 340px;
+  opacity: 0;
+  animation: sys-poussiere 6s ease-out forwards;
+}
+@keyframes sys-poussiere {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  30% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.35;
+    transform: translateY(-40px);
+  }
+}
+.sys-fenetre {
+  position: relative;
+  width: min(760px, 90vw);
+  border: 1px solid var(--sys);
+  background: linear-gradient(180deg, rgba(12, 30, 66, 0.92), rgba(4, 10, 26, 0.94));
+  box-shadow: 0 0 28px rgba(79, 183, 255, 0.55), 0 0 90px rgba(79, 183, 255, 0.18), inset 0 0 36px rgba(79, 183, 255, 0.16);
+  transform: scale(0, 0.004);
+  opacity: 0;
+}
+.sys-intro.joue .sys-fenetre {
+  animation: sys-ouvre 0.7s 0s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+@keyframes sys-ouvre {
+  0% {
+    transform: scale(0, 0.004);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1, 0.004);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1, 1);
+    opacity: 1;
+  }
+}
+/* les coins lumineux de la fenêtre */
+.sys-fenetre::before,
+.sys-fenetre::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--sys-clair);
+  filter: drop-shadow(0 0 6px var(--sys));
+}
+.sys-fenetre::before {
+  top: -3px;
+  left: -3px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.sys-fenetre::after {
+  bottom: -3px;
+  right: -3px;
+  border-left: 0;
+  border-top: 0;
+}
+.sys-tete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--sys-doux);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: 0.45em;
+  text-shadow: 0 0 10px var(--sys);
+}
+.sys-alerte {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--sys-clair);
+  border-radius: 50%;
+  font-size: 15px;
+  letter-spacing: 0;
+  box-shadow: 0 0 12px var(--sys);
+}
+.sys-corps {
+  padding: 24px 34px 28px;
+  display: grid;
+  gap: 12px;
+}
+.sys-intro .sys-tete,
+.sys-intro .sys-connexion,
+.sys-intro .sys-barre,
+.sys-intro .sys-modules li,
+.sys-intro .sys-joueur,
+.sys-intro .sys-niveau {
+  opacity: 0;
+}
+.sys-intro.joue .sys-tete {
+  animation: sys-apparait 0.3s 0.6s forwards;
+}
+.sys-intro.joue .sys-connexion {
+  animation: sys-apparait 0.3s 0.7s forwards;
+}
+.sys-intro.joue .sys-barre {
+  animation: sys-apparait 0.3s 0.75s forwards;
+}
+@keyframes sys-apparait {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+.sys-connexion {
+  margin: 0;
+  font-size: 21px;
+  letter-spacing: 0.08em;
+}
+.sys-points::after {
+  content: "";
+  animation: sys-points 1s steps(4) infinite;
+}
+@keyframes sys-points {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+}
+.sys-barre {
+  position: relative;
+  height: 8px;
+  border: 1px solid var(--sys-doux);
+}
+.sys-barre i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, rgba(79, 183, 255, 0.4), var(--sys-clair));
+  box-shadow: 0 0 12px var(--sys);
+}
+.sys-intro.joue .sys-barre i {
+  animation: sys-charge 0.9s 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes sys-charge {
+  to {
+    width: 100%;
+  }
+}
+.sys-barre b {
+  position: absolute;
+  right: 0;
+  top: -22px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.sys-modules {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 17px;
+  letter-spacing: 0.08em;
+}
+.sys-modules li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+}
+.sys-modules li i {
+  border-bottom: 1px dotted var(--sys-doux);
+}
+.sys-intro.joue .sys-modules li {
+  animation: sys-apparait 0.22s calc(0.85s + var(--i) * 0.1s) forwards;
+}
+.sys-modules b.ok {
+  color: var(--sys);
+}
+.sys-modules b.ko {
+  color: #ff8a6b;
+}
+.sys-joueur {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sys-doux);
+  text-align: center;
+}
+.sys-joueur p {
+  margin: 0;
+  font-size: 27px;
+  letter-spacing: 0.06em;
+}
+.sys-joueur strong {
+  color: #fff;
+  text-shadow: 0 0 14px var(--sys), 0 0 2px #fff;
+}
+.sys-intro.joue .sys-joueur {
+  animation: sys-eveil 0.55s 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes sys-eveil {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+    filter: blur(6px) brightness(2);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+.sys-niveau {
+  margin-top: 4px !important;
+  font-size: 15px !important;
+  letter-spacing: 0.3em !important;
+  color: var(--sys);
+}
+.sys-niveau strong {
+  font-size: 36px;
+}
+.sys-intro.joue .sys-niveau {
+  animation: sys-apparait 0.4s 2.1s forwards;
+}
+/* la quête du jour, qui arrive sur le côté */
+.sys-quete {
+  position: absolute;
+  right: 6vw;
+  bottom: 12vh;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 18px;
+  border: 1px solid var(--sys);
+  background: var(--sys-fond);
+  box-shadow: 0 0 22px rgba(79, 183, 255, 0.45);
+  opacity: 0;
+  transform: translateX(40px);
+}
+.sys-quete b {
+  display: block;
+  letter-spacing: 0.22em;
+  font-size: 15px;
+}
+.sys-quete small {
+  color: var(--sys-clair);
+  opacity: 0.8;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+.sys-intro.joue .sys-quete {
+  animation: sys-quete 0.5s 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes sys-quete {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sys-intro.sort {
+  animation: sys-sort 0.7s ease-in forwards;
+}
+.sys-intro.sort .sys-fenetre {
+  animation: sys-ferme 0.5s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+@keyframes sys-ferme {
+  to {
+    transform: scale(1, 0.004);
+    opacity: 0;
+  }
+}
+@keyframes sys-sort {
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* --- l'accueil : chaque carte devient une fenêtre du Système ----------------------------------------- */
+.jarvis {
+  font-family: var(--sys-police);
+}
+.jarvis .j-carte {
+  border-radius: 3px;
+  border: 1px solid rgba(79, 183, 255, 0.55);
+  background: linear-gradient(180deg, rgba(10, 26, 58, 0.88), rgba(4, 11, 28, 0.9));
+  box-shadow: 0 0 16px rgba(79, 183, 255, 0.22), inset 0 0 22px rgba(79, 183, 255, 0.09);
+}
+.jarvis .j-carte h3 {
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(79, 183, 255, 0.3);
+  text-align: center;
+  font-family: var(--sys-police);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: var(--sys-clair);
+  text-shadow: 0 0 8px rgba(79, 183, 255, 0.85);
+}
+.jarvis .j-carte h3::before {
+  content: "[ ";
+  color: var(--sys);
+}
+.jarvis .j-carte h3::after {
+  content: " ]";
+  color: var(--sys);
+}
+.jarvis .j-carte h3 small {
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  text-shadow: none;
+}
+/* la quête quotidienne, en bleu Système */
+.jarvis .j-plan {
+  border-color: var(--sys);
+  background: linear-gradient(180deg, rgba(14, 34, 74, 0.92), rgba(4, 11, 28, 0.92));
+  box-shadow: 0 0 22px rgba(79, 183, 255, 0.35), inset 0 0 26px rgba(79, 183, 255, 0.12);
+}
+.vq-sous {
+  margin: -4px 0 8px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(198, 236, 255, 0.7);
+}
+.jarvis .vr-case[aria-pressed="true"],
+.jarvis .vr-fixe:not(:empty) {
+  background: var(--sys);
+  border-color: var(--sys);
+  color: #021028;
+  box-shadow: 0 0 10px rgba(79, 183, 255, 0.7);
+}
+.vr-fixe {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(79, 183, 255, 0.5);
+}
+.vq-compte {
+  grid-template-columns: 24px 1fr auto !important;
+}
+.vq-compte b {
+  font-family: var(--sys-police);
+  color: var(--sys-clair);
+  letter-spacing: 0.06em;
+}
+.vq-avert {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: #ffb36b;
+  letter-spacing: 0.03em;
+}
+.vq-accomplie {
+  margin: 10px 0 0;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  color: #fff;
+  text-shadow: 0 0 12px var(--sys), 0 0 30px var(--sys);
+  animation: vq-brille 2.4s ease-in-out infinite;
+}
+@keyframes vq-brille {
+  50% {
+    text-shadow: 0 0 6px var(--sys);
+  }
+}
+.jarvis .vr-identite {
+  color: rgba(198, 236, 255, 0.75);
+}
+/* la fenêtre STATUT */
+.ss-tete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 4px;
+}
+.ss-tete small,
+.ss-ligne small,
+.ss-stats small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: rgba(198, 236, 255, 0.6);
+}
+.ss-tete b {
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(79, 183, 255, 0.8);
+}
+.ss-niv {
+  text-align: right;
+}
+.ss-niv b {
+  font-size: 30px;
+  color: var(--sys-clair);
+}
+.ss-ligne {
+  margin: 2px 0;
+  font-size: 13px;
+  color: #e6f6ff;
+}
+.ss-ligne small {
+  display: inline;
+  margin-right: 6px;
+}
+.ss-xp {
+  position: relative;
+  height: 14px;
+  margin: 8px 0;
+  border: 1px solid rgba(79, 183, 255, 0.5);
+}
+.ss-xp i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, rgba(79, 183, 255, 0.35), var(--sys));
+  box-shadow: 0 0 10px rgba(79, 183, 255, 0.6);
+}
+.ss-xp span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  color: #fff;
+}
+.ss-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  text-align: center;
+}
+.ss-stats li {
+  padding: 5px 0;
+  border: 1px solid rgba(79, 183, 255, 0.25);
+  background: rgba(79, 183, 255, 0.06);
+}
+.ss-stats b {
+  font-size: 18px;
+  color: var(--sys-clair);
+}
+
+/* les colonnes de l'accueil défilent si les fenêtres dépassent (au lieu d'être coupées) */
+.jarvis[data-mode="accueil"] .j-cote {
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 183, 255, 0.45) transparent;
+  padding-right: 4px;
+}
+.jarvis .j-plan h3 {
+  letter-spacing: 0.2em;
+}
+
+/* l'oreille : plus de texte, juste un signe qui s'allume quand Max t'entend */
+.j-entendu {
+  min-height: 0;
+  height: 18px;
+  display: flex;
+  justify-content: center;
+}
+.j-entendu::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: rgba(79, 183, 255, 0.35);
+  box-shadow: 0 0 6px rgba(79, 183, 255, 0.4);
+  transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.j-entendu[data-entend="oui"]::before {
+  background: #c6ecff;
+  box-shadow: 0 0 14px #4fb7ff, 0 0 30px rgba(79, 183, 255, 0.7);
+  transform: scale(1.5);
+}
+.j-entendu[data-ok="non"]::before {
+  background: rgba(255, 138, 107, 0.6);
+  box-shadow: none;
+}
+
+/* --- l'ambiance du Système : poussière de mana bleue qui monte, halo sur les bords ------------------ */
+.sys-ambiance {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 120%, rgba(40, 110, 255, 0.16), transparent 55%), radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0, 8, 30, 0.55) 100%);
+}
+body[data-obscur="oui"] .sys-ambiance {
+  display: none;
+}
+.sys-ambiance i {
+  position: absolute;
+  inset: -100% 0 0 0;
+  background-image: radial-gradient(1.6px 1.6px at 12% 18%, rgba(140, 210, 255, 0.9) 50%, transparent 52%), radial-gradient(1.2px 1.2px at 32% 64%, rgba(110, 190, 255, 0.8) 50%, transparent 52%),
+    radial-gradient(2px 2px at 58% 38%, rgba(160, 225, 255, 0.85) 50%, transparent 52%), radial-gradient(1.3px 1.3px at 78% 82%, rgba(110, 190, 255, 0.8) 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 90% 12%, rgba(140, 210, 255, 0.85) 50%, transparent 52%);
+  background-size: 520px 520px;
+  opacity: 0.35;
+  animation: sys-mana 38s linear infinite;
+}
+.sys-ambiance i + i {
+  background-size: 780px 780px;
+  opacity: 0.22;
+  animation-duration: 60s;
+  filter: blur(0.6px);
+}
+@keyframes sys-mana {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(50%);
+  }
+}
+
+/* --- les grandes fenêtres du Système (quête attribuée, niveau supérieur, quête accomplie) ----------- */
+.sys-pop-fond {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+  display: grid;
+  place-items: center;
+  background: rgba(1, 4, 14, 0.72);
+  backdrop-filter: blur(3px);
+  font-family: var(--sys-police);
+  color: var(--sys-clair);
+}
+.sys-pop {
+  position: relative;
+  width: min(640px, 90vw);
+  border: 1px solid var(--sys);
+  background: linear-gradient(180deg, rgba(12, 30, 66, 0.95), rgba(4, 10, 26, 0.96));
+  box-shadow: 0 0 30px rgba(79, 183, 255, 0.55), 0 0 100px rgba(79, 183, 255, 0.2), inset 0 0 36px rgba(79, 183, 255, 0.16);
+  transform: scale(1, 0.004);
+  opacity: 0;
+}
+.sys-pop::before,
+.sys-pop::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--sys-clair);
+  filter: drop-shadow(0 0 6px var(--sys));
+}
+.sys-pop::before {
+  top: -3px;
+  left: -3px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.sys-pop::after {
+  bottom: -3px;
+  right: -3px;
+  border-left: 0;
+  border-top: 0;
+}
+.sys-pop-fond.ouvre .sys-pop {
+  animation: sys-pop-ouvre 0.55s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+.sys-pop-fond.sort .sys-pop {
+  animation: sys-ferme 0.4s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+.sys-pop-fond.sort {
+  animation: sys-sort 0.45s ease-in forwards;
+}
+@keyframes sys-pop-ouvre {
+  0% {
+    transform: scale(0.2, 0.004);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(1, 0.004);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1, 1);
+    opacity: 1;
+  }
+}
+.sys-pop-corps {
+  padding: 22px 32px 8px;
+  display: grid;
+  gap: 10px;
+  font-size: 19px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.sys-pop-corps p {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.sys-pop-corps strong {
+  color: #fff;
+  text-shadow: 0 0 12px var(--sys);
+}
+.sys-pop-corps small {
+  font-size: 13px;
+  opacity: 0.7;
+}
+.sys-gros {
+  font-size: 42px;
+}
+.sys-case {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--sys);
+  box-shadow: 0 0 6px rgba(79, 183, 255, 0.5);
+}
+.sys-pop-ok {
+  display: block;
+  margin: 14px auto 22px;
+  padding: 8px 34px;
+  font-family: var(--sys-police);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--sys-clair);
+  background: rgba(79, 183, 255, 0.12);
+  border: 1px solid var(--sys);
+  box-shadow: 0 0 14px rgba(79, 183, 255, 0.35);
+  cursor: pointer;
+}
+.sys-pop-ok:hover {
+  background: rgba(79, 183, 255, 0.28);
+}
+
+/* --- les notifications du Système, en haut à droite -------------------------------------------------- */
+.sys-toasts {
+  position: fixed;
+  top: 76px;
+  right: 18px;
+  z-index: 1800;
+  display: grid;
+  gap: 8px;
+  width: min(360px, 80vw);
+  pointer-events: none;
+}
+.sys-toast {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border: 1px solid var(--sys);
+  background: rgba(6, 16, 38, 0.94);
+  box-shadow: 0 0 18px rgba(79, 183, 255, 0.4);
+  font-family: var(--sys-police);
+  color: var(--sys-clair);
+  animation: sys-toast 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sys-toast b {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+}
+.sys-toast p {
+  margin: 3px 0 0;
+  font-size: 14px;
+  color: #e8f6ff;
+}
+.sys-toast.part {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: all 0.45s;
+}
+.sys-toast .sys-alerte {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+}
+@keyframes sys-toast {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scaleY(0.2);
+  }
+}
+
+/* l'œil de code : en plein écran, derrière la fenêtre ; il s'efface quand la fenêtre s'ouvre */
+.sys-oeil {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.6s;
+}
+.sys-intro.joue .sys-oeil {
+  opacity: 0.25;
+}
+.sys-intro:not(.joue) .sys-poussiere {
+  display: none;
+}
+
+/* --- la barre du haut, en interface du Système ------------------------------------------------------- */
+.jarvis .qg-barre {
+  border-bottom: 1px solid rgba(79, 183, 255, 0.35);
+  box-shadow: 0 8px 18px -14px rgba(79, 183, 255, 0.6);
+}
+.jarvis .qg-barre button,
+.jarvis .qg-barre .qg-pastille,
+.jarvis .j-statut {
+  font-family: var(--sys-police);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  border: 1px solid rgba(79, 183, 255, 0.55);
+  background: linear-gradient(180deg, rgba(14, 34, 74, 0.85), rgba(5, 13, 32, 0.9));
+  color: var(--sys-clair);
+  box-shadow: 0 0 10px rgba(79, 183, 255, 0.18), inset 0 0 10px rgba(79, 183, 255, 0.08);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.jarvis .qg-barre button:hover {
+  border-color: var(--sys-clair);
+  box-shadow: 0 0 16px rgba(79, 183, 255, 0.55), inset 0 0 12px rgba(79, 183, 255, 0.2);
+}
+.jarvis .qg-barre .qg-obscur {
+  border-color: rgba(255, 70, 90, 0.6);
+  color: #ffb3bd;
+}
+.jarvis .j-nom {
+  font-family: var(--sys-police);
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  color: #fff;
+  text-shadow: 0 0 10px var(--sys), 0 0 24px rgba(79, 183, 255, 0.6);
+  animation: sys-nom 6s ease-in-out infinite;
+}
+@keyframes sys-nom {
+  0%,
+  92%,
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+  93% {
+    transform: translateX(2px) skewX(-8deg);
+    opacity: 0.7;
+  }
+  95% {
+    transform: translateX(-2px);
+    opacity: 1;
+  }
+}
+/* les tuiles des pôles, en fenêtres du Système */
+.jarvis .qg-tuile {
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(10, 26, 58, 0.9), rgba(4, 11, 28, 0.92));
+  box-shadow: 0 0 14px rgba(79, 183, 255, 0.15), inset 0 0 18px rgba(79, 183, 255, 0.07);
+  font-family: var(--sys-police);
+}
+.jarvis .j-form input {
+  font-family: var(--sys-police);
+  border-radius: 3px;
+  border-color: rgba(79, 183, 255, 0.5);
+  box-shadow: inset 0 0 14px rgba(79, 183, 255, 0.08);
+}
+
+/* --- le Système partout : grille d'hexagones qui respire, balayage, ondes au clic, fenêtres qui s'ouvrent ---- */
+.sys-ambiance .sys-grille {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97'%3E%3Cpath d='M28 0l28 16v32L28 64 0 48V16zM28 64v33' fill='none' stroke='%234fb7ff' stroke-width='0.8'/%3E%3C/svg%3E");
+  background-size: 56px 97px;
+  opacity: 0.05;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 55%, #000 10%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 50% 55%, #000 10%, transparent 75%);
+  animation: sys-grille 7s ease-in-out infinite;
+}
+@keyframes sys-grille {
+  50% {
+    opacity: 0.1;
+  }
+}
+.sys-ambiance .sys-balayage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 120px;
+  background: linear-gradient(180deg, transparent, rgba(79, 183, 255, 0.07) 70%, rgba(160, 225, 255, 0.16) 100%, transparent);
+  border-bottom: 1px solid rgba(160, 225, 255, 0.12);
+  animation: sys-balayage 11s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  transform: translateY(-140px);
+}
+@keyframes sys-balayage {
+  0%,
+  62% {
+    transform: translateY(-140px);
+  }
+  100% {
+    transform: translateY(105vh);
+  }
+}
+.sys-onde {
+  position: fixed;
+  z-index: 3000;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 1.5px solid rgba(160, 225, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(79, 183, 255, 0.8), inset 0 0 6px rgba(79, 183, 255, 0.6);
+  pointer-events: none;
+  animation: sys-onde 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+.sys-onde::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 1px solid rgba(79, 183, 255, 0.5);
+  transform: rotate(45deg);
+}
+@keyframes sys-onde {
+  from {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  to {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+body[data-obscur="oui"] .sys-onde {
+  border-color: rgba(255, 90, 90, 0.9);
+  box-shadow: 0 0 10px rgba(255, 50, 50, 0.8);
+}
+/* les fenêtres arrivent comme celles du Système : une ligne de lumière qui s'ouvre */
+.jarvis.qg-arrive .j-cote .j-carte {
+  animation: sys-fenetre-ouvre 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.jarvis.qg-arrive .j-cote .j-carte:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.jarvis.qg-arrive .j-cote .j-carte:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.jarvis.qg-arrive .j-cote .j-carte:nth-child(4) {
+  animation-delay: 0.24s;
+}
+.jarvis.qg-arrive .j-cote .j-carte:nth-child(5) {
+  animation-delay: 0.32s;
+}
+@keyframes sys-fenetre-ouvre {
+  0% {
+    transform: scaleY(0.02);
+    filter: brightness(3);
+    opacity: 0;
+  }
+  35% {
+    transform: scaleY(0.02);
+    filter: brightness(3);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+    filter: none;
+    opacity: 1;
+  }
+}
+/* les coins des fenêtres, comme les cadres du Système */
+.jarvis .j-carte {
+  position: relative;
+}
+.jarvis .j-carte::before,
+.jarvis .j-carte::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  border: 2px solid var(--sys-clair);
+  filter: drop-shadow(0 0 4px rgba(79, 183, 255, 0.9));
+}
+.jarvis .j-carte::before {
+  top: -2px;
+  left: -2px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.jarvis .j-carte::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: 0;
+  border-top: 0;
+}
+/* le compte à rebours de la quête quotidienne */
+.vq-chrono {
+  margin: 8px 0 2px;
+  text-align: center;
+  font-family: var(--sys-police);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--sys);
+}
+.vq-chrono b {
+  display: block;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: var(--sys-clair);
+  text-shadow: 0 0 10px rgba(79, 183, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sys-ambiance .sys-balayage,
+  .sys-ambiance .sys-grille {
+    animation: none;
+  }
+}

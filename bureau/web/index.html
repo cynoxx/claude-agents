@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Le Bureau</title>
+    <!-- la police du Système (si internet ne répond pas, Avenir Next du Mac prend le relais) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>" />
+  </head>
+  <body data-vue="jarvis">
+    <section id="verrou" class="verrou" aria-label="Max est verrouillé" hidden>
+      <div class="v-boite">
+        <div class="j-nom">MAX</div>
+        <div class="v-cadenas" aria-hidden="true">🔒</div>
+        <h1 id="v-titre">Max est verrouillé</h1>
+        <div id="v-cadre" class="v-cadre" data-actif="non"><video id="v-video" playsinline muted></video></div>
+        <canvas id="v-scan" class="v-scan" aria-hidden="true"></canvas>
+        <p id="v-statut" class="v-statut">Passe devant la caméra pour que Max te reconnaisse.</p>
+        <button type="button" id="v-camera">📷 Me reconnaître</button>
+        <button type="button" id="v-guet" class="v-guet" hidden></button>
+        <p class="v-note">L'image de la caméra reste dans cette page : rien n'est filmé, enregistré ni envoyé.</p>
+      </div>
+    </section>
+    <div id="v-reglages" class="v-reglages" role="dialog" aria-label="Reconnaissance du visage" hidden>
+      <div class="v-boite">
+        <button type="button" id="vr-fermer" class="v-fermer" aria-label="Fermer">×</button>
+        <h2>🔐 Reconnaissance du visage</h2>
+        <p id="vr-intro"></p>
+        <label id="vr-prenom-ligne" class="v-prenom">Ton prénom (pour que Max te salue) <input id="vr-prenom" autocomplete="given-name" /></label>
+        <div id="vr-cadre" class="v-cadre" data-actif="non"><video id="vr-video" playsinline muted></video></div>
+        <p id="vr-statut" class="v-statut"></p>
+        <div class="v-actions">
+          <button type="button" id="vr-enregistrer">📷 Enregistrer mon visage</button>
+          <button type="button" id="vr-verrouiller">🔒 Verrouiller maintenant</button>
+          <button type="button" id="vr-effacer" class="danger">Effacer mon visage</button>
+        </div>
+        <p class="v-note">Max garde seulement une « empreinte » de ton visage (des nombres, pas de photo), sur ce Mac. Une photo peut parfois tromper une webcam : c'est pour ça que Max te demande aussi de tourner la tête, ce qu'une photo ne sait pas faire. Garde ton mot de passe ou Touch ID pour protéger le Mac lui-même.</p>
+      </div>
+    </div>
+    <div id="j-gestes-msg" class="j-gestes-msg" role="status" aria-live="polite" hidden></div>
+    <div class="sys-ambiance" aria-hidden="true"><i></i><i></i><b class="sys-grille"></b><b class="sys-balayage"></b></div>
+    <section id="jarvis" class="jarvis" data-mode="accueil" aria-label="Max">
+      <canvas id="j-fond" class="j-fond" aria-hidden="true"></canvas>
+      <header class="qg-barre">
+        <div class="j-nom">MAX</div>
+        <div id="j-statut" class="j-statut" data-etat="veille">En veille</div>
+        <div class="qg-joueur" data-hud-joueur hidden>
+          <span class="qg-niv">NIV <strong data-hud="niveau">1</strong></span>
+          <span class="qg-xp" role="progressbar" aria-label="Expérience" aria-valuemin="0" aria-valuemax="100"><i data-hud="xp"></i></span>
+          <span class="qg-pastille" data-hud="serie" title="Jours d'affilée avec au moins une session">🔥 0 j</span>
+          <span class="qg-pastille" data-hud="echeance" hidden></span>
+        </div>
+        <span id="j-minuteur" class="qg-pastille qg-minuteur" hidden></span>
+        <button type="button" id="j-alarme" class="qg-pastille qg-alarme" title="Ton réveil : Max t'appelle" hidden></button>
+        <span class="espace"></span>
+        <span id="j-liens" class="j-liens"></span>
+        <button type="button" id="j-obscur" class="qg-obscur" title="Max Ultime : le mode obscur, pour se concentrer (ou dis « Max, mode obscur »)">◆ Mode obscur</button>
+        <button type="button" id="j-gestes" class="qg-icone qg-gestes" aria-label="Contrôler Max avec la main">🖐</button>
+        <button type="button" id="j-visage" hidden>🔐 Visage</button>
+        <button type="button" id="j-reveil">👂 Réveiller</button>
+        <button type="button" id="j-bureau" title="Le bureau : l'équipe de robots et ses quêtes">🏢 Le bureau</button>
+      </header>
+
+      <div class="qg-corps">
+        <div id="qg-accueil" class="j-centre">
+          <aside class="j-cote j-gauche">
+            <div class="j-carte j-horloge">
+              <div id="j-heure" class="j-heure">--:--</div>
+              <div id="j-date" class="j-date"></div>
+              <div id="j-meteo" class="j-meteo">—</div>
+            </div>
+            <div id="j-statut-joueur" class="j-carte sys-statut"></div>
+            <div id="j-plan" class="j-carte j-plan"></div>
+            <div id="j-cap" class="j-carte j-cap"></div>
+            <div class="j-carte j-defile">
+              <h3 id="j-jour-titre">Aujourd'hui</h3>
+              <ol id="j-agenda" class="j-agenda"></ol>
+              <p id="j-jour-aide" class="j-petit" hidden></p>
+            </div>
+          </aside>
+          <div class="j-sphere-zone">
+            <canvas id="sphere" class="j-sphere"></canvas>
+            <p id="j-toi" class="j-toi"></p>
+            <p id="j-dit" class="j-dit" aria-live="polite"></p>
+            <p id="j-soucis" class="j-soucis"></p>
+            <p id="j-entendu" class="j-entendu" aria-live="polite"></p>
+          </div>
+          <aside class="j-cote j-droite">
+            <div class="j-carte">
+              <h3>Maintenant</h3>
+              <div id="j-maintenant" class="j-gros">—</div>
+              <div id="j-objectif" class="qg-jauge" hidden><i></i></div>
+              <div id="j-travail" class="j-petit"></div>
+            </div>
+            <button type="button" id="j-mails-carte" class="j-carte qg-mails-carte" hidden>
+              <h3>Mails</h3>
+              <span id="j-mails-resume" class="j-mails-resume"></span>
+              <span id="j-mails-compte" class="j-petit"></span>
+            </button>
+            <button type="button" id="j-mission" class="j-carte j-mission" hidden></button>
+            <div class="j-carte j-journal">
+              <h3>Journal</h3>
+              <div id="j-journal-contenu"></div>
+              <form id="j-journal-form" class="j-journal-form"><input id="j-journal-texte" autocomplete="off" maxlength="500" placeholder="Une ligne sur ta journée…" /></form>
+            </div>
+            <div class="j-carte j-auto">
+              <h3>Automatismes <small>· Max les fait tout seul</small></h3>
+              <div id="j-automatismes"></div>
+            </div>
+            <div id="j-conseillers" class="j-petit"></div>
+          </aside>
+        </div>
+        <section id="qg-fiche" class="qg-fiche" aria-live="polite" hidden></section>
+      </div>
+
+      <nav id="qg-poles" class="qg-poles" aria-label="Tes pôles"></nav>
+
+      <form id="j-form" class="j-form">
+        <input id="j-texte" autocomplete="off" placeholder="Parle à Max (« Max, … ») ou écris-lui ici" />
+        <button type="submit">Envoyer</button>
+      </form>
+    </section>
+
+    <div id="alarme-ecran" class="alarme-ecran" role="alertdialog" aria-label="Réveil" hidden>
+      <div class="al-boite">
+        <div class="al-icone" aria-hidden="true">⏰</div>
+        <h1>Debout !</h1>
+        <div id="al-heure" class="al-heure">--:--</div>
+        <p class="al-aide">Dis « Max, je suis réveillé », ou clique ici :</p>
+        <button type="button" id="al-ok">Je suis réveillé</button>
+      </div>
+    </div>
+
+    <div id="mails-fenetre" class="mails-fenetre" role="dialog" aria-label="Tes mails" hidden>
+      <div class="mails-boite">
+        <button type="button" id="mf-fermer" class="v-fermer" aria-label="Fermer">×</button>
+        <h2>📬 Tes mails</h2>
+        <p id="mf-resume" class="mf-resume"></p>
+        <div id="mf-categories" class="j-mails"></div>
+        <div class="mf-actions">
+          <button type="button" id="mf-ranger" hidden>📰 Ranger les pubs</button>
+          <button type="button" id="mf-retrier">🔄 Retrier</button>
+          <button type="button" id="mf-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <header class="hud">
+      <div class="hud-logo" aria-label="Le Bureau"><span class="hud-logo-haut">LE</span><span class="hud-logo-bas">BUREAU</span></div>
+      <div id="hud-joueur" class="hud-joueur" hidden>
+        <div class="hud-niv"><span>NIV</span><strong id="hud-niveau">1</strong></div>
+        <div class="hud-xp">
+          <div class="hud-xp-barre" role="progressbar" aria-label="Expérience" aria-valuemin="0" aria-valuemax="100"><div id="hud-xp" class="hud-xp-plein"></div></div>
+          <div id="hud-xp-texte" class="hud-xp-texte">0 / 60 XP</div>
+        </div>
+        <div id="hud-serie" class="hud-pastille" title="Jours d'affilée avec au moins une session">🔥 0</div>
+        <div id="hud-echeance" class="hud-pastille" hidden></div>
+      </div>
+      <div class="statut hud-quete">
+        <span class="hud-quete-titre">QUÊTE</span>
+        <span id="phase">En attente d'une quête</span>
+        <span id="chrono"></span>
+        <span id="titre-mission"></span>
+      </div>
+      <nav class="hud-menu">
+        <button id="btn-jarvis" title="Revenir à l'écran de Max">🔵 Max</button>
+        <span id="hud-artefacts" class="hud-artefacts"></span>
+        <button id="btn-resultat" hidden>🏆 Résultat</button>
+        <button id="btn-reprendre" hidden>▶️ Reprendre</button>
+        <button id="btn-arreter" class="danger" hidden>⏹ Arrêter</button>
+        <button id="btn-historique" title="Les quêtes passées">📜 Quêtes</button>
+        <button id="btn-dossier" title="Ouvrir le dossier des missions">📁 Dossier</button>
+      </nav>
+    </header>
+    <div id="bandeau" class="bandeau" hidden></div>
+    <div id="connexion" class="bandeau" hidden>🔌 Connexion au Bureau perdue, reconnexion…</div>
+    <div id="carte-zone" class="carte-zone" aria-hidden="true" hidden><small>— ZONE —</small><strong>LE BUREAU</strong><span>Max et son équipe</span></div>
+
+    <main>
+      <div class="borne">
+        <div class="borne-haut"><span class="borne-etoile">★</span> LE BUREAU <span class="borne-etoile">★</span><span class="borne-direct"><i></i> EN DIRECT</span></div>
+        <div id="jeu"></div>
+      </div>
+      <p class="aide">Clique sur un personnage (et sur le chat 🐈) pour voir ce qu'il fait. Pour parler à Max, commence ta phrase par « Max ».</p>
+    </main>
+
+    <section id="conversation" class="conversation fenetre" hidden>
+      <div class="fenetre-titre">💬 Conversation avec Max</div>
+      <div class="conv-tete">
+        <span id="voyant" class="voyant">😴 Max dort</span>
+        <span id="organes" class="organes"></span>
+        <span class="espace"></span>
+        <button type="button" id="btn-taire" hidden>🤫 Tais-toi</button>
+        <button type="button" id="btn-reveil">👂 Réveiller Max</button>
+      </div>
+      <div class="coach">
+        <span id="coach-minuteur" class="puce-coach" hidden></span>
+        <span id="coach-jour" class="puce-coach"></span>
+        <span id="coach-echeance" class="puce-coach" hidden></span>
+        <span class="espace"></span>
+        <button type="button" id="btn-session" class="bouton-action">⏱ Session 25 min</button>
+        <button type="button" id="btn-fin-session" hidden>⏹ Stop</button>
+      </div>
+      <ol id="messages" class="messages" aria-live="polite"></ol>
+      <form id="form-max" class="form-max">
+        <input id="texte-max" autocomplete="off" placeholder="Écris à Max… ou dis-lui « Max, … »" />
+        <button type="submit" class="bouton-action">Envoyer ▶</button>
+      </form>
+    </section>
+
+    <details class="mission-directe fenetre">
+      <summary>📜 Proposer une quête directement, sans passer par Max</summary>
+      <form id="mission">
+        <textarea id="texte" rows="2" placeholder="Quelle est la quête ? (Entrée pour lancer, Maj+Entrée pour aller à la ligne)"></textarea>
+        <div class="boutons">
+          <button type="submit" id="btn-lancer" class="bouton-action">🚀 Lancer</button>
+        </div>
+      </form>
+    </details>
+
+    <aside id="panneau" class="panneau" hidden>
+      <button class="fermer" aria-label="Fermer">×</button>
+      <div class="contenu"></div>
+    </aside>
+    <div id="toast" class="toast" role="status" hidden></div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
