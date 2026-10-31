@@ -29,3 +29,13 @@ describe("les événements du Système", () => {
     expect(titreJoueur({ FOR: 0, INT: 0, VIT: 8, PER: 0 })).toBe("Celui qui tient parole");
   });
 });
+
+describe("l'ouverture hacker", () => {
+  it("tape les lignes du terminal avec le nom du Joueur, jusqu'à ACCESS GRANTED", async () => {
+    const { lignesTerminal, DUREE_OEIL_MS } = await import("../web/oeil-code.ts");
+    const l = lignesTerminal("JOHAN");
+    expect(l).toContain('> player = "JOHAN"');
+    expect(l.at(-1)).toBe("> ACCESS GRANTED");
+    expect(DUREE_OEIL_MS).toBeLessThan(4500);
+  });
+});

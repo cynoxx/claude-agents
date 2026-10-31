@@ -29,7 +29,8 @@ export function chercherMp3(dossier: string, motif: RegExp): string[] {
 /** L'intro : 14 s, pleine puissance 5 s, puis baisse sous la voix de Max, et fondu final. */
 export const INTRO_MS = 14_000;
 /** Max commence à parler quand la musique a baissé. */
-export const PAROLE_APRES_MS = 5_500;
+// l'entrée (l'œil de code, puis la fenêtre du Système) dure ~7,4 s : Max parle juste après
+export const PAROLE_APRES_MS = 7_400;
 
 export function argsIntro(source: string, sortie: string): string[] {
   return [

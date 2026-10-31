@@ -3009,7 +3009,7 @@ body[data-obscur="oui"] .j-gestes-msg {
   opacity: 0;
 }
 .sys-intro.joue .sys-fenetre {
-  animation: sys-ouvre 1.05s 0.1s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+  animation: sys-ouvre 0.7s 0s cubic-bezier(0.7, 0, 0.2, 1) forwards;
 }
 @keyframes sys-ouvre {
   0% {
@@ -3087,13 +3087,13 @@ body[data-obscur="oui"] .j-gestes-msg {
   opacity: 0;
 }
 .sys-intro.joue .sys-tete {
-  animation: sys-apparait 0.35s 1s forwards;
+  animation: sys-apparait 0.3s 0.6s forwards;
 }
 .sys-intro.joue .sys-connexion {
-  animation: sys-apparait 0.3s 1.15s forwards;
+  animation: sys-apparait 0.3s 0.7s forwards;
 }
 .sys-intro.joue .sys-barre {
-  animation: sys-apparait 0.3s 1.25s forwards;
+  animation: sys-apparait 0.3s 0.75s forwards;
 }
 @keyframes sys-apparait {
   from {
@@ -3143,7 +3143,7 @@ body[data-obscur="oui"] .j-gestes-msg {
   box-shadow: 0 0 12px var(--sys);
 }
 .sys-intro.joue .sys-barre i {
-  animation: sys-charge 1.6s 1.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: sys-charge 0.9s 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 @keyframes sys-charge {
   to {
@@ -3177,7 +3177,7 @@ body[data-obscur="oui"] .j-gestes-msg {
   border-bottom: 1px dotted var(--sys-doux);
 }
 .sys-intro.joue .sys-modules li {
-  animation: sys-apparait 0.25s calc(1.45s + var(--i) * 0.22s) forwards;
+  animation: sys-apparait 0.22s calc(0.85s + var(--i) * 0.1s) forwards;
 }
 .sys-modules b.ok {
   color: var(--sys);
@@ -3201,7 +3201,7 @@ body[data-obscur="oui"] .j-gestes-msg {
   text-shadow: 0 0 14px var(--sys), 0 0 2px #fff;
 }
 .sys-intro.joue .sys-joueur {
-  animation: sys-eveil 0.6s 3.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: sys-eveil 0.55s 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 @keyframes sys-eveil {
   from {
@@ -3225,7 +3225,7 @@ body[data-obscur="oui"] .j-gestes-msg {
   font-size: 36px;
 }
 .sys-intro.joue .sys-niveau {
-  animation: sys-apparait 0.4s 3.5s forwards;
+  animation: sys-apparait 0.4s 2.1s forwards;
 }
 /* la quête du jour, qui arrive sur le côté */
 .sys-quete {
@@ -3254,7 +3254,7 @@ body[data-obscur="oui"] .j-gestes-msg {
   letter-spacing: 0.05em;
 }
 .sys-intro.joue .sys-quete {
-  animation: sys-quete 0.5s 4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: sys-quete 0.5s 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 @keyframes sys-quete {
   to {
@@ -3690,4 +3690,83 @@ body[data-obscur="oui"] .sys-ambiance {
     opacity: 0;
     transform: translateX(40px) scaleY(0.2);
   }
+}
+
+/* l'œil de code : en plein écran, derrière la fenêtre ; il s'efface quand la fenêtre s'ouvre */
+.sys-oeil {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.6s;
+}
+.sys-intro.joue .sys-oeil {
+  opacity: 0.25;
+}
+.sys-intro:not(.joue) .sys-poussiere {
+  display: none;
+}
+
+/* --- la barre du haut, en interface du Système ------------------------------------------------------- */
+.jarvis .qg-barre {
+  border-bottom: 1px solid rgba(79, 183, 255, 0.35);
+  box-shadow: 0 8px 18px -14px rgba(79, 183, 255, 0.6);
+}
+.jarvis .qg-barre button,
+.jarvis .qg-barre .qg-pastille,
+.jarvis .j-statut {
+  font-family: var(--sys-police);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  border: 1px solid rgba(79, 183, 255, 0.55);
+  background: linear-gradient(180deg, rgba(14, 34, 74, 0.85), rgba(5, 13, 32, 0.9));
+  color: var(--sys-clair);
+  box-shadow: 0 0 10px rgba(79, 183, 255, 0.18), inset 0 0 10px rgba(79, 183, 255, 0.08);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.jarvis .qg-barre button:hover {
+  border-color: var(--sys-clair);
+  box-shadow: 0 0 16px rgba(79, 183, 255, 0.55), inset 0 0 12px rgba(79, 183, 255, 0.2);
+}
+.jarvis .qg-barre .qg-obscur {
+  border-color: rgba(255, 70, 90, 0.6);
+  color: #ffb3bd;
+}
+.jarvis .j-nom {
+  font-family: var(--sys-police);
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  color: #fff;
+  text-shadow: 0 0 10px var(--sys), 0 0 24px rgba(79, 183, 255, 0.6);
+  animation: sys-nom 6s ease-in-out infinite;
+}
+@keyframes sys-nom {
+  0%,
+  92%,
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+  93% {
+    transform: translateX(2px) skewX(-8deg);
+    opacity: 0.7;
+  }
+  95% {
+    transform: translateX(-2px);
+    opacity: 1;
+  }
+}
+/* les tuiles des pôles, en fenêtres du Système */
+.jarvis .qg-tuile {
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(10, 26, 58, 0.9), rgba(4, 11, 28, 0.92));
+  box-shadow: 0 0 14px rgba(79, 183, 255, 0.15), inset 0 0 18px rgba(79, 183, 255, 0.07);
+  font-family: var(--sys-police);
+}
+.jarvis .j-form input {
+  font-family: var(--sys-police);
+  border-radius: 3px;
+  border-color: rgba(79, 183, 255, 0.5);
+  box-shadow: inset 0 0 14px rgba(79, 183, 255, 0.08);
 }

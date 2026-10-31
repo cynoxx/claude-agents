@@ -1,12 +1,15 @@
 // L'entrée de Max, façon « Système » : l'écran est noir, une ligne de lumière bleue s'ouvre en fenêtre, la
 // notification sonne, le Système se connecte (ses modules s'allument un par un, avec leur état réel), puis annonce
-// le Joueur éveillé, son niveau, et la quête du jour reçue. Environ 5 secondes, en même temps que la musique.
+// le Joueur éveillé, son niveau, et la quête du jour reçue. Avant tout ça, l'œil de code (oeil-code.ts) s'ouvre et
+// scanne le Joueur. Environ 7 secondes, en même temps que la musique.
 import type { EtatBureau } from "../shared/protocol.ts";
 import { niveau } from "../shared/niveau.ts";
 import { son } from "./sons.ts";
+import { DUREE_OEIL_MS, OeilCode } from "./oeil-code.ts";
 
 const RECENTE_MS = 8000;
-const DUREE_MS = 5600;
+/** La fenêtre du Système, après l'œil. */
+const DUREE_FENETRE_MS = 3500;
 const echapper = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /** Faut-il jouer l'intro pour ce lancement (nouveau, et pas trop ancien) ? */
@@ -42,6 +45,7 @@ export class Intro {
   private jouee = 0;
   private el: HTMLElement;
   private minuteries: number[] = [];
+  private oeil: OeilCode | null = null;
 
   constructor() {
     this.el = document.createElement("div");
@@ -75,6 +79,7 @@ export class Intro {
       .map((l, i) => `<li style="--i:${i}"><span>${echapper(l.texte)}</span><i></i><b class="${l.ok ? "ok" : "ko"}">${l.ok ? "EN LIGNE" : "HORS LIGNE"}</b></li>`)
       .join("");
     this.el.innerHTML = `
+<canvas class="sys-oeil"></canvas>
 <div class="sys-poussiere"></div>
 <div class="sys-fenetre">
   <div class="sys-tete"><span class="sys-alerte">!</span><span>NOTIFICATION</span></div>
@@ -92,27 +97,35 @@ export class Intro {
     for (const t of this.minuteries) clearTimeout(t);
     this.minuteries = [];
     this.el.hidden = false;
-    this.el.classList.remove("sort", "joue");
-    void this.el.offsetWidth;
-    this.el.classList.add("joue");
-    // la notification sonne quand la fenêtre s'ouvre, puis quand la quête arrive
-    this.plus(650, () => son("systeme", 0.08));
-    this.plus(4000, () => son("quete", 0.07));
-    // la barre de chargement : le pourcentage suit la barre (1,3 s → 2,9 s)
-    const debut = performance.now() + 1300;
-    const pct = this.el.querySelector<HTMLElement>(".sys-barre b")!;
-    const tic = (t: number) => {
-      const p = Math.max(0, Math.min(1, (t - debut) / 1600));
-      pct.textContent = `${Math.round(p * 100)} %`;
-      if (p < 1 && !this.el.hidden) requestAnimationFrame(tic);
-    };
-    requestAnimationFrame(tic);
-    this.plus(DUREE_MS, () => this.finir());
+    this.el.classList.remove("sort", "joue", "fenetre");
+    // 1. l'œil de code s'ouvre, scanne, se ferme
+    this.oeil?.arreter();
+    this.oeil = new OeilCode(this.el.querySelector<HTMLCanvasElement>(".sys-oeil")!, a.joueur);
+    this.oeil.jouer(() => {});
+    this.plus(150, () => son("ouvre", 0.05));
+    this.plus(3600, () => son("deverrouille", 0.07));
+    // 2. puis la fenêtre du Système
+    this.plus(DUREE_OEIL_MS, () => {
+      void this.el.offsetWidth;
+      this.el.classList.add("joue");
+      const debut = performance.now() + 800;
+      const pct = this.el.querySelector<HTMLElement>(".sys-barre b")!;
+      const tic = (t: number) => {
+        const p = Math.max(0, Math.min(1, (t - debut) / 900));
+        pct.textContent = `${Math.round(p * 100)} %`;
+        if (p < 1 && !this.el.hidden) requestAnimationFrame(tic);
+      };
+      requestAnimationFrame(tic);
+    });
+    this.plus(DUREE_OEIL_MS + 350, () => son("systeme", 0.08));
+    this.plus(DUREE_OEIL_MS + 2400, () => son("quete", 0.07));
+    this.plus(DUREE_OEIL_MS + DUREE_FENETRE_MS, () => this.finir());
   }
 
   /** La fenêtre se referme, l'écran s'ouvre sur le QG ; les fenêtres arrivent une par une. */
   private finir(): void {
     if (this.el.hidden) return;
+    this.oeil?.arreter();
     for (const t of this.minuteries) clearTimeout(t);
     this.minuteries = [];
     this.el.classList.add("sort");
