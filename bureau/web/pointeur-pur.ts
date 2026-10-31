@@ -124,3 +124,42 @@ export class PointeurMain {
 
 /** Ce que le pointeur peut actionner : le plus proche ancêtre cliquable de l'élément visé. */
 export const CLIQUABLE = 'button, a[href], input, textarea, select, label, summary, [role="button"], [data-action], [data-auto], [data-regle], [data-pole], .qg-tuile';
+
+/** Rester ce temps sur un bouton, c'est appuyer dessus. */
+export const ATTENTE_MS = 2000;
+
+/**
+ * Le clic par attente : rester sur le même bouton pendant ATTENTE_MS l'actionne. Une fois actionné, il faut le
+ * quitter vraiment (sortir des boutons, ou s'éloigner de l'endroit du clic) pour réarmer : pas de clics en rafale,
+ * même si le bouton change d'aspect après le clic (un interrupteur, par exemple).
+ */
+export class Attente {
+  private cible: unknown = null;
+  private debut = 0;
+  private bloque: { x: number; y: number } | null = null;
+
+  suivre(cible: unknown, tMs: number, x = 0, y = 0): { progres: number; declenche: boolean } {
+    if (this.bloque) {
+      if (cible === null || Math.hypot(x - this.bloque.x, y - this.bloque.y) > 0.05) this.bloque = null;
+      else {
+        this.cible = cible;
+        this.debut = tMs;
+        return { progres: 0, declenche: false };
+      }
+    }
+    if (cible !== this.cible) {
+      this.cible = cible;
+      this.debut = tMs;
+    }
+    if (!cible) return { progres: 0, declenche: false };
+    const progres = Math.min(1, (tMs - this.debut) / ATTENTE_MS);
+    if (progres < 1) return { progres, declenche: false };
+    this.bloque = { x, y };
+    return { progres: 1, declenche: true };
+  }
+
+  /** Le bouton visé vient d'être actionné autrement (pince) : pas de second clic par attente dessus. */
+  marquer(x = 0, y = 0): void {
+    this.bloque = { x, y };
+  }
+}

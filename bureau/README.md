@@ -121,7 +121,8 @@ Clique sur le bouton **🖐** de la barre pour l'activer ou le désactiver (le c
 | Avec ta main | Ce que ça fait |
 |---|---|
 | **bouger** la main | le viseur se déplace (il se laisse attirer par les boutons, qui s'illuminent) |
-| **pincer** pouce + index, puis relâcher | clic |
+| **rester 2 secondes** sur un bouton | il est actionné (un anneau de lumière se remplit autour du viseur) |
+| **pincer** pouce + index, puis relâcher | clic tout de suite |
 | **pincer et monter / descendre** la main | le contenu défile |
 
 Pas besoin de grands gestes : le centre du champ de la caméra couvre tout l'écran. En haut à droite, le **squelette de ta main** montre ce que Max voit (sans l'image de la caméra), avec la zone utile en pointillés.

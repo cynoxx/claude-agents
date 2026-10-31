@@ -4,8 +4,8 @@
 // scanne le Joueur. Environ 7 secondes, en même temps que la musique.
 import type { EtatBureau } from "../shared/protocol.ts";
 import { niveau } from "../shared/niveau.ts";
-import { bandeSonOeil, son } from "./sons.ts";
-import { BATTEMENTS, DUREE_OEIL_MS, OeilCode } from "./oeil-code.ts";
+import { son } from "./sons.ts";
+import { DUREE_OEIL_MS, OeilCode } from "./oeil-code.ts";
 import { convergence } from "./eclat.ts";
 
 const RECENTE_MS = 8000;
@@ -124,8 +124,7 @@ export class Intro {
     this.oeil?.arreter();
     this.oeil = new OeilCode(this.el.querySelector<HTMLCanvasElement>(".sys-oeil")!, a.joueur);
     this.oeil.jouer(() => {});
-    bandeSonOeil(BATTEMENTS);
-    this.plus(3250, () => son("deverrouille", 0.08));
+    // pas de son pendant l'œil : Bella Ciao suffit
     // 2. puis la fenêtre du Système
     this.plus(DUREE_OEIL_MS, () => {
       void this.el.offsetWidth;

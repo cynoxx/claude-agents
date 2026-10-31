@@ -1,14 +1,14 @@
 // Contrôler Max avec la main, façon Jarvis (bouton 🖐 dans la barre : marche / arrêt, retenu d'une fois sur l'autre).
 // La caméra suit ta main, dans la page seulement (rien n'est enregistré ni envoyé) :
 // - bouge la main : le pointeur (un viseur holographique) se déplace, et se laisse attirer par les boutons ;
-// - pince le pouce et l'index : clic ;
+// - reste 2 secondes sur un bouton (un anneau se remplit) : il est actionné ; pincer le pouce et l'index aussi ;
 // - pince et bouge la main vers le haut ou le bas : le contenu défile.
 // En haut à droite, le squelette de ta main (sans l'image de la caméra) montre ce que Max voit.
 // En pause (caméra rendue) quand Max est verrouillé, quand la page est cachée, ou sur la fiche du corps 3D, où la
 // main sert déjà à tourner le corps.
 import { son } from "./sons.ts";
 import { onde } from "./systeme-ambiance.ts";
-import { CLIQUABLE, PointeurMain, type EtatPointeur } from "./pointeur-pur.ts";
+import { Attente, CLIQUABLE, PointeurMain, type EtatPointeur } from "./pointeur-pur.ts";
 
 const PREF = "max-main";
 type Detecteur = { detectForVideo(v: HTMLVideoElement, t: number): { landmarks: { x: number; y: number }[][] }; close(): void };
@@ -17,6 +17,10 @@ const OS = [
   [0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12],
   [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17],
 ];
+
+/** Une signature stable du bouton visé : la page redessine certaines fenêtres, le bouton reste « le même ». */
+const cle = (el: HTMLElement | null) =>
+  el ? `${el.tagName}|${el.id}|${el.className.replace(/\bmain-survol\b/, "")}|${JSON.stringify({ ...el.dataset })}|${(el.textContent ?? "").trim().slice(0, 40)}` : null;
 
 const lirePref = () => {
   try {
@@ -47,13 +51,15 @@ export class PointeurMainPage {
   private present = false;
   private serrage = 0;
   private survol: HTMLElement | null = null;
+  private attente = new Attente();
+  private progresAttente = 0;
   private message = 0;
 
   constructor() {
     this.curseur.className = "main-curseur";
     this.curseur.hidden = true;
     this.curseur.setAttribute("aria-hidden", "true");
-    this.curseur.innerHTML = `<i class="mc-arcs"></i><i class="mc-anneau"></i><i class="mc-point"></i><b class="mc-coord"></b>`;
+    this.curseur.innerHTML = `<i class="mc-arcs"></i><i class="mc-attente"></i><i class="mc-anneau"></i><i class="mc-point"></i><b class="mc-coord"></b>`;
     this.squelette.className = "main-squelette";
     this.squelette.width = 200;
     this.squelette.height = 150;
@@ -79,7 +85,7 @@ export class PointeurMainPage {
       // le choix vaut pour cette fois
     }
     this.maj();
-    this.dire(this.voulu ? "Pointeur main actif : bouge la main pour viser · pince pouce + index pour cliquer · pince et bouge pour défiler" : "Pointeur main coupé.");
+    this.dire(this.voulu ? "Pointeur main actif : bouge la main pour viser · reste 2 s sur un bouton (ou pince pouce + index) pour appuyer · pince et bouge pour défiler" : "Pointeur main coupé.");
   }
 
   private get doitSuivre(): boolean {
@@ -95,7 +101,7 @@ export class PointeurMainPage {
       this.bouton.title = this.refuse
         ? "Max ne peut pas utiliser la caméra (autorisation refusée)"
         : this.voulu
-          ? "Pointeur main actif : viser avec la main, pincer pour cliquer, pincer et bouger pour défiler. Clique pour l'arrêter."
+          ? "Pointeur main actif : viser avec la main, rester 2 s sur un bouton (ou pincer) pour appuyer, pincer et bouger pour défiler. Clique pour l'arrêter."
           : "Contrôler Max avec la main (un pointeur suit ta main) : clique pour l'activer";
     }
     if (this.doitSuivre && !this.actif) void this.demarrer();
@@ -210,17 +216,29 @@ export class PointeurMainPage {
     coord.textContent = `${String(Math.round(x)).padStart(4, "0")}·${String(Math.round(y)).padStart(4, "0")}`;
     // le reste de la page (Max qui suit le pointeur, la profondeur du fond) suit la main comme une souris
     window.dispatchEvent(new PointerEvent("pointermove", { clientX: x, clientY: y }));
-    if (e.clic) this.cliquer(cliquable, x, y);
+    // rester 2 secondes sur un bouton, c'est appuyer dessus (l'anneau se remplit) ; pincer marche aussi, tout de suite
+    const a = this.attente.suivre(e.pince ? null : cle(cliquable), performance.now(), e.x, e.y);
+    if (Math.abs(a.progres - this.progresAttente) > 0.01 || (a.progres === 0) !== (this.progresAttente === 0)) {
+      this.progresAttente = a.progres;
+      this.curseur.style.setProperty("--attente", a.progres.toFixed(3));
+    }
+    if (a.declenche) this.cliquer(cliquable, x, y);
+    if (e.clic) {
+      this.cliquer(cliquable, x, y);
+      this.attente.marquer(e.x, e.y);
+    }
     if (e.defile) this.defiler(sous, e.defile);
   }
 
   private viser(el: HTMLElement | null): void {
     if (el === this.survol) return;
+    const meme = cle(el) === cle(this.survol);
     this.survol?.classList.remove("main-survol");
     this.survol = el;
     el?.classList.add("main-survol");
     this.curseur.dataset.survol = el ? "oui" : "non";
-    if (el) son("clic", 0.015);
+    // un petit son quand on arrive sur un nouveau bouton (pas quand la page redessine le même)
+    if (el && !meme) son("clic", 0.015);
   }
 
   private cliquer(el: HTMLElement | null, x: number, y: number): void {

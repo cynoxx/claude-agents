@@ -4233,3 +4233,20 @@ body[data-obscur="oui"] .main-curseur .mc-arcs {
 .main-squelette[hidden] {
   display: none;
 }
+/* le clic par attente : un anneau de lumière qui se remplit pendant 2 secondes sur un bouton */
+.main-curseur {
+  --attente: 0;
+}
+.main-curseur .mc-attente {
+  width: 50px;
+  height: 50px;
+  background: conic-gradient(from 0deg, #fff 0deg, rgba(198, 236, 255, 0.95) calc(var(--attente) * 360deg), rgba(79, 183, 255, 0.12) calc(var(--attente) * 360deg));
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%, #000 72%, transparent 74%);
+  mask: radial-gradient(circle, transparent 58%, #000 60%, #000 72%, transparent 74%);
+  filter: drop-shadow(0 0 6px rgba(79, 183, 255, 1));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.main-curseur[data-survol="oui"] .mc-attente {
+  opacity: 1;
+}

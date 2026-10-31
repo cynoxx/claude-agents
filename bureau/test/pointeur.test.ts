@@ -68,3 +68,39 @@ describe("FiltreUnEuro", () => {
     expect(v).toBeGreaterThan(0.85);
   });
 });
+
+import { ATTENTE_MS, Attente } from "../web/pointeur-pur.ts";
+describe("Attente (clic en restant sur un bouton)", () => {
+  it("se déclenche au bout de 2 s sur le même bouton, une seule fois", () => {
+    const a = new Attente();
+    const b = {};
+    expect(a.suivre(b, 0).progres).toBe(0);
+    expect(a.suivre(b, ATTENTE_MS / 2).progres).toBeCloseTo(0.5);
+    expect(a.suivre(b, ATTENTE_MS).declenche).toBe(true);
+    expect(a.suivre(b, ATTENTE_MS * 3).declenche).toBe(false);
+    // le quitter puis revenir le réarme
+    a.suivre(null, ATTENTE_MS * 3);
+    a.suivre(b, ATTENTE_MS * 4);
+    expect(a.suivre(b, ATTENTE_MS * 5).declenche).toBe(true);
+  });
+  it("repart de zéro quand on change de bouton, et ne redéclenche pas après une pince", () => {
+    const a = new Attente();
+    const b1 = {};
+    const b2 = {};
+    a.suivre(b1, 0);
+    a.suivre(b2, ATTENTE_MS * 0.9);
+    expect(a.suivre(b2, ATTENTE_MS * 1.5).declenche).toBe(false);
+    a.marquer();
+    expect(a.suivre(b2, ATTENTE_MS * 4).declenche).toBe(false);
+  });
+  it("un interrupteur qui change d'aspect après le clic n'est pas relancé tant qu'on ne s'éloigne pas", () => {
+    const a = new Attente();
+    a.suivre("bouton-off", 0, 0.5, 0.5);
+    expect(a.suivre("bouton-off", ATTENTE_MS, 0.5, 0.5).declenche).toBe(true);
+    // il devient « bouton-on » sous le pointeur immobile
+    expect(a.suivre("bouton-on", ATTENTE_MS * 4, 0.51, 0.5).declenche).toBe(false);
+    // on s'éloigne (autre bouton), le compteur repart
+    a.suivre("autre", ATTENTE_MS * 5, 0.7, 0.5);
+    expect(a.suivre("autre", ATTENTE_MS * 6, 0.7, 0.5).declenche).toBe(true);
+  });
+});
