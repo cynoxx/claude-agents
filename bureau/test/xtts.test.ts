@@ -32,7 +32,8 @@ describe.skipIf(!python)("la voix XTTS (avec un faux modèle)", () => {
     const wav = fs.readFileSync(f);
     expect(wav.toString("ascii", 0, 4)).toBe("RIFF");
     expect(wav.readUInt32LE(24)).toBe(24000);
-    expect(wav.length).toBe(44 + 2400 * 2);
+    // 0,1 s de voix, puis 60 ms de silence ajoutés à la fin
+    expect(wav.length).toBe(44 + (2400 + 1440) * 2);
     await expect(x.synthetiser("PLANTE", path.join(dir, "b.wav"))).rejects.toThrow("phrase impossible");
     await x.synthetiser("Encore là.", path.join(dir, "c.wav"), { locuteur: "Viktor Eka" });
     expect(fs.existsSync(path.join(dir, "c.wav"))).toBe(true);
@@ -45,7 +46,21 @@ describe.skipIf(!python)("la voix XTTS (avec un faux modèle)", () => {
     const x = new Xtts(dir, { locuteur: "Inconnu", vitesse: 1.2, appareil: "cpu" }, { bin: python!, args: [SCRIPT_XTTS, "Inconnu", "1.2", "cpu"] });
     await x.demarrer(30_000);
     await x.synthetiser("Salut.", path.join(dir, "a.wav"));
-    expect(fs.readFileSync(path.join(dir, "a.wav")).length).toBe(44 + 2000 * 2);
+    expect(fs.readFileSync(path.join(dir, "a.wav")).length).toBe(44 + (2000 + 1440) * 2);
+    x.arreter();
+  });
+});
+
+describe.skipIf(!python)("la voix XTTS avec une voix de référence", () => {
+  it("parle avec la voix de référence quand elle est donnée", async () => {
+    process.env.PYTHONPATH = path.join(__dirname, "faux-tts");
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "xtts-"));
+    const ref = path.join(dir, "reference.wav");
+    fs.writeFileSync(ref, "");
+    const x = new Xtts(dir, { locuteur: "Damien Black", vitesse: 1, appareil: "cpu" }, { bin: python!, args: [SCRIPT_XTTS, "Damien Black", "1", "cpu", "accord", `ref=${ref}`] });
+    await x.demarrer(30_000);
+    await x.synthetiser("Bonsoir 🔥 → 19h30.", path.join(dir, "a.wav"));
+    expect(fs.existsSync(path.join(dir, "a.wav"))).toBe(true);
     x.arreter();
   });
 });
@@ -64,6 +79,6 @@ describe("XTTS dans la config", () => {
     fs.writeFileSync(c.pret, "");
     expect(moteurVoix(loadConfig(dir))).toBe("xtts");
     enregistrerLocuteurXtts(path.join(dir, "bureau.config.json"), "Viktor Eka");
-    expect(loadConfig(dir).voix.xtts).toEqual({ locuteur: "Viktor Eka", vitesse: 1, appareil: "cpu" });
+    expect(loadConfig(dir).voix.xtts).toEqual({ locuteur: "Viktor Eka", vitesse: 1, appareil: "cpu", reference: null });
   });
 });

@@ -39,3 +39,11 @@ describe("l'ouverture hacker", () => {
     expect(DUREE_OEIL_MS).toBeLessThan(4500);
   });
 });
+
+import { tempsRestant } from "../web/systeme-ambiance.ts";
+describe("tempsRestant", () => {
+  it("compte jusqu'à minuit", () => {
+    expect(tempsRestant(new Date(2026, 9, 31, 21, 30, 15))).toBe("02:29:45");
+    expect(tempsRestant(new Date(2026, 9, 31, 0, 0, 0))).toBe("24:00:00");
+  });
+});

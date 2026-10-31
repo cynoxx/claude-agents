@@ -144,7 +144,11 @@ export class Humanoide {
     this.apparaitre();
     const boucle = (ms: number) => {
       this.anim = requestAnimationFrame(boucle);
-      if (document.hidden) return;
+      // pendant l'ouverture (l'œil de code), toute la carte graphique est pour elle
+      if (document.hidden || document.body.dataset.intro === "oui") {
+        this.dernier = 0;
+        return;
+      }
       const dt = Math.min(0.05, (ms - (this.dernier || ms)) / 1000);
       this.dernier = ms;
       this.dessiner(dt);

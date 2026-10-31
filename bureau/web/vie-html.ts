@@ -117,6 +117,6 @@ export function htmlPlan(p: PlanVue | undefined, blocsFaits = 0): string {
     .join("")}<li class="vq-compte"><span class="vr-case vr-fixe" aria-hidden="true">${blocs >= p.blocs ? "✓" : ""}</span><span>Blocs de médecine (50 min)</span><b>[${blocs}/${p.blocs}]</b></li></ul>${
     accomplie
       ? `<p class="vq-accomplie">QUÊTE ACCOMPLIE</p>`
-      : `<p class="vq-avert">⚠ Quête incomplète : aucune pénalité. On reprend au prochain bloc.</p>`
+      : `<p class="vq-chrono">TEMPS RESTANT <b data-chrono>--:--:--</b></p><p class="vq-avert">⚠ Quête incomplète : aucune pénalité. On reprend au prochain bloc.</p>`
   }<p class="vr-pied">⏰ demain ${p.reveilDemain.replace(":", " h ")}${p.serie ? ` · 🔥 ${p.serie} j à 3/3` : ""}</p><p class="vr-identite">« ${echapper(p.identite)} »</p>`;
 }

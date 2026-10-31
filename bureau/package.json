@@ -20,6 +20,7 @@
     "voix": "tsx server/installer-voix.ts",
     "voix-humaine": "tsx server/choisir-voix.ts",
     "voix-xtts": "tsx server/installer-xtts.ts",
+    "voix-reference": "tsx server/voix-reference.ts",
     "ia-locale": "tsx server/ia-locale.ts",
     "musique": "tsx server/changer-musique.ts",
     "claque": "tsx server/claque.ts",

@@ -10,6 +10,7 @@ import { Hud } from "./hud.ts";
 import { QG, brancherAutreSeance } from "./poles.ts";
 import { Intro } from "./intro.ts";
 import { EvenementsSysteme } from "./systeme-evenements.ts";
+import { brancherAmbianceSysteme } from "./systeme-ambiance.ts";
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/pixelify-sans/700.css";
 import "@fontsource/press-start-2p/400.css";
@@ -33,10 +34,11 @@ const hud = new Hud();
 const qg = new QG(envoyer);
 const intro = new Intro();
 const systeme = new EvenementsSysteme();
+brancherAmbianceSysteme();
 brancherAutreSeance(envoyer);
 
 // les polices pixel sont chargées avant le jeu, pour que les textes du bureau les utilisent
-Promise.all(['16px "Pixelify Sans"', '8px "Press Start 2P"'].map((f) => document.fonts.load(f).catch(() => []))).finally(() => new Phaser.Game({
+Promise.all(['16px "Pixelify Sans"', '8px "Press Start 2P"'].map((f) => document.fonts.load(f).catch(() => []))).finally(() => endormirHorsBureau(new Phaser.Game({
   type: Phaser.AUTO,
   parent: "jeu",
   width: LARGEUR,
@@ -46,7 +48,23 @@ Promise.all(['16px "Pixelify Sans"', '8px "Press Start 2P"'].map((f) => document
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_HORIZONTALLY },
   scene,
   banner: false,
-}));
+})));
+
+/**
+ * Le bureau (le jeu) ne tourne que quand on le regarde : sur l'écran de Max, il dort, et laisse toute la carte
+ * graphique à Max et à ses animations (c'est ce qui rend l'ouverture fluide).
+ */
+function endormirHorsBureau(jeu: Phaser.Game): void {
+  let dort = false;
+  const regler = () => {
+    const visible = document.body.dataset.vue === "bureau";
+    if (visible && dort) jeu.loop.wake();
+    else if (!visible && !dort) jeu.loop.sleep();
+    dort = !visible;
+  };
+  jeu.events.once("ready", regler);
+  new MutationObserver(regler).observe(document.body, { attributes: true, attributeFilter: ["data-vue"] });
+}
 
 // Une seule fenêtre de Max à la fois : la plus récente garde la main, les autres se ferment (ou, si le navigateur
 // refuse de les fermer, passent sur une page « Max est ouvert ailleurs », qui libère la caméra).

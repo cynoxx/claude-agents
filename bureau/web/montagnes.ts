@@ -55,7 +55,7 @@ export class Montagnes {
     this.preparer();
     const boucle = (ms: number) => {
       this.anim = requestAnimationFrame(boucle);
-      if (document.hidden || ms - this.dernier < 33) return; // 30 images par seconde suffisent
+      if (document.hidden || document.body.dataset.intro === "oui" || ms - this.dernier < 33) return; // 30 images par seconde suffisent
       this.dernier = ms;
       this.dessiner(ms / 1000);
     };

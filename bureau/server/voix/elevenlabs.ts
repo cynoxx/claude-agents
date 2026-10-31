@@ -7,6 +7,8 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { PiperLike } from "./bouche.ts";
+import { lireVoixSay } from "./bouche.ts";
+import { choisirVoix } from "../../shared/parole.ts";
 import { encoderWav } from "./wav.ts";
 
 export const API_ELEVENLABS = "https://api.elevenlabs.io";
@@ -174,11 +176,19 @@ export async function lireQuota(recuperer: Recuperer, cle: string): Promise<Quot
 
 /** `say` du Mac, vers un fichier WAV (le dernier secours). */
 export class SayVersFichier implements PiperLike {
-  constructor(private o: { bin: string; voix: string | null; debit: number }) {}
-  async demarrer(): Promise<void> {}
+  private voix: string | null;
+  constructor(private o: { bin: string; voix: string | null; debit: number }) {
+    this.voix = o.voix;
+  }
+  /** Sans voix imposée : la meilleure voix française du Mac (pas la voix par défaut, souvent anglaise). */
+  async demarrer(): Promise<void> {
+    if (this.voix) return;
+    const sortie = await new Promise<string>((r) => execFile(this.o.bin, ["-v", "?"], { timeout: 10_000 }, (e, out) => r(e ? "" : String(out))));
+    this.voix = choisirVoix(lireVoixSay(sortie))?.name ?? null;
+  }
   arreter(): void {}
   synthetiser(texte: string, fichier: string): Promise<void> {
-    const args = [...(this.o.voix ? ["-v", this.o.voix] : []), "-r", String(this.o.debit), "-o", fichier, "--file-format=WAVE", "--data-format=LEI16@22050", texte];
+    const args = [...(this.voix ? ["-v", this.voix] : []), "-r", String(this.o.debit), "-o", fichier, "--file-format=WAVE", "--data-format=LEI16@22050", texte];
     return new Promise((resolve, reject) => execFile(this.o.bin, args, { timeout: 60_000 }, (e) => (e ? reject(e) : resolve())));
   }
 }

@@ -97,13 +97,15 @@ export class Intro {
     for (const t of this.minuteries) clearTimeout(t);
     this.minuteries = [];
     this.el.hidden = false;
+    document.body.dataset.intro = "oui";
     this.el.classList.remove("sort", "joue", "fenetre");
     // 1. l'œil de code s'ouvre, scanne, se ferme
     this.oeil?.arreter();
     this.oeil = new OeilCode(this.el.querySelector<HTMLCanvasElement>(".sys-oeil")!, a.joueur);
     this.oeil.jouer(() => {});
     this.plus(150, () => son("ouvre", 0.05));
-    this.plus(3600, () => son("deverrouille", 0.07));
+    this.plus(3250, () => son("deverrouille", 0.07));
+    this.plus(3500, () => son("ouvre", 0.04));
     // 2. puis la fenêtre du Système
     this.plus(DUREE_OEIL_MS, () => {
       void this.el.offsetWidth;
@@ -129,6 +131,7 @@ export class Intro {
     for (const t of this.minuteries) clearTimeout(t);
     this.minuteries = [];
     this.el.classList.add("sort");
+    delete document.body.dataset.intro;
     const jarvis = document.getElementById("jarvis")!;
     jarvis.classList.remove("qg-arrive");
     void jarvis.offsetWidth;

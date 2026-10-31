@@ -7,7 +7,7 @@ import type { BureauConfig } from "../config.ts";
 import { Bouche, type PiperLike } from "./bouche.ts";
 import { AvecSecours, ElevenLabs, SayVersFichier, cleElevenLabs } from "./elevenlabs.ts";
 import { Piper, cheminsPiper, piperInstalle } from "./piper.ts";
-import { Xtts, xttsInstalle } from "./xtts.ts";
+import { Xtts, referenceXtts, xttsInstalle } from "./xtts.ts";
 
 /** Quel moteur la config demande-t-elle ? */
 export function moteurVoix(config: BureauConfig): "elevenlabs" | "xtts" | "piper" | "say" {
@@ -52,15 +52,17 @@ export function creerBouche(config: BureauConfig, journal: (m: string) => void =
     const secours: PiperLike[] = [...(piperInstalle(config.dossierDonnees, v.voixPiper) ? [piper()] : []), new SayVersFichier(base)];
     // XTTS tourne sur le Mac : une phrase ratée ne l'écarte pas, seule cette phrase passe au secours
     const avec = new AvecSecours(new Xtts(config.dossierDonnees, v.xtts), secours, { journal, pauseMs: 0 });
+    const nom = referenceXtts(config.dossierDonnees, v.xtts) ? "voix de référence" : v.xtts.locuteur;
     return new Bouche({
       ...base,
       piper: {
         moteur: avec,
         lecteur: "afplay",
         dossier,
-        nom: v.xtts.locuteur,
-        cache: path.join(config.dossierDonnees, "voix-cache", "phrases"),
-        decrire: () => (avec.panne ? `Voix : secours (XTTS indisponible : ${avec.panne})` : `Voix : ${v.xtts.locuteur} (XTTS, sur ton Mac)`),
+        nom,
+        // le cache dépend de la voix : une nouvelle voix ne ressort pas les phrases de l'ancienne
+        cache: path.join(config.dossierDonnees, "voix-cache", "phrases", nom.replace(/[^\w-]+/g, "-")),
+        decrire: () => (avec.panne ? `Voix : secours (XTTS indisponible : ${avec.panne})` : `Voix : ${nom} (XTTS, sur ton Mac)`),
       },
     });
   }

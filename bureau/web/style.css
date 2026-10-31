@@ -3770,3 +3770,156 @@ body[data-obscur="oui"] .sys-ambiance {
   border-color: rgba(79, 183, 255, 0.5);
   box-shadow: inset 0 0 14px rgba(79, 183, 255, 0.08);
 }
+
+/* --- le Système partout : grille d'hexagones qui respire, balayage, ondes au clic, fenêtres qui s'ouvrent ---- */
+.sys-ambiance .sys-grille {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97'%3E%3Cpath d='M28 0l28 16v32L28 64 0 48V16zM28 64v33' fill='none' stroke='%234fb7ff' stroke-width='0.8'/%3E%3C/svg%3E");
+  background-size: 56px 97px;
+  opacity: 0.05;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 55%, #000 10%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 50% 55%, #000 10%, transparent 75%);
+  animation: sys-grille 7s ease-in-out infinite;
+}
+@keyframes sys-grille {
+  50% {
+    opacity: 0.1;
+  }
+}
+.sys-ambiance .sys-balayage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 120px;
+  background: linear-gradient(180deg, transparent, rgba(79, 183, 255, 0.07) 70%, rgba(160, 225, 255, 0.16) 100%, transparent);
+  border-bottom: 1px solid rgba(160, 225, 255, 0.12);
+  animation: sys-balayage 11s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  transform: translateY(-140px);
+}
+@keyframes sys-balayage {
+  0%,
+  62% {
+    transform: translateY(-140px);
+  }
+  100% {
+    transform: translateY(105vh);
+  }
+}
+.sys-onde {
+  position: fixed;
+  z-index: 3000;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 1.5px solid rgba(160, 225, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(79, 183, 255, 0.8), inset 0 0 6px rgba(79, 183, 255, 0.6);
+  pointer-events: none;
+  animation: sys-onde 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+.sys-onde::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 1px solid rgba(79, 183, 255, 0.5);
+  transform: rotate(45deg);
+}
+@keyframes sys-onde {
+  from {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  to {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+body[data-obscur="oui"] .sys-onde {
+  border-color: rgba(255, 90, 90, 0.9);
+  box-shadow: 0 0 10px rgba(255, 50, 50, 0.8);
+}
+/* les fenêtres arrivent comme celles du Système : une ligne de lumière qui s'ouvre */
+.jarvis.qg-arrive .j-cote .j-carte {
+  animation: sys-fenetre-ouvre 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.jarvis.qg-arrive .j-cote .j-carte:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.jarvis.qg-arrive .j-cote .j-carte:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.jarvis.qg-arrive .j-cote .j-carte:nth-child(4) {
+  animation-delay: 0.24s;
+}
+.jarvis.qg-arrive .j-cote .j-carte:nth-child(5) {
+  animation-delay: 0.32s;
+}
+@keyframes sys-fenetre-ouvre {
+  0% {
+    transform: scaleY(0.02);
+    filter: brightness(3);
+    opacity: 0;
+  }
+  35% {
+    transform: scaleY(0.02);
+    filter: brightness(3);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+    filter: none;
+    opacity: 1;
+  }
+}
+/* les coins des fenêtres, comme les cadres du Système */
+.jarvis .j-carte {
+  position: relative;
+}
+.jarvis .j-carte::before,
+.jarvis .j-carte::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  border: 2px solid var(--sys-clair);
+  filter: drop-shadow(0 0 4px rgba(79, 183, 255, 0.9));
+}
+.jarvis .j-carte::before {
+  top: -2px;
+  left: -2px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.jarvis .j-carte::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: 0;
+  border-top: 0;
+}
+/* le compte à rebours de la quête quotidienne */
+.vq-chrono {
+  margin: 8px 0 2px;
+  text-align: center;
+  font-family: var(--sys-police);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--sys);
+}
+.vq-chrono b {
+  display: block;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: var(--sys-clair);
+  text-shadow: 0 0 10px rgba(79, 183, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sys-ambiance .sys-balayage,
+  .sys-ambiance .sys-grille {
+    animation: none;
+  }
+}
