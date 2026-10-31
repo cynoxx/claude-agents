@@ -1,6 +1,6 @@
 // Les sons de l'interface, fabriqués à la volée (WebAudio, aucun fichier) : discrets, courts, dans les aigus,
 // pour que tout réagisse sous les doigts sans couvrir la voix de Max. Le bouton 🔈 les coupe.
-export type Son = "ouvre" | "ferme" | "mail" | "salut" | "deverrouille" | "clic";
+export type Son = "ouvre" | "ferme" | "mail" | "salut" | "deverrouille" | "clic" | "systeme" | "quete";
 
 const PREF = "max-sons";
 let ctx: AudioContext | null = null;
@@ -40,6 +40,18 @@ export const PARTITIONS: Record<Son, [number, number, number, number, Oscillator
     [440, 440, 0, 0.5, "sine", 0.35],
     [660, 660, 0.08, 0.5, "sine", 0.3],
     [880, 990, 0.16, 0.6, "triangle", 0.25],
+  ],
+  // la notification du Système : deux notes cristallines, claires, qui résonnent
+  systeme: [
+    [1568, 1568, 0, 0.55, "sine", 0.5],
+    [2093, 2093, 0.11, 0.66, "sine", 0.45],
+    [3136, 3136, 0.11, 0.35, "triangle", 0.08],
+  ],
+  // une quête reçue (ou accomplie) : une petite montée
+  quete: [
+    [880, 880, 0, 0.12, "sine", 0.45],
+    [1175, 1175, 0.09, 0.12, "sine", 0.45],
+    [1760, 1760, 0.18, 0.45, "sine", 0.45],
   ],
   deverrouille: [
     [392, 784, 0, 0.22, "sine", 0.6],

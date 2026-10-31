@@ -308,10 +308,10 @@ export class Humanoide {
     if (!petit) {
       const pouls = 0.55 + 0.45 * Math.sin(this.t * 3) * 0.5 + this.voix * 0.4;
       ctx.lineWidth = Math.max(1, S / 650);
-      ctx.shadowColor = melange([255, 170, 60], [200, 0, 0], ob, 0.8 * L);
+      ctx.shadowColor = melange([80, 180, 255], [200, 0, 0], ob, 0.8 * L);
       ctx.shadowBlur = S / 80;
       for (const v of this.veines) {
-        ctx.strokeStyle = melange([255, 160 + 60 * a.dore, 70], [150, 0, 10], ob, 0.75 * pouls * a.coeur * app);
+        ctx.strokeStyle = melange([90 + 80 * a.dore, 190, 255], [150, 0, 10], ob, 0.75 * pouls * a.coeur * app);
         ctx.beginPath();
         v.forEach(([x, y], i) => (i ? ctx.lineTo(ox + S * 0.5 + x * S, oy + y * S) : ctx.moveTo(ox + S * 0.5 + x * S, oy + y * S)));
         ctx.stroke();
@@ -380,13 +380,14 @@ export class Humanoide {
     const gy = cy + ry * 0.12 + ty * 0.6;
     const gr = rx * (1.05 + this.voix * 0.3 + sal * 0.35);
     const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
-    const vert = Math.round(150 + 60 * a.dore);
+    // le cœur du Système : blanc-bleu au centre, bleu électrique autour (un peu plus clair quand il réfléchit)
+    const vert = Math.round(195 + 40 * a.dore);
     // Max Ultime : un cœur plus sombre et plus petit, rouge sang, pour laisser voir ses yeux
     const sombre = 1 - 0.45 * ob;
-    g.addColorStop(0, melange([255, Math.round(240 + 15 * a.dore), 190], [255, 110, 90], ob, Math.min(1, eclat * sombre)));
-    g.addColorStop(0.3, melange([255, vert, 50], [210, 15, 15], ob, Math.min(1, eclat * 0.95 * sombre)));
-    g.addColorStop(0.65, melange([255, 95, 20], [80, 0, 0], ob, Math.min(1, eclat * 0.4 * sombre)));
-    g.addColorStop(1, melange([255, 90, 20], [40, 0, 0], ob, 0));
+    g.addColorStop(0, melange([235, 250, 255], [255, 110, 90], ob, Math.min(1, eclat * sombre)));
+    g.addColorStop(0.3, melange([110, vert, 255], [210, 15, 15], ob, Math.min(1, eclat * 0.95 * sombre)));
+    g.addColorStop(0.65, melange([35, 120, 255], [80, 0, 0], ob, Math.min(1, eclat * 0.4 * sombre)));
+    g.addColorStop(1, melange([25, 90, 255], [40, 0, 0], ob, 0));
     ctx.fillStyle = g;
     // deux passes : le cœur, et son halo qui « brûle » les lignes du visage
     for (let passe = 0; passe < 2; passe++) {

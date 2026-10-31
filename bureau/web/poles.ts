@@ -7,6 +7,7 @@ import { son } from "./sons.ts";
 import { JOURS_SEMAINE, MUSCLES, SEANCES, seance } from "../shared/sport.ts";
 import { barres, decalerHeure, duree, quandReveil, semaineSport, seanceSuivante, tuile } from "./poles-pur.ts";
 import { compteMails, prochainsRdv } from "./jarvis.ts";
+import { htmlStatut } from "./systeme.ts";
 import { htmlAutomatismes, htmlCap, htmlIdees, htmlJournal, htmlPlan, htmlProjets, htmlStudio } from "./vie-html.ts";
 import type { Corps3D } from "./corps.ts";
 
@@ -108,7 +109,8 @@ export class QG {
     this.rendreMails();
     this.remplacer($("j-cap"), "cap", htmlCap(etat));
     $("j-plan").hidden = !etat.plan;
-    this.remplacer($("j-plan"), "plan", htmlPlan(etat.plan));
+    this.remplacer($("j-plan"), "plan", htmlPlan(etat.plan, Math.floor((etat.assistant?.coach?.aujourdhui ?? 0) / 50)));
+    this.remplacer($("j-statut-joueur"), "statut", htmlStatut(etat));
     this.remplacer($("j-journal-contenu"), "journal", htmlJournal(etat.vie));
     this.remplacer($("j-automatismes"), "automatismes", htmlAutomatismes(etat.automatismes));
     const rv = etat.reveil;

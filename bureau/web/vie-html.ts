@@ -104,13 +104,19 @@ export function htmlIdees(i: EtatBureau["ideesDuJour"]): string {
 }
 
 /** Le plan de reconstruction, à l'accueil : les 3 règles à cocher, l'objectif de blocs, le réveil, la série. */
-export function htmlPlan(p: PlanVue | undefined): string {
+export function htmlPlan(p: PlanVue | undefined, blocsFaits = 0): string {
   if (!p) return "";
   const n = p.regles.filter((r) => p.aujourdhui[r.id]).length;
-  return `<h3>Tes 3 règles <small>· jour ${p.jour} · ${n}/3</small></h3><ul class="vr-liste">${p.regles
+  const blocs = Math.min(blocsFaits, p.blocs);
+  const accomplie = n === 3 && blocs >= p.blocs;
+  return `<h3>Quête quotidienne</h3><p class="vq-sous">Reprendre le contrôle · jour ${p.jour}</p><ul class="vr-liste">${p.regles
     .map(
       (r) =>
         `<li><button type="button" class="vr-case" data-regle="${r.id}" aria-pressed="${p.aujourdhui[r.id]}">${p.aujourdhui[r.id] ? "✓" : ""}</button><span>${echapper(r.texte)}</span></li>`,
     )
-    .join("")}</ul><p class="vr-pied">🎯 ${p.blocs} blocs de 50 min · ⏰ demain ${p.reveilDemain.replace(":", " h ")}${p.serie ? ` · 🔥 ${p.serie} j à 3/3` : ""}</p><p class="vr-identite">« ${echapper(p.identite)} »</p>`;
+    .join("")}<li class="vq-compte"><span class="vr-case vr-fixe" aria-hidden="true">${blocs >= p.blocs ? "✓" : ""}</span><span>Blocs de médecine (50 min)</span><b>[${blocs}/${p.blocs}]</b></li></ul>${
+    accomplie
+      ? `<p class="vq-accomplie">QUÊTE ACCOMPLIE</p>`
+      : `<p class="vq-avert">⚠ Quête incomplète : aucune pénalité. On reprend au prochain bloc.</p>`
+  }<p class="vr-pied">⏰ demain ${p.reveilDemain.replace(":", " h ")}${p.serie ? ` · 🔥 ${p.serie} j à 3/3` : ""}</p><p class="vr-identite">« ${echapper(p.identite)} »</p>`;
 }

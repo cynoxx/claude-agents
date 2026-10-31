@@ -2951,3 +2951,514 @@ body[data-obscur="oui"] .j-gestes-msg {
   display: inline-flex;
   gap: 4px;
 }
+
+/* =====================================================================================================
+   LE SYSTÈME : l'interface de Max façon « fenêtres du Système » (bleu, lumière, crochets, notifications)
+   ===================================================================================================== */
+:root {
+  --sys: #4fb7ff;
+  --sys-clair: #c6ecff;
+  --sys-doux: rgba(79, 183, 255, 0.35);
+  --sys-fond: rgba(6, 14, 34, 0.9);
+  --sys-police: "Rajdhani", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+
+/* --- l'entrée : la fenêtre du Système s'ouvre --------------------------------------------------------- */
+.sys-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 45%, #061024 0%, #010309 70%);
+  font-family: var(--sys-police);
+  color: var(--sys-clair);
+  cursor: pointer;
+  overflow: hidden;
+}
+.sys-poussiere {
+  position: absolute;
+  inset: -10%;
+  background-image: radial-gradient(1.5px 1.5px at 20% 30%, var(--sys) 50%, transparent 51%), radial-gradient(1px 1px at 70% 60%, var(--sys-clair) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 40% 80%, var(--sys) 50%, transparent 51%), radial-gradient(1px 1px at 85% 20%, var(--sys) 50%, transparent 51%),
+    radial-gradient(1px 1px at 10% 70%, var(--sys-clair) 50%, transparent 51%);
+  background-size: 340px 340px;
+  opacity: 0;
+  animation: sys-poussiere 6s ease-out forwards;
+}
+@keyframes sys-poussiere {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  30% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.35;
+    transform: translateY(-40px);
+  }
+}
+.sys-fenetre {
+  position: relative;
+  width: min(760px, 90vw);
+  border: 1px solid var(--sys);
+  background: linear-gradient(180deg, rgba(12, 30, 66, 0.92), rgba(4, 10, 26, 0.94));
+  box-shadow: 0 0 28px rgba(79, 183, 255, 0.55), 0 0 90px rgba(79, 183, 255, 0.18), inset 0 0 36px rgba(79, 183, 255, 0.16);
+  transform: scale(0, 0.004);
+  opacity: 0;
+}
+.sys-intro.joue .sys-fenetre {
+  animation: sys-ouvre 1.05s 0.1s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+@keyframes sys-ouvre {
+  0% {
+    transform: scale(0, 0.004);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1, 0.004);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1, 1);
+    opacity: 1;
+  }
+}
+/* les coins lumineux de la fenêtre */
+.sys-fenetre::before,
+.sys-fenetre::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--sys-clair);
+  filter: drop-shadow(0 0 6px var(--sys));
+}
+.sys-fenetre::before {
+  top: -3px;
+  left: -3px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.sys-fenetre::after {
+  bottom: -3px;
+  right: -3px;
+  border-left: 0;
+  border-top: 0;
+}
+.sys-tete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--sys-doux);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: 0.45em;
+  text-shadow: 0 0 10px var(--sys);
+}
+.sys-alerte {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--sys-clair);
+  border-radius: 50%;
+  font-size: 15px;
+  letter-spacing: 0;
+  box-shadow: 0 0 12px var(--sys);
+}
+.sys-corps {
+  padding: 24px 34px 28px;
+  display: grid;
+  gap: 12px;
+}
+.sys-intro .sys-tete,
+.sys-intro .sys-connexion,
+.sys-intro .sys-barre,
+.sys-intro .sys-modules li,
+.sys-intro .sys-joueur,
+.sys-intro .sys-niveau {
+  opacity: 0;
+}
+.sys-intro.joue .sys-tete {
+  animation: sys-apparait 0.35s 1s forwards;
+}
+.sys-intro.joue .sys-connexion {
+  animation: sys-apparait 0.3s 1.15s forwards;
+}
+.sys-intro.joue .sys-barre {
+  animation: sys-apparait 0.3s 1.25s forwards;
+}
+@keyframes sys-apparait {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+.sys-connexion {
+  margin: 0;
+  font-size: 21px;
+  letter-spacing: 0.08em;
+}
+.sys-points::after {
+  content: "";
+  animation: sys-points 1s steps(4) infinite;
+}
+@keyframes sys-points {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+}
+.sys-barre {
+  position: relative;
+  height: 8px;
+  border: 1px solid var(--sys-doux);
+}
+.sys-barre i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, rgba(79, 183, 255, 0.4), var(--sys-clair));
+  box-shadow: 0 0 12px var(--sys);
+}
+.sys-intro.joue .sys-barre i {
+  animation: sys-charge 1.6s 1.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes sys-charge {
+  to {
+    width: 100%;
+  }
+}
+.sys-barre b {
+  position: absolute;
+  right: 0;
+  top: -22px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.sys-modules {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 17px;
+  letter-spacing: 0.08em;
+}
+.sys-modules li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+}
+.sys-modules li i {
+  border-bottom: 1px dotted var(--sys-doux);
+}
+.sys-intro.joue .sys-modules li {
+  animation: sys-apparait 0.25s calc(1.45s + var(--i) * 0.22s) forwards;
+}
+.sys-modules b.ok {
+  color: var(--sys);
+}
+.sys-modules b.ko {
+  color: #ff8a6b;
+}
+.sys-joueur {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sys-doux);
+  text-align: center;
+}
+.sys-joueur p {
+  margin: 0;
+  font-size: 27px;
+  letter-spacing: 0.06em;
+}
+.sys-joueur strong {
+  color: #fff;
+  text-shadow: 0 0 14px var(--sys), 0 0 2px #fff;
+}
+.sys-intro.joue .sys-joueur {
+  animation: sys-eveil 0.6s 3.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes sys-eveil {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+    filter: blur(6px) brightness(2);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+.sys-niveau {
+  margin-top: 4px !important;
+  font-size: 15px !important;
+  letter-spacing: 0.3em !important;
+  color: var(--sys);
+}
+.sys-niveau strong {
+  font-size: 36px;
+}
+.sys-intro.joue .sys-niveau {
+  animation: sys-apparait 0.4s 3.5s forwards;
+}
+/* la quête du jour, qui arrive sur le côté */
+.sys-quete {
+  position: absolute;
+  right: 6vw;
+  bottom: 12vh;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 18px;
+  border: 1px solid var(--sys);
+  background: var(--sys-fond);
+  box-shadow: 0 0 22px rgba(79, 183, 255, 0.45);
+  opacity: 0;
+  transform: translateX(40px);
+}
+.sys-quete b {
+  display: block;
+  letter-spacing: 0.22em;
+  font-size: 15px;
+}
+.sys-quete small {
+  color: var(--sys-clair);
+  opacity: 0.8;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+.sys-intro.joue .sys-quete {
+  animation: sys-quete 0.5s 4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes sys-quete {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sys-intro.sort {
+  animation: sys-sort 0.7s ease-in forwards;
+}
+.sys-intro.sort .sys-fenetre {
+  animation: sys-ferme 0.5s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+@keyframes sys-ferme {
+  to {
+    transform: scale(1, 0.004);
+    opacity: 0;
+  }
+}
+@keyframes sys-sort {
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* --- l'accueil : chaque carte devient une fenêtre du Système ----------------------------------------- */
+.jarvis {
+  font-family: var(--sys-police);
+}
+.jarvis .j-carte {
+  border-radius: 3px;
+  border: 1px solid rgba(79, 183, 255, 0.55);
+  background: linear-gradient(180deg, rgba(10, 26, 58, 0.88), rgba(4, 11, 28, 0.9));
+  box-shadow: 0 0 16px rgba(79, 183, 255, 0.22), inset 0 0 22px rgba(79, 183, 255, 0.09);
+}
+.jarvis .j-carte h3 {
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(79, 183, 255, 0.3);
+  text-align: center;
+  font-family: var(--sys-police);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: var(--sys-clair);
+  text-shadow: 0 0 8px rgba(79, 183, 255, 0.85);
+}
+.jarvis .j-carte h3::before {
+  content: "[ ";
+  color: var(--sys);
+}
+.jarvis .j-carte h3::after {
+  content: " ]";
+  color: var(--sys);
+}
+.jarvis .j-carte h3 small {
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  text-shadow: none;
+}
+/* la quête quotidienne, en bleu Système */
+.jarvis .j-plan {
+  border-color: var(--sys);
+  background: linear-gradient(180deg, rgba(14, 34, 74, 0.92), rgba(4, 11, 28, 0.92));
+  box-shadow: 0 0 22px rgba(79, 183, 255, 0.35), inset 0 0 26px rgba(79, 183, 255, 0.12);
+}
+.vq-sous {
+  margin: -4px 0 8px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(198, 236, 255, 0.7);
+}
+.jarvis .vr-case[aria-pressed="true"],
+.jarvis .vr-fixe:not(:empty) {
+  background: var(--sys);
+  border-color: var(--sys);
+  color: #021028;
+  box-shadow: 0 0 10px rgba(79, 183, 255, 0.7);
+}
+.vr-fixe {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(79, 183, 255, 0.5);
+}
+.vq-compte {
+  grid-template-columns: 24px 1fr auto !important;
+}
+.vq-compte b {
+  font-family: var(--sys-police);
+  color: var(--sys-clair);
+  letter-spacing: 0.06em;
+}
+.vq-avert {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: #ffb36b;
+  letter-spacing: 0.03em;
+}
+.vq-accomplie {
+  margin: 10px 0 0;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  color: #fff;
+  text-shadow: 0 0 12px var(--sys), 0 0 30px var(--sys);
+  animation: vq-brille 2.4s ease-in-out infinite;
+}
+@keyframes vq-brille {
+  50% {
+    text-shadow: 0 0 6px var(--sys);
+  }
+}
+.jarvis .vr-identite {
+  color: rgba(198, 236, 255, 0.75);
+}
+/* la fenêtre STATUT */
+.ss-tete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 4px;
+}
+.ss-tete small,
+.ss-ligne small,
+.ss-stats small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: rgba(198, 236, 255, 0.6);
+}
+.ss-tete b {
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(79, 183, 255, 0.8);
+}
+.ss-niv {
+  text-align: right;
+}
+.ss-niv b {
+  font-size: 30px;
+  color: var(--sys-clair);
+}
+.ss-ligne {
+  margin: 2px 0;
+  font-size: 13px;
+  color: #e6f6ff;
+}
+.ss-ligne small {
+  display: inline;
+  margin-right: 6px;
+}
+.ss-xp {
+  position: relative;
+  height: 14px;
+  margin: 8px 0;
+  border: 1px solid rgba(79, 183, 255, 0.5);
+}
+.ss-xp i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, rgba(79, 183, 255, 0.35), var(--sys));
+  box-shadow: 0 0 10px rgba(79, 183, 255, 0.6);
+}
+.ss-xp span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  color: #fff;
+}
+.ss-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  text-align: center;
+}
+.ss-stats li {
+  padding: 5px 0;
+  border: 1px solid rgba(79, 183, 255, 0.25);
+  background: rgba(79, 183, 255, 0.06);
+}
+.ss-stats b {
+  font-size: 18px;
+  color: var(--sys-clair);
+}
+
+/* les colonnes de l'accueil défilent si les fenêtres dépassent (au lieu d'être coupées) */
+.jarvis[data-mode="accueil"] .j-cote {
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 183, 255, 0.45) transparent;
+  padding-right: 4px;
+}
+.jarvis .j-plan h3 {
+  letter-spacing: 0.2em;
+}
