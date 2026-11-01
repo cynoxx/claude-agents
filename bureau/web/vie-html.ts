@@ -109,7 +109,13 @@ export function htmlPlan(p: PlanVue | undefined, blocsFaits = 0): string {
   const n = p.regles.filter((r) => p.aujourdhui[r.id]).length;
   const blocs = Math.min(blocsFaits, p.blocs);
   const accomplie = n === 3 && blocs >= p.blocs;
-  return `<h3>Quête quotidienne</h3><p class="vq-sous">Reprendre le contrôle · jour ${p.jour}</p><ul class="vr-liste">${p.regles
+  const sanction = p.sanction;
+  const blocSanction = sanction
+    ? sanction.statut === "en-cours"
+      ? `<div class="vq-sanction" data-niveau="${sanction.niveau}"><b>${sanction.niveau === 3 ? "ZONE DE PÉNALITÉ" : "PÉNALITÉ"}</b><p>${echapper(sanction.texte)}</p><small>Quête d'hier incomplète : ${sanction.motif.map(echapper).join(" · ")}</small><span class="vq-sanction-boutons"><button type="button" data-sanction="faite">FAIT</button><button type="button" class="vq-sanction-annuler" data-sanction="annuler" title="Malade, journée exceptionnelle : pas de sanction aujourd'hui">ANNULER</button></span></div>`
+      : `<p class="vq-sanction-fin">${sanction.statut === "faite" ? "✓ Pénalité effectuée" : "↩ Pénalité annulée"}</p>`
+    : "";
+  return `<h3>Quête quotidienne</h3><p class="vq-sous">Reprendre le contrôle · jour ${p.jour}</p>${blocSanction}<ul class="vr-liste">${p.regles
     .map(
       (r) =>
         `<li><button type="button" class="vr-case" data-regle="${r.id}" aria-pressed="${p.aujourdhui[r.id]}">${p.aujourdhui[r.id] ? "✓" : ""}</button><span>${echapper(r.texte)}</span></li>`,
@@ -117,6 +123,6 @@ export function htmlPlan(p: PlanVue | undefined, blocsFaits = 0): string {
     .join("")}<li class="vq-compte"><span class="vr-case vr-fixe" aria-hidden="true">${blocs >= p.blocs ? "✓" : ""}</span><span>Blocs de médecine (50 min)</span><b>[${blocs}/${p.blocs}]</b></li></ul>${
     accomplie
       ? `<p class="vq-accomplie">QUÊTE ACCOMPLIE</p>`
-      : `<p class="vq-chrono">TEMPS RESTANT <b data-chrono>--:--:--</b></p><p class="vq-avert">⚠ Quête incomplète : aucune pénalité. On reprend au prochain bloc.</p>`
+      : `<p class="vq-chrono">TEMPS RESTANT <b data-chrono>--:--:--</b></p><p class="vq-avert">⚠ Quête incomplète : une petite pénalité demain. Il reste du temps.</p>`
   }<p class="vr-pied">⏰ demain ${p.reveilDemain.replace(":", " h ")}${p.serie ? ` · 🔥 ${p.serie} j à 3/3` : ""}</p><p class="vr-identite">« ${echapper(p.identite)} »</p>`;
 }

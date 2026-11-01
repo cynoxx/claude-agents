@@ -12,7 +12,7 @@ import { creerJeton } from "./jeton.ts";
 import { Assistant } from "./max/assistant.ts";
 import { lireCarnet } from "./max/carnet.ts";
 import { Cerveau } from "./max/cerveau.ts";
-import { Coach, lireProfil } from "./max/coach.ts";
+import { Coach, jourDe, lireJournal, lireProfil, poleDe } from "./max/coach.ts";
 import { Conseillers } from "./max/conseillers.ts";
 import { InfosJarvis } from "./max/infos-jarvis.ts";
 import { Mac } from "./max/mac.ts";
@@ -104,7 +104,11 @@ const trieur = new TrieurAuto({
 });
 const sport = new Sport({ dossier: config.dossierMissions });
 const vie = new Vie({ dossier: config.dossierMissions });
-const plan = new Plan({ dossier: config.dossierMissions });
+const plan = new Plan({
+  dossier: config.dossierMissions,
+  // les blocs de médecine d'un jour (pour juger la quête de la veille)
+  minutesDuJour: (jour) => lireJournal(config.dossierMissions).filter((s) => poleDe(s) === "etudes" && jourDe(new Date(s.debut)) === jour).reduce((t, s) => t + s.minutes, 0),
+});
 // le Studio vidéo, dans iCloud Drive (s'il est activé sur ce Mac)
 const dossierStudio = config.studio.dossier;
 const studio =

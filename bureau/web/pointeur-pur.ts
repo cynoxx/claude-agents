@@ -123,7 +123,7 @@ export class PointeurMain {
 }
 
 /** Ce que le pointeur peut actionner : le plus proche ancêtre cliquable de l'élément visé. */
-export const CLIQUABLE = 'button, a[href], input, textarea, select, label, summary, [role="button"], [data-action], [data-auto], [data-regle], [data-pole], .qg-tuile';
+export const CLIQUABLE = 'button, a[href], input, textarea, select, label, summary, [role="button"], [data-action], [data-auto], [data-regle], [data-sanction], [data-pole], .qg-tuile';
 
 /** Rester ce temps sur un bouton, c'est appuyer dessus. */
 export const ATTENTE_MS = 2000;

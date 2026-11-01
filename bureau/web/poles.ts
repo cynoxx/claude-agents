@@ -46,6 +46,12 @@ export class QG {
     const fiche = $("qg-fiche");
     fiche.addEventListener("click", (e) => this.clic(e));
     $("j-plan").addEventListener("click", (e) => {
+      const sanction = (e.target as HTMLElement).closest<HTMLElement>("[data-sanction]");
+      if (sanction) {
+        son("clic");
+        this.envoyer({ type: "sanction", action: sanction.dataset.sanction === "annuler" ? "annuler" : "faite" });
+        return;
+      }
       const b = (e.target as HTMLElement).closest<HTMLElement>("[data-regle]");
       if (!b) return;
       son("clic");

@@ -226,6 +226,16 @@ export interface IdeeDuJour {
 
 export type RegleId = "lever" | "bloc" | "coucher";
 
+/** La sanction d'une quête non réalisée : petite, concrète, une seule à la fois, jamais sur le sommeil ni les repas. */
+export interface SanctionVue {
+  /** 1 : légère, 2 : moyenne, 3 : zone de pénalité. */
+  niveau: 1 | 2 | 3;
+  texte: string;
+  /** Ce qui n'a pas été tenu la veille. */
+  motif: string[];
+  statut: "en-cours" | "faite" | "annulee";
+}
+
 /** Le plan de reconstruction : semaine, blocs visés, réveil qui recule, les 3 règles du jour. */
 export interface PlanVue {
   jour: number;
@@ -237,6 +247,8 @@ export interface PlanVue {
   aujourdhui: Record<RegleId, boolean>;
   serie: number;
   identite: string;
+  /** La sanction d'aujourd'hui (pour la quête non réalisée hier), s'il y en a une. */
+  sanction?: SanctionVue;
 }
 
 export type DomaineVie = "etudes" | "sante" | "business" | "apps" | "vie" | "esprit";
@@ -384,6 +396,7 @@ export type ClientMessage =
   | { type: "artefact"; id: string }
   | { type: "lien"; id: string }
   | { type: "regle"; regle: RegleId; tenue: boolean }
+  | { type: "sanction"; action: "faite" | "annuler" }
   | { type: "automatisme"; id: string; actif?: boolean; lancer?: boolean }
   | { type: "micro"; probleme: string | null }
   | { type: "publier"; video: string; plateforme: Plateforme }

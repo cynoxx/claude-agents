@@ -26,14 +26,16 @@ const jour = () => new Date().toLocaleDateString("sv-SE");
 /** Ce qu'il faut annoncer, à partir de l'état (pur, testable). */
 export function evenementsSysteme(
   e: Pick<EtatBureau, "assistant" | "plan">,
-  memoire: { niveau: number | null; queteAttribuee: string | null; queteAccomplie: string | null; aujourdhui: string },
-): ("attribution" | "niveau" | "accomplie")[] {
-  const out: ("attribution" | "niveau" | "accomplie")[] = [];
+  memoire: { niveau: number | null; queteAttribuee: string | null; queteAccomplie: string | null; aujourdhui: string; penaliteAnnoncee?: string | null },
+): ("attribution" | "niveau" | "accomplie" | "penalite")[] {
+  const out: ("attribution" | "niveau" | "accomplie" | "penalite")[] = [];
   const a = e.assistant;
   if (!a || a.etat === "veille") return out;
   const n = niveau(a.coach?.total ?? 0).niveau;
   if (memoire.niveau !== null && n > memoire.niveau) out.push("niveau");
   const p = e.plan;
+  // la pénalité d'abord (c'est la suite de la quête d'hier), une seule fois par jour
+  if (p?.sanction?.statut === "en-cours" && memoire.penaliteAnnoncee !== memoire.aujourdhui) out.push("penalite");
   if (p && memoire.queteAttribuee !== memoire.aujourdhui) out.push("attribution");
   const blocs = Math.floor((a.coach?.aujourdhui ?? 0) / 50);
   if (p && memoire.queteAccomplie !== memoire.aujourdhui && p.regles.every((r) => p.aujourdhui[r.id]) && blocs >= p.blocs) out.push("accomplie");
@@ -76,8 +78,21 @@ export class EvenementsSysteme {
     if (document.querySelector(".sys-intro:not([hidden])") || e.verrou?.verrouille) return;
     const a = e.assistant;
     const n = niveau(a?.coach?.total ?? 0).niveau;
-    const mem = { niveau: Number(lire("max-niveau") ?? NaN), queteAttribuee: lire("max-quete-attribuee"), queteAccomplie: lire("max-quete-accomplie"), aujourdhui: jour() };
+    const mem = { niveau: Number(lire("max-niveau") ?? NaN), queteAttribuee: lire("max-quete-attribuee"), queteAccomplie: lire("max-quete-accomplie"), penaliteAnnoncee: lire("max-penalite"), aujourdhui: jour() };
     for (const ev of evenementsSysteme(e, { ...mem, niveau: Number.isNaN(mem.niveau) ? null : mem.niveau })) {
+      if (ev === "penalite") {
+        ecrire("max-penalite", mem.aujourdhui);
+        const sa = e.plan!.sanction!;
+        this.annoncer(() =>
+          this.fenetre(
+            sa.niveau === 3 ? "ZONE DE PÉNALITÉ" : "PÉNALITÉ",
+            ["La quête d'hier n'a pas été réalisée.", `<small>${sa.motif.map(echapper).join(" · ")}</small>`, `<strong>${echapper(sa.texte)}</strong>`, "<small>Une seule pénalité à la fois, jamais sur ton sommeil ni tes repas. Tu peux l'annuler si tu es malade.</small>"],
+            "quete",
+            "COMPRIS",
+            "penalite",
+          ),
+        );
+      }
       if (ev === "niveau") this.annoncer(() => this.fenetre("NIVEAU SUPÉRIEUR", [`Niveau <strong>${n - 1}</strong> → <strong class="sys-gros">${n}</strong>`, "Chaque minute de travail compte."], "niveau"));
       if (ev === "attribution") {
         ecrire("max-quete-attribuee", mem.aujourdhui);
@@ -89,7 +104,7 @@ export class EvenementsSysteme {
               "Le Système t'attribue la quête du jour.",
               ...p.regles.map((r) => `<span class="sys-case"></span>${echapper(r.texte)}`),
               `<span class="sys-case"></span>Blocs de médecine (50 min) <b>[0/${p.blocs}]</b>`,
-              `<small>Réveil de demain : ${p.reveilDemain.replace(":", " h ")} · aucune pénalité en cas d'échec.</small>`,
+              `<small>Réveil de demain : ${p.reveilDemain.replace(":", " h ")} · en cas d'échec : une petite pénalité demain.</small>`,
             ],
             "quete",
             "ACCEPTER",
@@ -144,13 +159,14 @@ export class EvenementsSysteme {
   }
 
   /** Une grande fenêtre du Système, au centre ; un clic (ou le bouton) la referme. */
-  private fenetre(titre: string, lignes: string[], sonNom: "niveau" | "quete", bouton = "OK"): void {
+  private fenetre(titre: string, lignes: string[], sonNom: "niveau" | "quete", bouton = "OK", variante = ""): void {
     this.fond.innerHTML = `<div class="sys-pop">
   <div class="sys-tete"><span class="sys-alerte">!</span><span>${titre}</span></div>
   <div class="sys-pop-corps">${lignes.map((l) => `<p>${l}</p>`).join("")}</div>
   <button type="button" class="sys-pop-ok">${bouton}</button>
 </div>`;
     this.fond.hidden = false;
+    this.fond.classList.toggle("penalite", variante === "penalite");
     this.fond.classList.remove("sort");
     void this.fond.offsetWidth;
     this.fond.classList.add("ouvre");

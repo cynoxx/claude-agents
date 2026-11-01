@@ -425,6 +425,16 @@ export function createBureauServer(o: {
           if (rr.ok) o.assistant?.informer?.(`Depuis la page : ${rr.texte}`);
           break;
         }
+        case "sanction": {
+          if (!o.plan) {
+            r = { ok: false, erreur: "Le plan n'est pas disponible." };
+            break;
+          }
+          const rs = o.plan.sanction(msg.action === "annuler" ? "annuler" : "faite");
+          r = rs.ok ? { ok: true } : { ok: false, erreur: rs.texte };
+          if (rs.ok) o.assistant?.informer?.(`Depuis la page : ${rs.texte}`);
+          break;
+        }
         case "automatisme": {
           const au = o.automatismes;
           if (!au) {

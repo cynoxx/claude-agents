@@ -37,3 +37,75 @@ describe("le plan de reconstruction", () => {
     expect(h).toContain("tient parole envers lui-même");
   });
 });
+
+describe("les sanctions d'une quête non réalisée", () => {
+  const nouveau = (minutes: Record<string, number> = {}) => {
+    const dossier = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-sanction-"));
+    let maintenant = new Date("2026-11-02T10:00:00");
+    const p = () => new Plan({ dossier, maintenant: () => maintenant, minutesDuJour: (j) => minutes[j] ?? 0 });
+    return { p, jour: (d: string) => (maintenant = new Date(`${d}T10:00:00`)) };
+  };
+
+  it("n'en donne pas le premier jour, ni quand la veille est complète", () => {
+    const { p, jour } = nouveau({ "2026-11-02": 150 });
+    const a = p();
+    expect(a.vue().sanction).toBeUndefined();
+    for (const r of ["lever", "bloc", "coucher"] as const) a.cocher(r);
+    jour("2026-11-03");
+    expect(p().vue().sanction).toBeUndefined();
+  });
+
+  it("donne une sanction selon ce qui a manqué hier, une seule, qui ne s'empile pas", () => {
+    const { p, jour } = nouveau({ "2026-11-02": 150 });
+    const a = p();
+    a.cocher("lever");
+    a.cocher("bloc"); // il manque « coucher »
+    jour("2026-11-03");
+    const s = p().vue().sanction!;
+    expect(s).toMatchObject({ niveau: 1, statut: "en-cours" });
+    expect(s.motif).toEqual(["Couché avant l'heure, sans écran au lit"]);
+    // rouvrir la page ne la redonne pas deux fois, et elle ne change pas
+    expect(p().vue().sanction).toEqual(s);
+  });
+
+  it("monte en gravité avec les conditions manquées, jusqu'à la zone de pénalité", () => {
+    const { p, jour } = nouveau(); // aucune règle cochée, aucun bloc : 4 manques
+    p();
+    jour("2026-11-03");
+    const s = p().vue().sanction!;
+    expect(s.niveau).toBe(3);
+    expect(s.texte).toContain("Zone de pénalité");
+    expect(s.motif).toHaveLength(4);
+  });
+
+  it("se valide (« faite ») ou s'annule, et le dit à Max", () => {
+    const { p, jour } = nouveau();
+    p();
+    jour("2026-11-03");
+    const a = p();
+    expect(a.decrire()).toContain("SANCTION EN COURS");
+    expect(a.sanction("faite").ok).toBe(true);
+    expect(p().vue().sanction?.statut).toBe("faite");
+    expect(p().decrire()).toContain("Sanction du jour : faite");
+    jour("2026-11-04");
+    const b = p();
+    expect(b.vue().sanction?.statut).toBe("en-cours");
+    expect(b.sanction("annuler").texte).toContain("annulée");
+    expect(p().vue().sanction?.statut).toBe("annulee");
+    jour("2026-11-05");
+    expect(p().sanction("faite").ok).toBe(true); // la veille (4 novembre) n'a rien coché non plus
+  });
+
+  it("s'affiche avec ses boutons, puis se range une fois faite", () => {
+    const { p, jour } = nouveau();
+    p();
+    jour("2026-11-03");
+    const a = p();
+    const h = htmlPlan(a.vue());
+    expect(h).toContain("ZONE DE PÉNALITÉ");
+    expect(h).toContain('data-sanction="faite"');
+    expect(h).toContain('data-sanction="annuler"');
+    a.sanction("faite");
+    expect(htmlPlan(p().vue())).toContain("Pénalité effectuée");
+  });
+});

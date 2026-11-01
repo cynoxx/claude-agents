@@ -7,7 +7,7 @@
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import path from "node:path";
-import type { PlanVue, RegleId } from "../../shared/protocol.ts";
+import type { PlanVue, RegleId, SanctionVue } from "../../shared/protocol.ts";
 import { jourDe } from "./coach.ts";
 
 export const REGLES: { id: RegleId; texte: string }[] = [
@@ -43,17 +43,39 @@ export function blocsDeLaSemaine(semaine: number): number {
   return semaine <= 1 ? 3 : semaine === 2 ? 5 : 6;
 }
 
+/**
+ * Les sanctions d'une quête non réalisée. Elles sont là pour que la quête compte, pas pour punir la personne :
+ * petites et concrètes, une seule à la fois (elles ne s'empilent jamais), jamais sur le sommeil, les repas, l'argent
+ * ou l'humiliation, et toujours annulables (malade, journée de crise).
+ */
+export const SANCTIONS: Record<1 | 2 | 3, string> = {
+  1: "20 pompes avant ton premier bloc de médecine.",
+  2: "20 pompes et 10 minutes de rangement avant ton premier bloc de médecine.",
+  3: "Zone de pénalité : un bloc de médecine de 50 minutes en plus, et 20 pompes avant de commencer.",
+};
+
+interface SanctionEtat {
+  niveau: 1 | 2 | 3;
+  texte: string;
+  motif: string[];
+  statut: "en-cours" | "faite" | "annulee";
+}
+
 interface Etat {
   debut: string;
   /** jour → règles tenues */
   regles: Record<string, Partial<Record<RegleId, boolean>>>;
+  /** jour d'application → sanction (pour la quête ratée la veille) */
+  sanctions?: Record<string, SanctionEtat>;
+  /** Le dernier jour dont la quête a été jugée. */
+  juge?: string;
 }
 
 export class Plan extends EventEmitter {
   private etat: Etat;
   private readonly fichier: string;
 
-  constructor(private o: { dossier: string; maintenant?: () => Date; reglages?: ReglagesPlan }) {
+  constructor(private o: { dossier: string; maintenant?: () => Date; reglages?: ReglagesPlan; minutesDuJour?: (jour: string) => number }) {
     super();
     this.fichier = path.join(o.dossier, "vie", "plan.json");
     try {
@@ -112,7 +134,40 @@ export class Plan extends EventEmitter {
     return n;
   }
 
+  /**
+   * Juge la quête d'hier, une seule fois : chaque condition manquée (les 3 règles, les blocs) compte, et il en sort
+   * la sanction d'aujourd'hui. Les jours d'avant, ou si Max n'a pas tourné hier, ne sont pas jugés.
+   */
+  private juger(): void {
+    const auj = jourDe(this.maintenant);
+    const hier = jourDe(new Date(this.maintenant.getTime() - 86_400_000));
+    if (this.etat.juge === hier || hier < this.etat.debut) return;
+    this.etat.juge = hier;
+    const r = this.etat.regles[hier] ?? {};
+    const manques = REGLES.filter((x) => !r[x.id]).map((x) => x.texte);
+    if (this.o.minutesDuJour) {
+      const visees = blocsDeLaSemaine(Math.floor(this.numero(hier) / 7) + 1);
+      if (this.o.minutesDuJour(hier) < visees * BLOC_MIN) manques.push(`Blocs de médecine (${visees} visés)`);
+    }
+    if (manques.length && !this.etat.sanctions?.[auj]) {
+      const niveau = (manques.length >= 3 ? 3 : manques.length) as 1 | 2 | 3;
+      (this.etat.sanctions ??= {})[auj] = { niveau, texte: SANCTIONS[niveau], motif: manques, statut: "en-cours" };
+    }
+    this.sauver();
+  }
+
+  /** La sanction est faite (ou, pour un jour de maladie ou de crise, annulée). */
+  sanction(action: "faite" | "annuler", jour = jourDe(this.maintenant)): { ok: boolean; texte: string } {
+    this.juger();
+    const s = this.etat.sanctions?.[jour];
+    if (!s) return { ok: false, texte: "Aucune sanction aujourd'hui." };
+    s.statut = action === "faite" ? "faite" : "annulee";
+    this.sauver();
+    return { ok: true, texte: action === "faite" ? "Sanction faite : on repart propre." : "Sanction annulée : pas de souci, on reprend au prochain bloc." };
+  }
+
   vue(): PlanVue {
+    this.juger();
     const n = this.numero();
     const semaine = Math.floor(n / 7) + 1;
     const r = this.etat.regles[jourDe(this.maintenant)] ?? {};
@@ -126,6 +181,7 @@ export class Plan extends EventEmitter {
       aujourdhui: { lever: !!r.lever, bloc: !!r.bloc, coucher: !!r.coucher },
       serie: this.serie(),
       identite: PHRASE_IDENTITE,
+      sanction: ((s) => (s ? ({ niveau: s.niveau, texte: s.texte, motif: s.motif, statut: s.statut } satisfies SanctionVue) : undefined))(this.etat.sanctions?.[jourDe(this.maintenant)]),
     };
   }
 
@@ -133,6 +189,12 @@ export class Plan extends EventEmitter {
   decrire(): string {
     const v = this.vue();
     const tenues = REGLES.filter((x) => v.aujourdhui[x.id]).map((x) => x.texte);
-    return `Plan de reconstruction : jour ${v.jour} (semaine ${v.semaine}). Objectif du jour : ${v.blocs} blocs de 50 min de médecine. Réveil aujourd'hui ${v.reveil}, demain ${v.reveilDemain}. Règles tenues aujourd'hui : ${tenues.length ? tenues.join(" ; ") : "aucune encore"}. Série de journées à 3/3 : ${v.serie}.`;
+    return `Plan de reconstruction : jour ${v.jour} (semaine ${v.semaine}). Objectif du jour : ${v.blocs} blocs de 50 min de médecine. Réveil aujourd'hui ${v.reveil}, demain ${v.reveilDemain}. Règles tenues aujourd'hui : ${tenues.length ? tenues.join(" ; ") : "aucune encore"}. Série de journées à 3/3 : ${v.serie}.${
+      v.sanction
+        ? v.sanction.statut === "en-cours"
+          ? ` SANCTION EN COURS (quête de la veille non réalisée : ${v.sanction.motif.join(" ; ")}) : ${v.sanction.texte}`
+          : ` Sanction du jour : ${v.sanction.statut === "faite" ? "faite" : "annulée"}.`
+        : ""
+    }`;
   }
 }

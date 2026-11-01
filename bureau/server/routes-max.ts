@@ -402,6 +402,10 @@ export function routesMax(o: {
         if (!o.plan) return repondre(res, 503, { ok: false, texte: "Le plan n'est pas disponible." });
         return repondre(res, 200, o.plan.cocher(texte("regle") as RegleId, corps.tenue !== false));
       }
+      case "POST /api/outils/sanction": {
+        if (!o.plan) return repondre(res, 503, { ok: false, texte: "Le plan n'est pas disponible." });
+        return repondre(res, 200, o.plan.sanction(texte("action") === "annuler" ? "annuler" : "faite"));
+      }
       case "POST /api/outils/automatisme": {
         const au = o.automatismes;
         if (!au) return repondre(res, 503, { ok: false, texte: "Les automatismes ne sont pas disponibles." });

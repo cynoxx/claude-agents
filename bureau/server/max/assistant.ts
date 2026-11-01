@@ -209,6 +209,8 @@ function libelleOutil(nom: string, entree: Record<string, unknown>): string {
       return `🔗 Max ouvre ${String(entree.lien ?? "un raccourci")}`;
     case "regle_du_jour":
       return "✅ Max coche tes règles";
+    case "sanction":
+      return entree.action === "annuler" ? "↩️ Max annule la sanction" : "✅ Max valide ta sanction";
     case "automatismes":
       return "⚙️ Max règle ses automatismes";
     case "ouvrir_artefact":

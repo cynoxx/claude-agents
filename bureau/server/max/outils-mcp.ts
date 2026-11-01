@@ -435,6 +435,15 @@ serveur.registerTool(
   async (a) => appeler("POST", "/api/outils/regle", a),
 );
 serveur.registerTool(
+  "sanction",
+  {
+    description:
+      "La sanction du jour (pour la quête de la veille non réalisée). action « faite » quand il dit l'avoir faite ; « annuler » s'il est malade, en crise, ou dans une journée exceptionnelle. Elle est dans le contexte (« SANCTION EN COURS »).",
+    inputSchema: { action: z.enum(["faite", "annuler"]) },
+  },
+  async (a) => appeler("POST", "/api/outils/sanction", a),
+);
+serveur.registerTool(
   "automatismes",
   {
     description:

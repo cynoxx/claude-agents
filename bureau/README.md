@@ -114,6 +114,18 @@ Tout s'organise en **trois niveaux** :
 - **Les fiches s'ouvrent comme des hologrammes** : elles se déplient de haut en bas, traversées d'une ligne de lumière.
 - **Son « Salut ! »** te dit aussi ta séance du jour (« Côté sport, aujourd'hui c'est Pec-Dos »), ou te félicite si elle est déjà faite.
 
+### Les sanctions : une quête non réalisée a un prix
+
+Chaque matin, le Bureau juge la quête d'hier : tes 3 règles et tes blocs de médecine. Chaque condition manquée compte :
+
+| Manqué hier | Sanction aujourd'hui |
+|---|---|
+| 1 condition | 20 pompes avant ton premier bloc |
+| 2 conditions | 20 pompes + 10 minutes de rangement avant ton premier bloc |
+| 3 ou 4 conditions | **Zone de pénalité** : un bloc de médecine de 50 minutes en plus, et 20 pompes |
+
+Une fenêtre rouge l'annonce, le bloc rouge de la carte « Quête quotidienne » la garde sous les yeux, avec **FAIT** pour la valider (ou dis-le à Max) et **ANNULER** (malade, journée exceptionnelle : une sanction ne doit pas aggraver un mauvais jour). Garde-fous : une seule sanction à la fois (elles ne s'empilent jamais), jamais sur le sommeil, les repas, l'argent ou l'humiliation, et Max l'annonce sans reproche. Pour changer les sanctions : `SANCTIONS` dans `server/max/plan.ts`.
+
 ### Contrôler Max avec la main (pointeur façon Jarvis)
 
 Clique sur le bouton **🖐** de la barre pour l'activer ou le désactiver (le choix est retenu). La caméra suit ta main, **dans la page seulement** : rien n'est enregistré ni envoyé. Un **viseur holographique** suit ta main à l'écran, comme une souris :
