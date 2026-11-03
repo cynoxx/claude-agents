@@ -9,6 +9,7 @@ import { PageTitle } from '../Layout/Layout';
 import { Button, Card, EmptyState, ErrorMessage, Input, Modal, Select, Spinner } from '../ui';
 import { Icon } from '../ui/icons';
 import { AttachmentViewer } from './Attachments';
+import { BankImport } from './BankImport';
 import { BillForm } from './BillForm';
 import { SubscriptionsPanel } from './SubscriptionsPanel';
 
@@ -37,6 +38,7 @@ export function BillsPage() {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Bill | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const { data: bills, isLoading, error } = useBills({ ...filters, q: search.trim() || undefined });
   const { pay, remove } = useBillMutations();
   const today = localToday();
@@ -60,11 +62,16 @@ export function BillsPage() {
         title="Factures"
         subtitle={view === 'subscriptions' ? 'Vos abonnements et ce qu’ils vous coûtent' : 'Suivi, historique et paiement de vos factures'}
         action={
-          view === 'subscriptions' ? (
-            <Button onClick={() => openForm(null, true)}>+ Ajouter un abonnement</Button>
-          ) : (
-            <Button onClick={() => openForm(null)}>+ Ajouter une facture</Button>
-          )
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => setImportOpen(true)}>
+              Importer un relevé
+            </Button>
+            {view === 'subscriptions' ? (
+              <Button onClick={() => openForm(null, true)}>+ Ajouter un abonnement</Button>
+            ) : (
+              <Button onClick={() => openForm(null)}>+ Ajouter une facture</Button>
+            )}
+          </div>
         }
       />
 
@@ -172,7 +179,7 @@ export function BillsPage() {
                               <div className="font-medium">{b.title}</div>
                               <div className="text-xs text-muted">
                                 {b.provider}
-                                {b.reference && ` · réf. ${b.reference}`}
+                                {b.reference && (b.reference.startsWith('releve:') ? ' · relevé bancaire' : ` · réf. ${b.reference}`)}
                                 {b.recurrence !== 'NONE' && ` · ${RECURRENCES[b.recurrence]}`}
                               </div>
                             </td>
@@ -264,6 +271,7 @@ export function BillsPage() {
         </>
       )}
 
+      <BankImport open={importOpen} onClose={() => setImportOpen(false)} />
       <BillForm open={formOpen} onClose={() => setFormOpen(false)} bill={editing} preset={preset} />
       <Modal open={toDelete !== null} onClose={() => setToDelete(null)} title="Supprimer la facture">
         <p className="text-sm text-ink/70">
