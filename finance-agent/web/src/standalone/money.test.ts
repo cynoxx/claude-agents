@@ -53,11 +53,27 @@ describe('variations du solde', () => {
     expect(r.movements.find((m) => m.amount > 0)?.label).toBe('Argent reçu');
   });
 
-  it('déduit les factures payées et les rentrées connues', () => {
-    const income: Income = { id: 'i', label: 'Bourse', source: null, amount: 200, date: '2026-11-03', endDate: null, recurrence: 'MONTHLY', category: 'BENEFITS', notes: null, createdAt: '', updatedAt: '' };
-    const r = reconcile(base, [bill({ amount: 10, paidDate: '2026-11-01' })], [income], '2026-11-04');
+  it('déduit seulement les opérations prouvées (reçu, relevé)', () => {
+    const income: Income = { id: 'i', label: 'Virement', source: null, amount: 200, date: '2026-11-03', endDate: null, recurrence: 'NONE', category: 'OTHER', notes: 'Importée depuis ton relevé bancaire : VIR', createdAt: '', updatedAt: '' };
+    const r = reconcile(base, [bill({ id: 'mail-1', amount: 10, paidDate: '2026-11-01' })], [income], '2026-11-04');
     expect(r.movements.filter((m) => m.status === 'pending').map((m) => m.amount).sort((a, b) => a - b)).toEqual([-40, -20]);
     expect(r.movements.some((m) => m.amount > 0)).toBe(false);
+  });
+
+  it('une rentrée prévue non arrivée ne crée pas de fausse baisse', () => {
+    const bourse: Income = { id: 'i', label: 'Bourse', source: null, amount: 200, date: '2026-10-02', endDate: null, recurrence: 'MONTHLY', category: 'BENEFITS', notes: null, createdAt: '', updatedAt: '' };
+    const manual = bill({ amount: 30, paidDate: '2026-11-02' });
+    const r = reconcile(base, [manual], [bourse], '2026-11-04');
+    expect(r.movements.filter((m) => m.status === 'pending').map((m) => m.amount).sort((a, b) => a - b)).toEqual([-50, -20]);
+  });
+
+  it('une dépense classée d’office depuis un mail redevient une proposition', () => {
+    const old = { id: 'x', from: '2026-11-02', to: '2026-11-03', amount: -20, label: 'Sporting', category: 'ENTERTAINMENT' as const, status: 'done' as const, source: 'mail' as const, mailUrl: 'https://m', createdAt: '' };
+    const r = reconcile({ balances, movements: [old] }, [], [], '2026-11-04');
+    const q = r.movements.find((m) => m.from === '2026-11-02')!;
+    expect(q.status).toBe('pending');
+    expect(q.suggestion?.label).toBe('Sporting');
+    expect(r.movements.some((m) => m.label === 'Sporting' && m.status === 'done')).toBe(false);
   });
 
   it('une réponse partielle laisse le reste en question', () => {
@@ -78,8 +94,9 @@ describe('variations du solde', () => {
   });
 
   it('dépenses du mois : factures + variations, sans doublon', () => {
-    const r = reconcile(base, [bill({ amount: 10, paidDate: '2026-11-01' })], [], '2026-11-04');
-    const spends = spendsOf('2026-11', [bill({ amount: 10, paidDate: '2026-11-01' })], r.movements);
+    const proof = bill({ id: 'mail-1', amount: 10, paidDate: '2026-11-01' });
+    const r = reconcile(base, [proof], [], '2026-11-04');
+    const spends = spendsOf('2026-11', [proof], r.movements);
     expect(total(spends)).toBe(70);
   });
 });
@@ -134,5 +151,16 @@ describe('alertes de transactions Bankin', () => {
     const r = reconcile({ balances: [{ date: '2026-11-01', amount: 100 }, { date: '2026-11-02', amount: 80 }], movements: [op] }, [], [], '2026-11-02');
     expect(r.movements.filter((m) => m.status === 'pending')).toHaveLength(0);
     expect(r.movements[0]?.category).toBe('RESTAURANT');
+  });
+});
+
+import { isPaymentProof } from './bankin';
+describe('mail qui prouve une dépense', () => {
+  it('reçu du bon montant', () => {
+    expect(isPaymentProof({ subject: 'Votre reçu de paiement', snippet: 'Montant payé : 20,00 € le 2 nov.' }, 20)).toBe(true);
+  });
+  it('pas une pub ou une simple mention de prix', () => {
+    expect(isPaymentProof({ subject: 'Offre spéciale', snippet: 'Commande dès 20,00 €' }, 20)).toBe(false);
+    expect(isPaymentProof({ subject: 'Votre commande', snippet: 'Total 120,00 €' }, 20)).toBe(false);
   });
 });

@@ -40,7 +40,30 @@ export function AskCard({ m, today }: { m: Movement; today: string }) {
     <Card className="p-5">
       <p className="text-sm text-muted">Ton solde a baissé {when(m, today)}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{eur(-total)}</p>
-      <p className="mt-3 text-sm">Je n'ai rien trouvé dans tes mails. C'était quoi ?</p>
+      {m.suggestion ? (
+        <div className="mt-3 rounded-2xl bg-field p-4">
+          <p className="text-sm">
+            Un mail de <span className="font-medium">{m.suggestion.label}</span> parle du même montant
+            {m.suggestion.subject ? ` (« ${m.suggestion.subject} »)` : ''}. C'était ça ?
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button onClick={() => setLabel(m.suggestion!.label)} variant="secondary" className="bg-card">
+              Oui, c'est ça
+            </Button>
+            <Button variant="ghost" onClick={() => replaceMovement(m, { ...m, suggestion: null })}>
+              Non
+            </Button>
+            {m.suggestion.url && (
+              <a href={m.suggestion.url} target="_blank" rel="noreferrer" className="text-xs text-muted underline-offset-2 hover:text-ink hover:underline">
+                Voir le mail
+              </a>
+            )}
+          </div>
+          {label === m.suggestion.label && <p className="mt-2 text-xs text-muted">Choisis la catégorie ci-dessous, puis Ranger.</p>}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm">Je n'ai trouvé aucune preuve dans tes mails. C'était quoi ?</p>
+      )}
       <form onSubmit={submit} className="mt-3 space-y-3">
         <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ex. courses Leclerc, kebab, essence" aria-label="Ce que c'était" />
         <div className="flex flex-wrap gap-1.5">

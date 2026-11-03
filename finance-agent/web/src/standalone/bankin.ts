@@ -2,7 +2,7 @@
 // Seuls deux usages : le solde du mail Bankin « Balance quotidienne », et la recherche
 // d'un mail qui expliquerait une baisse (reçu, facture) du même montant.
 import { addDays, localToday } from '../utils/dates';
-import { answer, categorizeLabel, mergeBalances, movementFromOperation, parseBankinAlert, parisDate, parseBankinSnippet, reconcile, SPEND_LABELS, type DayBalance, type MoneyState, type Movement, type SpendCategory } from './money';
+import { categorizeLabel, mergeBalances, movementFromOperation, parseBankinAlert, parisDate, parseBankinSnippet, reconcile, SPEND_LABELS, type DayBalance, type MoneyState, type Movement, type SpendCategory } from './money';
 import type { State } from './storage';
 import { getBackend } from './storage';
 import { currentState, scheduleSave } from './vault';
@@ -180,14 +180,15 @@ async function lookInMails(mcp: Mcp) {
     const value = Math.abs(mv.amount);
     const after = addDays(mv.from, -2).replaceAll('-', '/');
     const before = addDays(mv.to, 1).replaceAll('-', '/');
-    const q = `after:${after} before:${before} -from:bankin.com ("${fmt(value).replace('.', ',')}" OR "${fmt(value)}")`;
-    let hit: { label: string; subject: string; url: string | null } | null = null;
+    const q = `after:${after} before:${before} -from:bankin.com -category:promotions -category:social ("${fmt(value).replace('.', ',')}" OR "${fmt(value)}")`;
+    let hit: NonNullable<Movement['suggestion']> | null = null;
     try {
-      const res = await search(mcp, q, 5);
+      const res = await search(mcp, q, 10);
       for (const t of res.threads ?? []) {
         const msg = t.messages?.[0];
-        if (!msg) continue;
+        if (!msg || !isPaymentProof(msg, value)) continue;
         const name = msg.addressDisplayNames?.[0]?.displayName || (msg.sender ?? '').split('@')[1]?.split('.')[0] || '';
+        if (!name.trim()) continue;
         hit = { label: name.trim(), subject: (msg.subject ?? '').trim(), url: msg.viewUrl ?? t.viewUrl ?? null };
         break;
       }
@@ -197,15 +198,22 @@ async function lookInMails(mcp: Mcp) {
     // L'état a pu changer pendant la recherche (réponse de l'utilisateur)
     const cur = money(currentState()).movements.find((x) => x.id === mv.id && x.status === 'pending');
     if (!cur) continue;
-    if (hit && hit.label) {
-      const category = categorizeLabel(`${hit.label} ${hit.subject}`);
-      const done: Movement = { ...answer(cur, hit.label, category, value, 'mail'), mailUrl: hit.url };
-      const list = money(currentState()).movements;
-      list.splice(list.indexOf(cur), 1, done);
-    } else cur.searched = true;
+    // Jamais classé d'office : le mail est seulement proposé, l'utilisateur confirme
+    cur.searched = true;
+    if (hit) cur.suggestion = hit;
   }
-  refreshMovements();
   scheduleSave();
+}
+
+const PROOF_WORDS = /re[çc]u|commande|paiement|pay[ée]|facture|achat|ticket|transaction|pr[ée]l[èe]vement|abonnement|confirmation|order|receipt|invoice|payment/i;
+
+/** Le mail ressemble à une preuve de paiement de ce montant (pas une pub qui cite un prix). */
+export function isPaymentProof(msg: { subject?: string; snippet?: string }, value: number): boolean {
+  const text = `${msg.subject ?? ''} ${(msg.snippet ?? '').replace(/&#39;/g, "'")}`.replace(/[\u00a0\u202f]/g, ' ');
+  const amount = value.toFixed(2);
+  const n = amount.replace('.', '[,.]');
+  const re = new RegExp(`(?<![\\d.,])${n}\\s?(€|eur)|(€|eur)\\s?${n}(?![\\d])`, 'i');
+  return re.test(text) && PROOF_WORDS.test(text) && !/promo|offre|soldes|r[ée]duction|newsletter|jusqu.?[àa]/i.test(msg.subject ?? '');
 }
 
 /** Catégorie d'une réponse libre : règles locales, puis Claude si elles ne suffisent pas. */

@@ -51,6 +51,8 @@ export interface Movement {
   /** Recherche dans les mails déjà faite (on ne la refait pas) */
   searched?: boolean;
   mailUrl?: string | null;
+  /** Mail du même montant trouvé autour de ces dates : proposé, jamais classé sans accord */
+  suggestion?: { label: string; subject: string; url: string | null } | null;
   createdAt: string;
 }
 
@@ -121,26 +123,35 @@ function incomesBetween(incomes: Income[], from: string, to: string): number {
  */
 export function reconcile(state: MoneyState, bills: Bill[], incomes: Income[], today: string, now = new Date().toISOString()): MoneyState {
   const { balances } = state;
-  // Les lignes rangées automatiquement sont recalculées à chaque fois : une facture
-  // ajoutée après coup (relevé importé) les remplace sans doublon
-  const keep = state.movements.filter((m) => m.status === 'done' && m.source !== 'auto');
+  // Anciennes versions : une dépense « trouvée dans les mails » était classée sans accord.
+  // Elle redevient une question, avec le mail proposé.
+  const legacy = new Map<string, Movement['suggestion']>();
+  for (const m of state.movements)
+    if (m.status === 'done' && m.source === 'mail') legacy.set(`${m.from}_${m.to}`, { label: m.label, subject: '', url: m.mailUrl ?? null });
+  // Les lignes rangées automatiquement sont recalculées à chaque fois
+  const keep = state.movements.filter((m) => m.status === 'done' && m.source !== 'auto' && m.source !== 'mail');
   const pendingByWindow = new Map(state.movements.filter((m) => m.status === 'pending').map((m) => [`${m.from}_${m.to}`, m]));
+  const proofBills = bills.filter(isProofBill);
+  const proofIncomes = incomes.filter(isProofIncome);
   const out: Movement[] = [...keep];
   for (let i = 1; i < balances.length; i++) {
     const { date: from, amount: before } = balances[i - 1]!;
     const { date: to, amount: after } = balances[i]!;
     const key = `${from}_${to}`;
-    const paid = bills.filter((b) => b.paid && billDay(b) >= from && billDay(b) < to).reduce((t, b) => t + b.amount, 0);
-    const received = incomesBetween(incomes, from, to);
-    // Réponses et dépenses ajoutées à la main tombant dans cet intervalle
+    // Seules les opérations prouvées expliquent une variation : reçus et relevés, pas les
+    // échéances prévues (une rentrée attendue qui n'est pas arrivée créerait une fausse baisse)
+    const paid = proofBills.filter((b) => billDay(b) >= from && billDay(b) < to).reduce((t, b) => t + b.amount, 0);
+    const received = incomesBetween(proofIncomes, from, to);
+    // Réponses, alertes Bankin et dépenses ajoutées à la main tombant dans cet intervalle
     const answered = keep.filter((m) => lastDayOf(m) >= from && lastDayOf(m) < to).reduce((t, m) => t + m.amount, 0);
     const rest = round(after - before - (received - paid) - answered);
     if (Math.abs(rest) < THRESHOLD) continue;
     const prev = pendingByWindow.get(key);
     if (rest > 0) {
       out.push({ id: `${key}_in`, from, to, amount: rest, label: 'Argent reçu', category: 'OTHER', status: 'done', source: 'auto', createdAt: now });
-    } else if (prev || daysBetween(to, today) <= ASK_WINDOW_DAYS) {
-      out.push({ ...(prev ?? { id: key, from, to, label: '', category: 'OTHER', status: 'pending', source: 'auto', createdAt: now }), amount: rest });
+    } else if (prev || legacy.has(key) || daysBetween(to, today) <= ASK_WINDOW_DAYS) {
+      const base: Movement = prev ?? { id: key, from, to, amount: rest, label: '', category: 'OTHER', status: 'pending', source: 'auto', searched: legacy.has(key), createdAt: now };
+      out.push({ ...base, amount: rest, suggestion: base.suggestion === undefined ? (legacy.get(key) ?? undefined) : base.suggestion });
     } else {
       out.push({ id: `${key}_old`, from, to, amount: rest, label: 'Non précisé', category: 'OTHER', status: 'done', source: 'auto', createdAt: now });
     }
@@ -148,6 +159,11 @@ export function reconcile(state: MoneyState, bills: Bill[], incomes: Income[], t
   out.sort((a, b) => b.to.localeCompare(a.to) || a.id.localeCompare(b.id));
   return { ...state, balances, movements: out };
 }
+
+/** Facture qui prouve un débit : reçu ou prélèvement lu dans un mail, ligne de relevé importé. */
+export const isProofBill = (b: Bill) => b.paid && (b.id.startsWith('mail-') || (b.notes ?? '').startsWith('Importée depuis ton relevé'));
+/** Rentrée prouvée : ligne de relevé importé (les rentrées prévues ne comptent pas). */
+export const isProofIncome = (i: Income) => i.recurrence === 'NONE' && (i.notes ?? '').startsWith('Importée depuis ton relevé');
 
 /**
  * Réponse à une question : la dépense est rangée ; si le montant indiqué est plus
@@ -163,6 +179,7 @@ export function answer(m: Movement, label: string, category: SpendCategory, amou
     category,
     status: 'done',
     source,
+    suggestion: undefined,
     createdAt: now,
   };
 }
@@ -205,8 +222,11 @@ export interface Spend {
 
 /** Toutes les sorties d'un mois (YYYY-MM) : factures payées + variations rangées ou en attente. */
 export function spendsOf(month: string, bills: Bill[], movements: Movement[]): Spend[] {
+  // Une facture marquée payée à la main et la baisse du solde qui lui correspond ne comptent qu'une fois
+  const twin = (b: Bill) =>
+    !isProofBill(b) && movements.some((m) => m.amount < 0 && Math.abs(-m.amount - b.amount) < 0.01 && Math.abs(daysBetween(lastDayOf(m), billDay(b))) <= 3);
   const fromBills: Spend[] = bills
-    .filter((b) => b.paid && billDay(b).startsWith(month))
+    .filter((b) => b.paid && billDay(b).startsWith(month) && !twin(b))
     .map((b) => ({ id: b.id, date: billDay(b), label: b.provider || b.title, amount: b.amount, category: b.category, kind: 'bill' }));
   const fromMoves: Spend[] = movements
     .filter((m) => m.amount < 0 && lastDayOf(m).startsWith(month))
@@ -463,10 +483,14 @@ const BANKIN_CATEGORIES: Array<[RegExp, SpendCategory]> = [
 
 /** Catégorie d'une opération Bankin : celle de Bankin si elle parle, sinon le libellé. */
 export function categorizeOperation(op: Pick<BankinOperation, 'label' | 'bankinCategory'>): SpendCategory {
+  // La catégorie donnée par Bankin d'abord ; le nom du commerçant seulement si elle ne dit rien
   const cat = normalize(op.bankinCategory);
+  const matches = BANKIN_CATEGORIES.filter(([re]) => re.test(cat)).map(([, c]) => c);
+  if (matches.length === 1) return matches[0]!;
+  // Catégorie large (« Alimentation & Restau. ») : le commerçant tranche, sinon la première
   const fromLabel = categorizeLabel(op.label);
-  if (fromLabel !== 'OTHER') return fromLabel;
-  return BANKIN_CATEGORIES.find(([re]) => re.test(cat))?.[1] ?? 'OTHER';
+  if (matches.length > 1) return matches.includes(fromLabel) ? fromLabel : matches.includes('FOOD') ? 'FOOD' : matches[0]!;
+  return fromLabel;
 }
 
 /** Opération exacte → ligne rangée (rattachée au jour de l'opération). */
