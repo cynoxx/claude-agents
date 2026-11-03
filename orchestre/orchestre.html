@@ -1,5 +1,5 @@
 <title>Chef d'orchestre</title>
-<meta name="description" content="Point d'entrée unique de Jojo vers Jarvis Ultime, Muse et l'Agent financier : tournée automatique, état de chaque agent et ce qui demande son attention.">
+<meta name="description" content="Point d'entrée unique de Jojo vers Jarvis Ultime, Muse, l'Agent financier, Carnet de salle et Lifforge : tournée automatique, état de chaque agent et ce qui demande son attention.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
@@ -56,7 +56,7 @@ a{color:inherit}
 .sec-h h2{margin:0;font-size:24px;font-weight:600;letter-spacing:-.03em}
 
 /* agents */
-.agents{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
 .agent{background:var(--card);border-radius:var(--r-xl);padding:22px;display:grid;gap:14px;align-content:start;min-width:0;position:relative}
 .agent.late{box-shadow:inset 0 0 0 1px rgba(255,77,79,.45)}
 .agent.warn{box-shadow:inset 0 0 0 1px rgba(255,159,26,.4)}
@@ -147,7 +147,7 @@ a{color:inherit}
       </div>
     </div>
     <div class="week" aria-label="Rituels tenus cette semaine">
-      <div class="week-h"><span>Rituels tenus</span><b id="weekTotal">0 / 21</b></div>
+      <div class="week-h"><span>Rituels tenus</span><b id="weekTotal">0 / 35</b></div>
       <div class="bars" id="weekBars"></div>
       <div class="days" id="weekDays"></div>
     </div>
@@ -183,7 +183,7 @@ a{color:inherit}
       <div class="truth">
         <h3>Ce qui est automatique, et ce qui ne l'est pas</h3>
         <ul>
-          <li><b>Automatique</b> : à chaque ouverture (une fois par jour) et sur « Lancer la tournée », je lis ta boîte Gmail (factures, reçus, échéances, prélèvements des 14 derniers jours) et ton Google Agenda des 7 prochains jours, puis Claude rédige tes ordres du jour et les répartit entre tes trois agents.</li>
+          <li><b>Automatique</b> : à chaque ouverture (une fois par jour) et sur « Lancer la tournée », je lis ta boîte Gmail (factures, reçus, échéances, prélèvements des 14 derniers jours) et ton Google Agenda des 7 prochains jours, puis Claude rédige tes ordres du jour et les répartit entre tes cinq agents.</li>
           <li><b>Automatique</b> : l'état de chaque agent (à jour, à surveiller en orange, en retard en rouge) se calcule tout seul.</li>
           <li><b>Pas automatique</b> : tes agents gardent leurs données chiffrées chacun de leur côté, je ne peux ni les lire ni écrire dedans. Je prépare la consigne, tu la colles ou tu la saisis dans l'agent, puis tu coches ici.</li>
         </ul>
@@ -215,8 +215,12 @@ const AGENTS = {
     ritual: "Idée du jour validée", warnAt: 18 },
   finance: { name: "Agent financier", short: "€", role: "Factures, abonnements, budget", url: "https://claude.ai/artifact/5Envk91bbCznx7bKLdpCHD",
     ritual: "Factures du jour saisies", warnAt: 20 },
+  carnet: { name: "Carnet de salle", short: "S", role: "Muscu, programme, progrès", url: "https://claude.ai/artifact/T2hRDPxgwz4s4aMteURb8z",
+    ritual: "Séance ou repos noté", warnAt: 20 },
+  lifforge: { name: "Lifforge", short: "L", role: "Habitudes, objectifs, sobriété", url: "https://claude.ai/artifact/H4WjamxLTrzFWh6n5ho6LM",
+    ritual: "Habitudes cochées", warnAt: 21 },
 };
-const IDS = ["jarvis", "muse", "finance"];
+const IDS = ["jarvis", "muse", "finance", "carnet", "lifforge"];
 const MAIL_Q = "newer_than:14d (facture OR reçu OR receipt OR invoice OR échéance OR prélèvement OR abonnement OR paiement OR avis)";
 const LOCK_MS = 30 * 60 * 1000;
 
@@ -386,10 +390,12 @@ function context() {
   };
 }
 async function brief() {
-  const prompt = `Tu es le chef d'orchestre des agents personnels de Johan (Jojo), étudiant en PASS (première année de médecine) en France. Tu répartis le travail entre ses trois agents :
+  const prompt = `Tu es le chef d'orchestre des agents personnels de Johan (Jojo), étudiant en PASS (première année de médecine) en France. Tu répartis le travail entre ses cinq agents :
 - "jarvis" : Jarvis Ultime, son assistant de vie (planning de la journée, révisions PASS, sport, prière, bilan du soir).
 - "muse" : Muse, qui lui propose chaque jour des idées de business IA ; il doit en valider une par jour.
 - "finance" : l'Agent financier, où il saisit factures, abonnements et revenus, et suit son budget.
+- "carnet" : Carnet de salle, son carnet de musculation (séance du jour, programme, objectif de séances par semaine, jours de repos, progrès).
+- "lifforge" : Lifforge, son suivi d'habitudes (habitudes à cocher chaque jour, objectifs, liste de tâches, sobriété).
 
 Voici l'état du jour (JSON) :
 ${JSON.stringify(context())}
@@ -397,10 +403,10 @@ ${JSON.stringify(context())}
 Rédige en français, sans emoji, sur un ton direct et bienveillant :
 - "phrase" : une seule phrase d'ouverture qui résume la journée.
 - "ordres" : 3 à 6 actions concrètes, les plus importantes d'abord. Chaque action dit exactement quoi faire dans quel agent (par exemple : saisir telle facture de tel montant dans l'Agent financier, caler telle séance avant tel évènement dans Jarvis). Une facture qui arrive à échéance ou un abonnement qui se renouvelle est prioritaire. Ne propose pas de rituel déjà fait aujourd'hui.
-- "consignes" : un texte court par agent que Johan peut copier-coller tel quel dans l'agent ("jarvis" et "muse" seulement), écrit à la première personne comme si Johan parlait à l'agent. Pour Jarvis, inclus les évènements d'agenda utiles. Pour Muse, propose un angle d'idée cohérent avec sa vie d'étudiant en médecine.
+- "consignes" : un texte court par agent que Johan peut copier-coller tel quel dans l'agent ("jarvis", "muse", "carnet" et "lifforge" seulement), écrit à la première personne comme si Johan parlait à l'agent. Pour Jarvis, inclus les évènements d'agenda utiles. Pour Muse, propose un angle d'idée cohérent avec sa vie d'étudiant en médecine. Pour Carnet de salle, place la séance (ou le repos) en fonction de l'agenda. Pour Lifforge, rappelle les habitudes et la sobriété à tenir aujourd'hui, en lien avec la journée prévue.
 
 Réponds uniquement avec ce JSON :
-{"phrase":"…","ordres":[{"agent":"jarvis|muse|finance","action":"…","pourquoi":"…","urgent":true}],"consignes":{"jarvis":"…","muse":"…"}}`;
+{"phrase":"…","ordres":[{"agent":"jarvis|muse|finance|carnet|lifforge","action":"…","pourquoi":"…","urgent":true}],"consignes":{"jarvis":"…","muse":"…","carnet":"…","lifforge":"…"}}`;
   const r = await sample.json(prompt, { modelTier: "default" });
   if (!r || !Array.isArray(r.ordres)) throw new Error("format");
   r.ordres = r.ordres.filter(o => AGENTS[o.agent] && o.action).slice(0, 6);
@@ -411,6 +417,8 @@ function fallbackBrief() {
   const pm = pendingMail();
   if (pm.length) o.push({ agent: "finance", action: "Saisir " + pm.length + " facture" + (pm.length > 1 ? "s" : "") + " ou reçu" + (pm.length > 1 ? "s" : "") + " repérés dans ta boîte mail", pourquoi: "Ils ne sont pas encore cochés ici.", urgent: pm.some(m => daysAgo(m.date) > 3) });
   if (!ritualDone("muse")) o.push({ agent: "muse", action: "Valider ton idée du jour", pourquoi: "Pour garder ta série.", urgent: false });
+  if (!ritualDone("carnet")) o.push({ agent: "carnet", action: "Noter ta séance du jour, ou ton jour de repos", pourquoi: "Pour tenir ton objectif de la semaine.", urgent: false });
+  if (!ritualDone("lifforge")) o.push({ agent: "lifforge", action: "Cocher tes habitudes du jour", pourquoi: "Pour ne pas casser tes séries.", urgent: false });
   if (!ritualDone("jarvis")) o.push({ agent: "jarvis", action: "Faire ton bilan du soir", pourquoi: "Pour préparer demain.", urgent: false });
   return { phrase: "Voici ce qui t'attend aujourd'hui.", ordres: o, consignes: {} };
 }
@@ -446,9 +454,9 @@ function renderWeek() {
   const now = new Date(), monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
   let total = 0;
   const week = [...Array(7)].map((_, k) => { const d = new Date(monday); d.setDate(monday.getDate() + k); const key = iso(d); const n = IDS.filter(id => ritualDone(id, key)).length; total += n; return { key, n }; });
-  $("#weekBars").replaceChildren(...week.map(w => el("i", { class: w.key === today() ? "now" : (w.n ? "" : "off"), style: `height:${10 + w.n * 25}px`, title: w.n + " rituel" + (w.n > 1 ? "s" : "") + " sur 3" })));
+  $("#weekBars").replaceChildren(...week.map(w => el("i", { class: w.key === today() ? "now" : (w.n ? "" : "off"), style: `height:${10 + w.n * 15}px`, title: w.n + " rituel" + (w.n > 1 ? "s" : "") + " sur " + IDS.length })));
   $("#weekDays").replaceChildren(...["L", "M", "M", "J", "V", "S", "D"].map((d, k) => el("span", { class: week[k].key === today() ? "now" : "" }, d)));
-  $("#weekTotal").textContent = total + " / 21";
+  $("#weekTotal").textContent = total + " / " + IDS.length * 7;
 }
 function renderOrders() {
   const box = $("#orders"); box.replaceChildren();
