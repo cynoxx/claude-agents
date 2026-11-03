@@ -19,24 +19,35 @@ export function useIncomeMutations() {
   };
 }
 
-export function IncomeForm({ open, onClose, income }: { open: boolean; onClose: () => void; income: Income | null }) {
+export function IncomeForm({
+  open,
+  onClose,
+  income,
+  preset,
+}: {
+  open: boolean;
+  onClose: () => void;
+  income: Income | null;
+  /** Valeurs proposées pour une nouvelle rentrée */
+  preset?: Partial<IncomeInput>;
+}) {
   return (
     <Modal open={open} onClose={onClose} title={income ? 'Modifier la rentrée' : 'Nouvelle rentrée d’argent'}>
-      {open && <IncomeFormBody key={income?.id ?? 'new'} income={income} onDone={onClose} />}
+      {open && <IncomeFormBody key={income?.id ?? 'new'} income={income} preset={preset} onDone={onClose} />}
     </Modal>
   );
 }
 
-function IncomeFormBody({ income, onDone }: { income: Income | null; onDone: () => void }) {
+function IncomeFormBody({ income, preset, onDone }: { income: Income | null; preset?: Partial<IncomeInput>; onDone: () => void }) {
   const { save } = useIncomeMutations();
   const [form, setForm] = useState({
-    label: income?.label ?? '',
-    source: income?.source ?? '',
+    label: income?.label ?? preset?.label ?? '',
+    source: income?.source ?? preset?.source ?? '',
     amount: income ? String(income.amount) : '',
     date: income?.date ?? localToday(),
     endDate: income?.endDate ?? '',
-    recurrence: (income?.recurrence ?? 'MONTHLY') as Recurrence,
-    category: (income?.category ?? 'SALARY') as IncomeCategory,
+    recurrence: (income?.recurrence ?? preset?.recurrence ?? 'MONTHLY') as Recurrence,
+    category: (income?.category ?? preset?.category ?? 'SALARY') as IncomeCategory,
     notes: income?.notes ?? '',
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});

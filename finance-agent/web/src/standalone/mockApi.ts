@@ -2,6 +2,7 @@
 // pour faire tourner l'app sans backend, par exemple dans un artefact.
 import type { Bill, BillCategory, Income, IncomeCategory, Recurrence } from '../types';
 import { monthlyBalance, monthsEndingAt } from '../utils/balance';
+import { AID_STATUS, EMPTY_PLAN, type AidStatus, type PlanState } from '../utils/plan';
 import { addDays, daysBetween, localToday } from '../utils/dates';
 import { BILL_CATEGORIES, categorizeProvider } from './categories';
 import type { State, StoredNotification } from './storage';
@@ -364,6 +365,24 @@ route('DELETE', '/incomes/:id', (s, p) => {
 route('GET', '/incomes/balance', (s, _p, q) => {
   const count = Math.min(24, Math.max(1, Number(q.get('months')) || 6));
   return monthlyBalance(s.incomes ?? [], s.bills, monthsEndingAt(localToday().slice(0, 7), count));
+});
+
+route('GET', '/plan', (s) => ({ ...EMPTY_PLAN, ...s.plan }));
+route('PUT', '/plan', (s, _p, _q, body) => {
+  const goal = Number(body.savingsGoal);
+  const flags = (v: unknown) =>
+    Object.fromEntries(Object.entries((v ?? {}) as Record<string, unknown>).filter(([, x]) => x === true)) as Record<string, boolean>;
+  const plan: PlanState = {
+    savingsGoal: body.savingsGoal != null && Number.isFinite(goal) && goal > 0 ? round(goal) : null,
+    aids: Object.fromEntries(
+      Object.entries((body.aids ?? {}) as Record<string, unknown>).filter(([, x]) => typeof x === 'string' && x in AID_STATUS),
+    ) as Record<string, AidStatus>,
+    ideas: flags(body.ideas),
+    toCancel: flags(body.toCancel),
+  };
+  s.plan = plan;
+  mutate(s);
+  return plan;
 });
 
 route('GET', '/dashboard', (s) => {

@@ -15,6 +15,7 @@ const NAV = [
   { to: '/calendrier', label: 'Calendrier', short: 'Agenda', icon: 'calendar' },
   { to: '/revenus', label: 'Revenus', short: 'Revenus', icon: 'income' },
   { to: '/budget', label: 'Budget', short: 'Budget', icon: 'budget' },
+  { to: '/plan', label: 'Plan', short: 'Plan', icon: 'plan' },
   { to: '/notifications', label: 'Notifications', short: 'Alertes', icon: 'bell' },
   { to: '/parametres', label: 'Paramètres', short: 'Réglages', icon: 'settings' },
 ] as const;
@@ -76,13 +77,13 @@ export function Layout() {
       </main>
 
       {/* Navigation mobile */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-7 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-8 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         {NAV.map((n) => (
           <NavLink
             key={n.to}
             to={n.to}
             end={n.to === '/'}
-            className={({ isActive }) => `relative flex flex-col items-center py-2 text-[11px] ${isActive ? 'text-ink' : 'text-muted'}`}
+            className={({ isActive }) => `relative flex flex-col items-center py-2 text-[10px] ${isActive ? 'text-ink' : 'text-muted'}`}
           >
             <Icon name={n.icon} className="mb-0.5 h-5 w-5" />
             <span className="max-w-full truncate px-0.5">{n.short}</span>

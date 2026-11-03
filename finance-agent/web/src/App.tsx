@@ -7,6 +7,7 @@ import { DashboardPage } from './components/Dashboard/DashboardPage';
 import { IncomesPage } from './components/Incomes/IncomesPage';
 import { Layout } from './components/Layout/Layout';
 import { NotificationsPage } from './components/Notifications/NotificationsPage';
+import { PlanPage } from './components/Plan/PlanPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
 import { STANDALONE } from './services/api';
 import { LockGate } from './standalone/LockGate';
@@ -33,6 +34,7 @@ export function App() {
         <Route path="calendrier" element={<CalendarPage />} />
         <Route path="revenus" element={<IncomesPage />} />
         <Route path="budget" element={<BudgetPage />} />
+        <Route path="plan" element={<PlanPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="parametres" element={<SettingsPage />} />
       </Route>

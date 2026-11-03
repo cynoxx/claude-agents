@@ -1,4 +1,5 @@
 import type { AppNotification, Bill, BillCategory, Income, User } from '../types';
+import type { PlanState } from '../utils/plan';
 
 export interface Budget {
   id: string;
@@ -23,6 +24,8 @@ export interface State {
   incomes?: Income[];
   /** Mails déjà transformés en factures (ids Gmail), pour ne jamais les ajouter deux fois */
   importedMail?: string[];
+  /** Aides, pistes et objectif d'épargne (page Plan) */
+  plan?: PlanState;
 }
 
 /** Facture repérée dans les mails par le tri du matin, en attente d'être rangée dans le coffre. */
