@@ -17,7 +17,7 @@ const shift = (ym: string, k: number) => {
   return d.toISOString().slice(0, 7);
 };
 
-const SOURCE: Record<Movement['source'], string> = { auto: '', mail: 'trouvé dans tes mails', me: '' };
+const SOURCE: Record<Movement['source'], string> = { auto: '', mail: 'trouvé dans tes mails', me: '', bankin: 'alerte Bankin' };
 
 export function SpendingPage() {
   const v = useVault();

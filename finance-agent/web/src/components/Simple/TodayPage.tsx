@@ -93,6 +93,15 @@ export function TodayPage() {
       </Card>
 
       {pending[0] && <AskCard key={pending[0].id} m={pending[0]} today={v.today} />}
+      {pending[0] && !movements.some((m) => m.source === 'bankin' && m.from > addDays(v.today, -30)) && (
+        <Card className="p-5">
+          <p className="font-medium">Pour que je sache tout seul d'où vient chaque dépense</p>
+          <p className="mt-1 text-sm text-muted">
+            Dans l'appli Bankin, ouvre Profil, puis Notifications, puis Alertes de transactions, et mets le seuil au plus bas. Bankin t'enverra alors un mail
+            par opération, avec le nom du commerçant : je les lis et je range chaque dépense sans te poser de question.
+          </p>
+        </Card>
+      )}
       {pending.length > 1 && (
         <Link to="/depenses" className="block text-center text-sm text-muted hover:text-ink">
           {pending.length - 1} autre{pending.length > 2 ? 's' : ''} baisse{pending.length > 2 ? 's' : ''} à préciser

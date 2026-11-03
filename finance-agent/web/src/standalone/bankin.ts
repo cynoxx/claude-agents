@@ -2,7 +2,7 @@
 // Seuls deux usages : le solde du mail Bankin « Balance quotidienne », et la recherche
 // d'un mail qui expliquerait une baisse (reçu, facture) du même montant.
 import { addDays, localToday } from '../utils/dates';
-import { answer, categorizeLabel, mergeBalances, parisDate, parseBankinSnippet, reconcile, SPEND_LABELS, type DayBalance, type MoneyState, type Movement, type SpendCategory } from './money';
+import { answer, categorizeLabel, mergeBalances, movementFromOperation, parseBankinAlert, parisDate, parseBankinSnippet, reconcile, SPEND_LABELS, type DayBalance, type MoneyState, type Movement, type SpendCategory } from './money';
 import type { State } from './storage';
 import { getBackend } from './storage';
 import { currentState, scheduleSave } from './vault';
@@ -73,7 +73,8 @@ export function money(s: State): MoneyState {
 
 /** Recalcule les variations après un changement (relevé, réponse, facture ajoutée). */
 export function refreshMovements(s: State = currentState()) {
-  s.money = reconcile(money(s), s.bills, s.incomes ?? [], localToday());
+  // Mise à jour sur place : les références déjà prises sur s.money restent valables
+  Object.assign(money(s), reconcile(money(s), s.bills, s.incomes ?? [], localToday()));
 }
 
 let running: Promise<SyncResult> | null = null;
@@ -118,12 +119,54 @@ async function doSync(): Promise<SyncResult> {
     if (stored.length) return { ok: true, added: 0, last: m.balances.at(-1) ?? null };
     return reason(e);
   }
-  const before = m.balances.length;
-  m.balances = mergeBalances(m.balances, found);
+  await readAlerts(mcp).catch((e) => console.error('[alertes Bankin]', e));
+  // refreshMovements remplace l'objet : on relit l'état à jour
+  const cur = money(s);
+  const before = cur.balances.length;
+  cur.balances = mergeBalances(cur.balances, found);
   refreshMovements(s);
   scheduleSave();
   await lookInMails(mcp).catch((e) => console.error('[mails]', e));
-  return { ok: true, added: m.balances.length - before, last: m.balances.at(-1) ?? null };
+  return { ok: true, added: cur.balances.length - before, last: money(currentState()).balances.at(-1) ?? null };
+}
+
+/**
+ * Alertes « Notification transactions » de Bankin : chaque opération y figure avec son
+ * libellé exact, son montant, sa date et sa catégorie Bankin. Elles sont rangées telles
+ * quelles, et la baisse du solde correspondante n'est plus une question.
+ */
+async function readAlerts(mcp: Mcp) {
+  const m = money(currentState());
+  const seen = new Set(m.alertMails ?? []);
+  const since = seen.size ? 'newer_than:20d' : 'newer_than:75d';
+  const res = await search(mcp, `from:ne-pas-repondre@bankin.com subject:"Notification transactions" ${since}`, 50);
+  const ids = (res.threads ?? []).map((t) => t.id).filter((id): id is string => !!id && !seen.has(id)).slice(0, 25);
+  let added = 0;
+  for (const id of ids) {
+    let text = '';
+    try {
+      const r = await mcp.callTool(SERVER, 'get_thread', { threadId: id, messageFormat: 'PLAIN_TEXT' });
+      const p = r.payload as { messages?: { plaintextBody?: string }[] } | undefined;
+      text = (p?.messages ?? []).map((x) => x.plaintextBody ?? '').join('\n');
+    } catch {
+      return; // accès refusé ou connecteur indisponible : on réessaiera au prochain relevé
+    }
+    const ops = parseBankinAlert(text);
+    const list = money(currentState()).movements;
+    ops.forEach((op, n) => {
+      const mid = `bk_${id}_${n}`;
+      if (!list.some((x) => x.id === mid)) {
+        list.push(movementFromOperation(op, mid));
+        added++;
+      }
+    });
+    seen.add(id);
+  }
+  m.alertMails = [...seen].slice(-1000);
+  if (added) {
+    refreshMovements();
+    scheduleSave();
+  }
 }
 
 const fmt = (n: number) => n.toFixed(2);

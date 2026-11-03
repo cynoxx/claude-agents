@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Bill, Income } from '../types';
-import { answer, categorizeLabel, dailyAllowance, parisDate, parseBankinSnippet, reconcile, spendsOf, total, type MoneyState } from './money';
+import { answer, categorizeLabel, categorizeOperation, dailyAllowance, movementFromOperation, parseBankinAlert, parisDate, parseBankinSnippet, reconcile, spendsOf, total, type MoneyState } from './money';
 
 const bill = (over: Partial<Bill>): Bill => ({
   id: 'b1',
@@ -101,5 +101,38 @@ describe('reste à dépenser', () => {
     const a = dailyAllowance(500, '2026-11-21', [bill({ paid: false, paidDate: null, dueDate: '2026-11-25', amount: 100 })], [], 100);
     expect(a.daysLeft).toBe(10);
     expect(a.perDay).toBe(30);
+  });
+});
+
+describe('alertes de transactions Bankin', () => {
+  const mail = ` BANKIN'
+
+| [](https://x) |
+
+| |
+| | Alerte de transactions | Jeudi 01 octobre |
+
+| |
+| Virement Instantane ...[](https://x) | | -1 000,00 €[](https://x) |
+| Mer. 30 septembre 2026 |
+| Mr Test Exemple Virements |
+| CB LECLERC AJACCIO[](https://x) | | -42,90 €[](https://x) |
+| Mer. 30 septembre 2026 |
+| Mr Test Exemple Alimentation & Restau. |
+
+| Ouvrir l'application[](https://x) |`;
+  it('lit chaque opération', () => {
+    const ops = parseBankinAlert(mail);
+    expect(ops).toEqual([
+      { label: 'Virement Instantane', amount: -1000, date: '2026-09-30', bankinCategory: 'Virements' },
+      { label: 'CB LECLERC AJACCIO', amount: -42.9, date: '2026-09-30', bankinCategory: 'Alimentation & Restau.' },
+    ]);
+    expect(categorizeOperation(ops[1]!)).toBe('FOOD');
+  });
+  it('une opération reçue explique la baisse du solde', () => {
+    const op = movementFromOperation({ label: 'CB KEBAB', amount: -20, date: '2026-11-01', bankinCategory: 'Restaurants' }, 'bk1');
+    const r = reconcile({ balances: [{ date: '2026-11-01', amount: 100 }, { date: '2026-11-02', amount: 80 }], movements: [op] }, [], [], '2026-11-02');
+    expect(r.movements.filter((m) => m.status === 'pending')).toHaveLength(0);
+    expect(r.movements[0]?.category).toBe('RESTAURANT');
   });
 });

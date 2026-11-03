@@ -46,8 +46,8 @@ export interface Movement {
   category: SpendCategory;
   /** pending : baisse inexpliquée, à préciser par l'utilisateur */
   status: 'pending' | 'done';
-  /** auto : rangé sans question ; mail : retrouvé dans les mails ; me : précisé à la main */
-  source: 'auto' | 'mail' | 'me';
+  /** auto : rangé sans question ; mail : retrouvé dans les mails ; me : précisé à la main ; bankin : opération exacte reçue par alerte Bankin */
+  source: 'auto' | 'mail' | 'me' | 'bankin';
   /** Recherche dans les mails déjà faite (on ne la refait pas) */
   searched?: boolean;
   mailUrl?: string | null;
@@ -57,6 +57,8 @@ export interface Movement {
 export interface MoneyState {
   balances: DayBalance[];
   movements: Movement[];
+  /** Mails « Notification transactions » déjà lus */
+  alertMails?: string[];
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
@@ -144,7 +146,7 @@ export function reconcile(state: MoneyState, bills: Bill[], incomes: Income[], t
     }
   }
   out.sort((a, b) => b.to.localeCompare(a.to) || a.id.localeCompare(b.id));
-  return { balances, movements: out };
+  return { ...state, balances, movements: out };
 }
 
 /**
@@ -335,7 +337,7 @@ export function insights(opts: {
         id: `cat-${c.key}`,
         tone: 'warn',
         title: `${c.label} : ${eur(c.value)} ce mois-ci`,
-        detail: `C'est ${eur(c.value - pastAvg)} de plus que ta moyenne (${eur(pastAvg)}).`,
+        detail: pastAvg > 0 ? `C'est ${eur(c.value - pastAvg)} de plus que ta moyenne (${eur(pastAvg)}).` : `Tu n'avais presque rien dépensé dans cette catégorie les mois précédents.`,
       });
       break;
     }
@@ -395,4 +397,90 @@ export function insights(opts: {
 
   const order = { warn: 0, info: 1, good: 2 } as const;
   return out.sort((a, b) => order[a.tone] - order[b.tone]);
+}
+
+// ---------- Alertes de transactions Bankin ----------
+
+export interface BankinOperation {
+  label: string;
+  /** négatif : dépense */
+  amount: number;
+  date: string;
+  bankinCategory: string;
+}
+
+const MONTHS = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
+
+const toAmount = (raw: string) => {
+  const neg = /^[-−–]/.test(raw.trim());
+  const [units, cents] = raw.split(',') as [string, string];
+  const n = Number(`${units.replace(/[^\d]/g, '')}.${cents.replace(/[^\d]/g, '').slice(0, 2)}`);
+  return neg ? -n : n;
+};
+
+/**
+ * Opérations du mail Bankin « Notification transactions » (texte brut du mail) :
+ * une ligne « libellé | montant », puis la date, puis le compte et la catégorie Bankin.
+ */
+export function parseBankinAlert(text: string): BankinOperation[] {
+  const lines = text
+    .replace(/\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/[\u00a0\u202f]/g, ' ')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !/^\|[\s|]*\|$/.test(l));
+  const ops: BankinOperation[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const row = /^\|\s*(.+?)\s*\|\s*\|\s*([-−–+]?\s?\d[\d .]*,\d{2})\s?€\s*\|$/.exec(lines[i]!);
+    if (!row) continue;
+    const dateLine = lines[i + 1] ?? '';
+    const d = /(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i.exec(normalize(dateLine));
+    if (!d) continue;
+    const month = MONTHS.indexOf(d[2]!);
+    if (month < 0) continue;
+    const date = `${d[3]}-${String(month + 1).padStart(2, '0')}-${d[1]!.padStart(2, '0')}`;
+    const meta = (lines[i + 2] ?? '').replace(/^\|\s*|\s*\|$/g, '');
+    // « Mr Prénom Nom Catégorie » : la catégorie Bankin suit le titulaire du compte
+    const bankinCategory = meta.replace(/^(mr|mme|mlle|m\.|monsieur|madame)\s+\S+\s+\S+\s*/i, '').trim();
+    ops.push({ label: row[1]!.replace(/\s*\.\.\.$/, '').replace(/\s+/g, ' ').trim(), amount: toAmount(row[2]!), date, bankinCategory });
+    i += 2;
+  }
+  return ops;
+}
+
+const BANKIN_CATEGORIES: Array<[RegExp, SpendCategory]> = [
+  [/restau|fast.?food|bar|cafe/, 'RESTAURANT'],
+  [/aliment|supermarche|courses/, 'FOOD'],
+  [/shopping|vetement|high.?tech|achat/, 'SHOPPING'],
+  [/abonnement|multimedia|internet|telephon/, 'SUBSCRIPTION'],
+  [/transport|auto|carburant|essence|peage|parking|train|avion/, 'TRANSPORT'],
+  [/loisir|sortie|sport|voyage|culture/, 'ENTERTAINMENT'],
+  [/sante|pharmacie|medecin|mutuelle/, 'HEALTH'],
+  [/logement|loyer|energie|electricite|eau/, 'HOUSING'],
+  [/retrait|especes|dab/, 'CASH'],
+  [/assurance/, 'INSURANCE'],
+];
+
+/** Catégorie d'une opération Bankin : celle de Bankin si elle parle, sinon le libellé. */
+export function categorizeOperation(op: Pick<BankinOperation, 'label' | 'bankinCategory'>): SpendCategory {
+  const cat = normalize(op.bankinCategory);
+  const fromLabel = categorizeLabel(op.label);
+  if (fromLabel !== 'OTHER') return fromLabel;
+  return BANKIN_CATEGORIES.find(([re]) => re.test(cat))?.[1] ?? 'OTHER';
+}
+
+/** Opération exacte → ligne rangée (rattachée au jour de l'opération). */
+export function movementFromOperation(op: BankinOperation, id: string, now = new Date().toISOString()): Movement {
+  const label = op.label.trim();
+  return {
+    id,
+    from: op.date,
+    to: addDays(op.date, 1),
+    amount: op.amount,
+    label: label || op.bankinCategory || 'Opération',
+    category: op.amount > 0 ? 'OTHER' : categorizeOperation(op),
+    status: 'done',
+    source: 'bankin',
+    createdAt: now,
+  };
 }
