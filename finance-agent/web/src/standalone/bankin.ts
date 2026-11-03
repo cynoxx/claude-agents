@@ -1,0 +1,175 @@
+// Lecture des mails depuis la page, avec le connecteur Gmail de la personne qui l'ouvre.
+// Seuls deux usages : le solde du mail Bankin « Balance quotidienne », et la recherche
+// d'un mail qui expliquerait une baisse (reçu, facture) du même montant.
+import { addDays, localToday } from '../utils/dates';
+import { answer, categorizeLabel, mergeBalances, parisDate, parseBankinSnippet, reconcile, SPEND_LABELS, type DayBalance, type MoneyState, type Movement, type SpendCategory } from './money';
+import type { State } from './storage';
+import { currentState, scheduleSave } from './vault';
+
+const SERVER = 'Gmail';
+const TOOL = 'search_threads';
+const MAX_SEARCHES = 6;
+
+interface Mcp {
+  callTool(server: string, tool: string, input?: unknown, opts?: unknown): Promise<{ payload?: unknown }>;
+}
+interface Sample {
+  (input: string, opts?: Record<string, unknown>): Promise<{ text: string }>;
+  json<T>(input: string, opts?: Record<string, unknown>): Promise<T>;
+}
+type Runtime = { use(name: string): Promise<unknown> };
+const runtime = () => (window as unknown as { claude?: Runtime }).claude;
+
+let mcpPromise: Promise<Mcp | null> | null = null;
+export function getMcp(): Promise<Mcp | null> {
+  mcpPromise ??= runtime()?.use ? (runtime()!.use('mcp') as Promise<Mcp | null>).catch(() => null) : Promise.resolve(null);
+  return mcpPromise;
+}
+let samplePromise: Promise<Sample | null> | null = null;
+export function getSample(): Promise<Sample | null> {
+  samplePromise ??= runtime()?.use ? (runtime()!.use('sample') as Promise<Sample | null>).catch(() => null) : Promise.resolve(null);
+  return samplePromise;
+}
+
+interface GmailMessage {
+  id?: string;
+  date?: string;
+  snippet?: string;
+  subject?: string;
+  sender?: string;
+  viewUrl?: string;
+  addressDisplayNames?: { displayName?: string; emailAddress?: string }[];
+}
+interface GmailSearch {
+  threads?: { id?: string; viewUrl?: string; messages?: GmailMessage[] }[];
+  nextPageToken?: string;
+}
+
+async function search(mcp: Mcp, query: string, pageSize = 50, pageToken?: string): Promise<GmailSearch> {
+  const res = await mcp.callTool(SERVER, TOOL, { query, pageSize, ...(pageToken ? { pageToken } : {}) });
+  const p = res.payload;
+  return p && typeof p === 'object' ? (p as GmailSearch) : {};
+}
+
+export type SyncResult =
+  | { ok: true; added: number; last: DayBalance | null }
+  | { ok: false; reason: 'unavailable' | 'not_connected' | 'denied' | 'reauth' | 'error'; message?: string };
+
+function reason(e: unknown): SyncResult {
+  const code = (e as { code?: string })?.code;
+  if (code === 'server_not_connected' || code === 'selection_required' || code === 'server_not_found') return { ok: false, reason: 'not_connected' };
+  if (code === 'needs_reauth') return { ok: false, reason: 'reauth' };
+  if (code === 'not_in_manifest' || code === 'approval_required' || code === 'not_granted' || code === 'blocked_by_policy' || code === 'consent_required')
+    return { ok: false, reason: 'denied' };
+  if (code === 'capability_disabled' || code === 'capability_removed') return { ok: false, reason: 'unavailable' };
+  return { ok: false, reason: 'error', message: (e as { message?: string })?.message };
+}
+
+export function money(s: State): MoneyState {
+  s.money ??= { balances: [], movements: [] };
+  return s.money;
+}
+
+/** Recalcule les variations après un changement (relevé, réponse, facture ajoutée). */
+export function refreshMovements(s: State = currentState()) {
+  s.money = reconcile(money(s), s.bills, s.incomes ?? [], localToday());
+}
+
+let running: Promise<SyncResult> | null = null;
+
+/** Lit les nouveaux soldes Bankin, recalcule les variations, cherche les dépenses dans les mails. */
+export function syncBankin(): Promise<SyncResult> {
+  running ??= doSync().finally(() => (running = null));
+  return running;
+}
+
+async function doSync(): Promise<SyncResult> {
+  const mcp = await getMcp();
+  if (!mcp) return { ok: false, reason: 'unavailable' };
+  const s = currentState();
+  const m = money(s);
+  const lastKnown = m.balances.at(-1)?.date;
+  const since = lastKnown ? `after:${addDays(lastKnown, -2).replaceAll('-', '/')}` : 'newer_than:75d';
+  const found: DayBalance[] = [];
+  try {
+    let token: string | undefined;
+    for (let page = 0; page < (lastKnown ? 2 : 3); page++) {
+      const res = await search(mcp, `from:ne-pas-repondre@bankin.com subject:"Balance quotidienne" ${since}`, 50, token);
+      for (const t of res.threads ?? [])
+        for (const msg of t.messages ?? []) {
+          if (!msg.date || !msg.snippet || !/bankin/i.test(msg.sender ?? '')) continue;
+          const amount = parseBankinSnippet(msg.snippet);
+          if (amount !== null) found.push({ date: parisDate(msg.date), amount });
+        }
+      token = res.nextPageToken;
+      if (!token) break;
+    }
+  } catch (e) {
+    return reason(e);
+  }
+  const before = m.balances.length;
+  m.balances = mergeBalances(m.balances, found);
+  refreshMovements(s);
+  scheduleSave();
+  await lookInMails(mcp).catch((e) => console.error('[mails]', e));
+  return { ok: true, added: m.balances.length - before, last: m.balances.at(-1) ?? null };
+}
+
+const fmt = (n: number) => n.toFixed(2);
+
+/** Pour chaque baisse en attente, cherche un mail du même montant (reçu, facture) autour de ces dates. */
+async function lookInMails(mcp: Mcp) {
+  const s = currentState();
+  const m = money(s);
+  const todo = m.movements.filter((x) => x.status === 'pending' && !x.searched).slice(0, MAX_SEARCHES);
+  for (const mv of todo) {
+    const value = Math.abs(mv.amount);
+    const after = addDays(mv.from, -2).replaceAll('-', '/');
+    const before = addDays(mv.to, 1).replaceAll('-', '/');
+    const q = `after:${after} before:${before} -from:bankin.com ("${fmt(value).replace('.', ',')}" OR "${fmt(value)}")`;
+    let hit: { label: string; subject: string; url: string | null } | null = null;
+    try {
+      const res = await search(mcp, q, 5);
+      for (const t of res.threads ?? []) {
+        const msg = t.messages?.[0];
+        if (!msg) continue;
+        const name = msg.addressDisplayNames?.[0]?.displayName || (msg.sender ?? '').split('@')[1]?.split('.')[0] || '';
+        hit = { label: name.trim(), subject: (msg.subject ?? '').trim(), url: msg.viewUrl ?? t.viewUrl ?? null };
+        break;
+      }
+    } catch {
+      return; // le connecteur ne répond plus : on retentera au prochain relevé
+    }
+    // L'état a pu changer pendant la recherche (réponse de l'utilisateur)
+    const cur = money(currentState()).movements.find((x) => x.id === mv.id && x.status === 'pending');
+    if (!cur) continue;
+    if (hit && hit.label) {
+      const category = categorizeLabel(`${hit.label} ${hit.subject}`);
+      const done: Movement = { ...answer(cur, hit.label, category, value, 'mail'), mailUrl: hit.url };
+      const list = money(currentState()).movements;
+      list.splice(list.indexOf(cur), 1, done);
+    } else cur.searched = true;
+  }
+  refreshMovements();
+  scheduleSave();
+}
+
+/** Catégorie d'une réponse libre : règles locales, puis Claude si elles ne suffisent pas. */
+export async function guessCategory(label: string): Promise<SpendCategory> {
+  const local = categorizeLabel(label);
+  if (local !== 'OTHER' || !label.trim()) return local;
+  const sample = await getSample();
+  if (!sample) return local;
+  const keys = Object.keys(SPEND_LABELS) as SpendCategory[];
+  try {
+    const r = await sample.json<{ category?: string }>(
+      `Classe cette dépense d'un étudiant en France dans une catégorie. Dépense : "${label.slice(0, 120)}".\nCatégories : ${keys
+        .map((k) => `${k} (${SPEND_LABELS[k]})`)
+        .join(', ')}.\nRéponds uniquement en JSON : {"category": "CLE"}`,
+      { modelTier: 'quick' },
+    );
+    return keys.includes(r?.category as SpendCategory) ? (r.category as SpendCategory) : local;
+  } catch {
+    return local;
+  }
+}

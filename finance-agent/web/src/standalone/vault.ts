@@ -172,8 +172,24 @@ function saveNow(): Promise<void> {
   return chain;
 }
 
+// Les pages qui lisent l'état directement se mettent à jour à chaque modification
+let version = 0;
+const changeListeners = new Set<() => void>();
+export const stateVersion = () => version;
+export function onStateChange(fn: () => void) {
+  changeListeners.add(fn);
+  return () => {
+    changeListeners.delete(fn);
+  };
+}
+export function notifyChange() {
+  version++;
+  changeListeners.forEach((l) => l());
+}
+
 /** Après chaque modification : enregistrement groupé quelques instants plus tard. */
 export function scheduleSave() {
+  notifyChange();
   dirty = true;
   setStatus('saving');
   clearTimeout(timer);

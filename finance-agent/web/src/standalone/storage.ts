@@ -1,5 +1,6 @@
 import type { AppNotification, Bill, BillCategory, Income, User } from '../types';
 import type { PlanState } from '../utils/plan';
+import type { MoneyState } from './money';
 
 export interface Budget {
   id: string;
@@ -26,6 +27,8 @@ export interface State {
   importedMail?: string[];
   /** Aides, pistes et objectif d'épargne (page Plan) */
   plan?: PlanState;
+  /** Solde quotidien lu dans les mails Bankin et variations expliquées */
+  money?: MoneyState;
 }
 
 /** Facture repérée dans les mails par le tri du matin, en attente d'être rangée dans le coffre. */

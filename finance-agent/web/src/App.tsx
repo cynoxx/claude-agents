@@ -9,6 +9,11 @@ import { Layout } from './components/Layout/Layout';
 import { NotificationsPage } from './components/Notifications/NotificationsPage';
 import { PlanPage } from './components/Plan/PlanPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
+import { AdvicePage } from './components/Simple/AdvicePage';
+import { MorePage } from './components/Simple/MorePage';
+import { SimpleLayout } from './components/Simple/SimpleLayout';
+import { SpendingPage } from './components/Simple/SpendingPage';
+import { TodayPage } from './components/Simple/TodayPage';
 import { STANDALONE } from './services/api';
 import { LockGate } from './standalone/LockGate';
 import { useAuthStore } from './store/authStore';
@@ -26,20 +31,42 @@ export function App() {
     );
   }
 
-  const routes = (
+  const pages = (
+    <>
+      <Route path="factures" element={<BillsPage />} />
+      <Route path="calendrier" element={<CalendarPage />} />
+      <Route path="revenus" element={<IncomesPage />} />
+      <Route path="budget" element={<BudgetPage />} />
+      <Route path="plan" element={<PlanPage />} />
+      <Route path="notifications" element={<NotificationsPage />} />
+      <Route path="parametres" element={<SettingsPage />} />
+    </>
+  );
+
+  // App autonome (artefact) : version simple, solde du jour et dépenses d'abord
+  if (STANDALONE)
+    return (
+      <LockGate>
+        <Routes>
+          <Route element={<SimpleLayout />}>
+            <Route index element={<TodayPage />} />
+            <Route path="depenses" element={<SpendingPage />} />
+            <Route path="conseils" element={<AdvicePage />} />
+            <Route path="plus" element={<MorePage />} />
+            {pages}
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </LockGate>
+    );
+
+  return (
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<DashboardPage />} />
-        <Route path="factures" element={<BillsPage />} />
-        <Route path="calendrier" element={<CalendarPage />} />
-        <Route path="revenus" element={<IncomesPage />} />
-        <Route path="budget" element={<BudgetPage />} />
-        <Route path="plan" element={<PlanPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="parametres" element={<SettingsPage />} />
+        {pages}
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
-  return STANDALONE ? <LockGate>{routes}</LockGate> : routes;
 }

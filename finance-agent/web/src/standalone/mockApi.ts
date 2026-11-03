@@ -5,6 +5,7 @@ import { monthlyBalance, monthsEndingAt } from '../utils/balance';
 import { AID_STATUS, EMPTY_PLAN, type AidStatus, type PlanState } from '../utils/plan';
 import { addDays, daysBetween, localToday } from '../utils/dates';
 import { BILL_CATEGORIES, categorizeProvider } from './categories';
+import { reconcile } from './money';
 import type { State, StoredNotification } from './storage';
 import { currentState, deleteAttachment, LockedError, scheduleSave } from './vault';
 
@@ -54,7 +55,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 // ---------- État ----------
 
 /** Toute modification est enregistrée (chiffrée) dans la foulée. */
-function mutate(_s: State) {
+function mutate(s: State) {
+  // Une facture payée ou une rentrée ajoutée peut expliquer une baisse du solde
+  if (s.money) s.money = reconcile(s.money, s.bills, s.incomes ?? [], localToday());
   scheduleSave();
 }
 
