@@ -294,10 +294,12 @@ export function createBureauServer(o: {
       } catch {
         return envoyer(ws, { type: "erreur", message: "Message incompréhensible." });
       }
-      // une seule fenêtre de Max : la nouvelle page le dit aux autres, qui lui cèdent la place (même verrouillé)
+      // une seule fenêtre de Max par rôle (Jarvis, Bureau, ou la fenêtre unique) : la nouvelle page le dit aux autres
+      // de même rôle, qui lui cèdent la place (même verrouillé)
       if (msg.type === "fenetre") {
         const nee = Number(msg.nee);
-        if (Number.isFinite(nee)) for (const c of wss.clients) if (c !== ws) envoyer(c, { type: "fenetre", nee });
+        const ecran = msg.ecran === "bureau" || msg.ecran === "jarvis" ? msg.ecran : undefined;
+        if (Number.isFinite(nee)) for (const c of wss.clients) if (c !== ws) envoyer(c, { type: "fenetre", nee, ...(ecran ? { ecran } : {}) });
         return;
       }
       let r: { ok: boolean; erreur?: string } = { ok: true };

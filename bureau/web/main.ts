@@ -11,6 +11,7 @@ import { QG, brancherAutreSeance } from "./poles.ts";
 import { Intro } from "./intro.ts";
 import { EvenementsSysteme } from "./systeme-evenements.ts";
 import { brancherAmbianceSysteme } from "./systeme-ambiance.ts";
+import { silencerSons } from "./sons.ts";
 import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/pixelify-sans/700.css";
 import "@fontsource/press-start-2p/400.css";
@@ -74,7 +75,14 @@ function ceder(): void {
   setTimeout(() => location.replace("/ailleurs.html"), 300);
 }
 
-new PointeurMainPage();
+// Le rôle de cette fenêtre : « jarvis » ou « bureau » quand Max s'ouvre sur deux écrans, sinon la fenêtre complète.
+// La fenêtre du Bureau est muette : le micro, la caméra, l'intro et les notifications restent à la fenêtre de Jarvis
+// (sinon tout se ferait deux fois : deux écoutes, deux popups).
+const ECRAN = ((new URLSearchParams(location.search).get("ecran")) ?? "") as "" | "jarvis" | "bureau";
+document.body.dataset.ecran = ECRAN;
+if (ECRAN === "bureau") silencerSons();
+
+if (ECRAN !== "bureau") new PointeurMainPage();
 const ecoute = new Ecoute((m) => ws?.readyState === 1 && ws.send(JSON.stringify(m)));
 
 function connecter(): void {
@@ -82,26 +90,28 @@ function connecter(): void {
   ws.onopen = () => {
     attente = 1000;
     document.getElementById("connexion")!.hidden = true;
-    ws?.send(JSON.stringify({ type: "fenetre", nee: NEE }));
+    ws?.send(JSON.stringify({ type: "fenetre", nee: NEE, ...(ECRAN ? { ecran: ECRAN } : {}) }));
   };
   ws.onmessage = (e) => {
     const msg: ServerMessage = JSON.parse(e.data);
     if (msg.type === "etat") {
-      verrou.rendre(msg.etat.verrou, !!msg.etat.reveil?.enCours && msg.etat.reveil.mode !== "appel");
+      if (ECRAN !== "bureau") verrou.rendre(msg.etat.verrou, !!msg.etat.reveil?.enCours && msg.etat.reveil.mode !== "appel");
       ui.rendre(msg.etat);
       hud.rendre(msg.etat.assistant?.coach);
       jarvis.rendre(msg.etat);
-      ecoute.rendre(msg.etat);
+      if (ECRAN !== "bureau") ecoute.rendre(msg.etat);
       qg.rendre(msg.etat);
-      intro.rendre(msg.etat);
-      systeme.rendre(msg.etat);
+      if (ECRAN !== "bureau") {
+        intro.rendre(msg.etat);
+        systeme.rendre(msg.etat);
+      }
       conversation.rendre(msg.etat.assistant);
       scene.sync(msg.etat.mission, msg.etat.assistant);
       scene.syncConseillers(msg.etat.conseillers);
     } else if (msg.type === "visage") {
       verrou.recevoir(msg);
     } else if (msg.type === "fenetre") {
-      if (msg.nee > NEE) ceder();
+      if (msg.nee > NEE && (msg.ecran ?? "") === ECRAN) ceder();
     } else if (document.body.dataset.verrou !== "oui") {
       ui.toast(msg.message);
     }

@@ -4330,3 +4330,12 @@ body[data-obscur="oui"] .main-curseur .mc-arcs {
   letter-spacing: 0.2em;
   color: rgba(160, 225, 255, 0.8);
 }
+
+/* --- deux écrans : chaque fenêtre garde son rôle, les boutons qui la feraient changer de rôle disparaissent --- */
+body[data-ecran] #btn-jarvis {
+  display: none !important;
+}
+body[data-ecran="jarvis"] #j-bureau,
+body[data-ecran="jarvis"] #j-mission {
+  display: none !important;
+}

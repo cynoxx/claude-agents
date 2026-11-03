@@ -114,6 +114,16 @@ Tout s'organise en **trois niveaux** :
 - **Les fiches s'ouvrent comme des hologrammes** : elles se déplient de haut en bas, traversées d'une ligne de lumière.
 - **Son « Salut ! »** te dit aussi ta séance du jour (« Côté sport, aujourd'hui c'est Pec-Dos »), ou te félicite si elle est déjà faite.
 
+### Deux écrans : Jarvis et le Bureau
+
+Si tu branches un deuxième écran, Max s'ouvre dans **deux fenêtres**, chacune en plein écran sur son écran : **Jarvis** (l'écran de Max, la voix, la quête) sur un écran, **le Bureau** (les robots, les pôles en pixel art) sur l'autre. Le détecteur compte les écrans branchés à chaque ouverture (Mac).
+
+- La fenêtre du Bureau est muette : le micro, la caméra, l'intro et les notifications restent à la fenêtre de Jarvis, pour que rien ne se fasse deux fois.
+- Le Bureau est sur l'autre écran par défaut. Pour l'inverser : `"fenetre": { "ecranBureau": "principal" }` dans `bureau.config.json`.
+- Pour revenir à une seule fenêtre : `"fenetre": { "ecrans": "un" }`.
+
+Un écran seul : rien ne change.
+
 ### Les sanctions : une quête non réalisée a un prix
 
 Chaque matin, le Bureau juge la quête d'hier : tes 3 règles et tes blocs de médecine. Chaque condition manquée compte :

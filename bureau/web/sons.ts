@@ -14,6 +14,12 @@ let actifs = (() => {
 
 export const sonsActifs = () => actifs;
 
+// la fenêtre du Bureau (quand Max est sur deux écrans) : pas de sons, ceux de Jarvis suffisent
+let silence = false;
+export function silencerSons(): void {
+  silence = true;
+}
+
 export function basculerSons(): boolean {
   actifs = !actifs;
   try {
@@ -60,7 +66,7 @@ export const PARTITIONS: Record<Son, [number, number, number, number, Oscillator
 };
 
 export function son(nom: Son, volume = 0.06): void {
-  if (!actifs) return;
+  if (!actifs || silence) return;
   try {
     ctx ??= new AudioContext();
     if (ctx.state === "suspended") void ctx.resume();
@@ -93,7 +99,7 @@ let bruitBlanc: AudioBuffer | null = null;
  * Plus fort que les petits sons d'interface, mais court ; coupé avec eux (🔈).
  */
 export function tonnerre(force = 1, volume = 0.22): void {
-  if (!actifs) return;
+  if (!actifs || silence) return;
   try {
     ctx ??= new AudioContext();
     if (ctx.state === "suspended") void ctx.resume();

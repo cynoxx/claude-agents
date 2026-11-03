@@ -366,7 +366,7 @@ export type ServerMessage =
   | { type: "erreur"; message: string }
   | { type: "visage"; ok: boolean; texte: string }
   /** Une page de Max plus récente s'est ouverte (`nee` = son heure d'ouverture) : les plus anciennes lui cèdent la place. */
-  | { type: "fenetre"; nee: number };
+  | { type: "fenetre"; nee: number; ecran?: "bureau" | "jarvis" };
 
 export type ClientMessage =
   | { type: "lancer"; texte: string }
@@ -389,7 +389,7 @@ export type ClientMessage =
   | { type: "visage-enregistrer"; descripteurs: number[][]; prenom: string }
   | { type: "visage-effacer" }
   | { type: "verrouiller" }
-  | { type: "fenetre"; nee: number }
+  | { type: "fenetre"; nee: number; ecran?: "bureau" | "jarvis" }
   | { type: "obscur"; actif: boolean }
   | { type: "journal"; texte: string }
   | { type: "entendu"; texte: string }

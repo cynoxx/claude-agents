@@ -155,7 +155,9 @@ export class Jarvis {
   rendre(etat: EtatBureau): void {
     this.etat = etat;
     const a = etat.assistant;
-    this.changerVue(a?.vue ?? "jarvis");
+    // sur deux écrans, chaque fenêtre garde sa vue (Jarvis ou le Bureau), quelle que soit la vue de Max
+    const role = document.body.dataset.ecran;
+    this.changerVue(role === "bureau" || role === "jarvis" ? role : (a?.vue ?? "jarvis"));
     const e = a?.etat ?? "veille";
     this.sphere.etat(e);
     this.sphere.donnees(etiquettesAnneaux(etat));
