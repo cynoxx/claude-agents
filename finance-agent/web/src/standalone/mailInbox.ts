@@ -2,6 +2,7 @@
 // d'orchestre). Elle les dépose, non chiffrées, dans data/users/<id>/finance/inbox ;
 // à l'ouverture du coffre, on les range dans l'état chiffré puis on vide la boîte.
 import type { Bill, BillCategory, Recurrence } from '../types';
+import { addDays } from '../utils/dates';
 import { BILL_CATEGORIES, categorizeProvider } from './categories';
 import type { Backend, State } from './storage';
 
@@ -32,7 +33,9 @@ export function billFromInbox(mailId: string, d: Record<string, unknown>, now = 
     category,
     recurrence,
     paid,
-    paidDate: paid ? (DATE_RE.test(text(d.paidDate, 10)) ? text(d.paidDate, 10) : dueDate) : null,
+    // Baisse du solde expliquée dans le fil du chef d'orchestre : on la date de la veille
+    // du solde qui l'a montrée, pour qu'elle couvre exactement cette baisse
+    paidDate: paid ? (DATE_RE.test(text(d.balanceDrop, 10)) ? addDays(text(d.balanceDrop, 10), -1) : DATE_RE.test(text(d.paidDate, 10)) ? text(d.paidDate, 10) : dueDate) : null,
     reference: text(d.reference, 100) || null,
     documentUrl: /^https:\/\//.test(mailUrl) ? mailUrl : null,
     attachment: null,

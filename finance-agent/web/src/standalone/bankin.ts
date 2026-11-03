@@ -4,6 +4,7 @@
 import { addDays, localToday } from '../utils/dates';
 import { answer, categorizeLabel, mergeBalances, parisDate, parseBankinSnippet, reconcile, SPEND_LABELS, type DayBalance, type MoneyState, type Movement, type SpendCategory } from './money';
 import type { State } from './storage';
+import { getBackend } from './storage';
 import { currentState, scheduleSave } from './vault';
 
 const SERVER = 'Gmail';
@@ -84,10 +85,18 @@ export function syncBankin(): Promise<SyncResult> {
 }
 
 async function doSync(): Promise<SyncResult> {
-  const mcp = await getMcp();
-  if (!mcp) return { ok: false, reason: 'unavailable' };
   const s = currentState();
   const m = money(s);
+  // 1. Soldes déjà relevés par le tri du matin (fonctionne même sans accès Gmail depuis la page)
+  const stored = await (await getBackend()).listBalances().catch(() => []);
+  if (stored.length) {
+    m.balances = mergeBalances(m.balances, stored);
+    refreshMovements(s);
+    scheduleSave();
+  }
+  // 2. Mails Bankin plus récents, lus directement
+  const mcp = await getMcp();
+  if (!mcp) return stored.length ? { ok: true, added: stored.length, last: m.balances.at(-1) ?? null } : { ok: false, reason: 'unavailable' };
   const lastKnown = m.balances.at(-1)?.date;
   const since = lastKnown ? `after:${addDays(lastKnown, -2).replaceAll('-', '/')}` : 'newer_than:75d';
   const found: DayBalance[] = [];
@@ -105,6 +114,8 @@ async function doSync(): Promise<SyncResult> {
       if (!token) break;
     }
   } catch (e) {
+    // Les soldes du tri du matin suffisent à afficher la page
+    if (stored.length) return { ok: true, added: 0, last: m.balances.at(-1) ?? null };
     return reason(e);
   }
   const before = m.balances.length;
@@ -172,4 +183,11 @@ export async function guessCategory(label: string): Promise<SpendCategory> {
   } catch {
     return local;
   }
+}
+
+/** Le tri du matin ne reposera pas la question pour ce jour-là. */
+export function markAnswered(m: Pick<Movement, 'to'>) {
+  void getBackend()
+    .then((b) => b.markAnswered(m.to))
+    .catch(() => {});
 }

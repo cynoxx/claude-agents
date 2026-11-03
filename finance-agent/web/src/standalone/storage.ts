@@ -59,6 +59,10 @@ export interface Backend {
   /** Boîte d'arrivée : factures déposées par le tri du matin (non chiffrées, privées) */
   listInbox(): Promise<InboxItem[]>;
   removeInbox(id: string): Promise<void>;
+  /** Soldes du matin déposés par le tri du matin (un document par jour, non chiffré) */
+  listBalances(): Promise<{ date: string; amount: number }[]>;
+  /** Signale au tri du matin qu'une baisse a été expliquée dans l'app (date seule, rien d'autre) */
+  markAnswered(date: string): Promise<void>;
   /** Où vont les données, pour l'afficher à l'utilisateur */
   kind: 'cloud' | 'browser' | 'memory';
 }
@@ -120,6 +124,8 @@ function browserBackend(): Backend | null {
     },
     listInbox: async () => [],
     removeInbox: async () => {},
+    listBalances: async () => [],
+    markAnswered: async () => {},
   };
 }
 
@@ -188,6 +194,17 @@ async function cloudBackend(): Promise<Backend | null> {
       async removeInbox(id) {
         await db.doc(`${base}/inbox/${id}`).delete();
       },
+      async listBalances() {
+        const { docs } = await db.collection(`${base}/balances`).limit(500).get();
+        return docs.flatMap((d) => {
+          const x = d.data() ?? {};
+          const date = typeof x.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.date) ? x.date : d.id;
+          return /^\d{4}-\d{2}-\d{2}$/.test(date) && typeof x.balance === 'number' && Number.isFinite(x.balance) ? [{ date, amount: x.balance }] : [];
+        });
+      },
+      async markAnswered(date) {
+        await db.doc(`${base}/answered/${date}`).set({ date, at: new Date().toISOString() });
+      },
     };
   } catch {
     return null;
@@ -211,6 +228,8 @@ export function getBackend(): Promise<Backend> {
       },
       listInbox: async () => [],
       removeInbox: async () => {},
+      listBalances: async () => [],
+      markAnswered: async () => {},
     };
     return (await cloudBackend()) ?? browserBackend() ?? memory;
   })();

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { guessCategory } from '../../standalone/bankin';
+import { guessCategory, markAnswered } from '../../standalone/bankin';
 import { answer, QUICK_CATEGORIES, SPEND_LABELS, type Movement, type SpendCategory } from '../../standalone/money';
 import { addDays, daysBetween } from '../../utils/dates';
 import { eur, formatDate } from '../../utils/format';
@@ -33,6 +33,7 @@ export function AskCard({ m, today }: { m: Movement; today: string }) {
     const category = chosen ?? (await guessCategory(label));
     const value = split ? Math.min(total, Math.abs(Number(amount.replace(',', '.')) || total)) : total;
     replaceMovement(m, answer(m, label, category, value));
+    if (value >= total) markAnswered(m);
   }
 
   return (

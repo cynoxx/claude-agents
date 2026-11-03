@@ -42,3 +42,10 @@ describe('factures des mails', () => {
     expect(r).toEqual({ added: 0, done: [] });
   });
 });
+
+describe('baisse expliquée dans le fil', () => {
+  it('date la dépense de la veille du solde', () => {
+    const b = billFromInbox('solde-2026-11-03', { title: 'Kebab', amount: 9.5, dueDate: '2026-11-03', paid: true, balanceDrop: '2026-11-03' });
+    expect(b?.paidDate).toBe('2026-11-02');
+  });
+});
