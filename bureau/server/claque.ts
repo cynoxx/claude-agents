@@ -50,7 +50,7 @@ export class DetecteurClaques {
   private o: Required<OptionsClaques>;
 
   constructor(o: OptionsClaques = {}) {
-    this.o = { seuil: o.seuil ?? 0.12, combien: o.combien ?? 3, fenetreMs: o.fenetreMs ?? 2800, surClaque: o.surClaque ?? (() => {}), surRejet: o.surRejet ?? (() => {}) };
+    this.o = { seuil: o.seuil ?? 0.06, combien: o.combien ?? 3, fenetreMs: o.fenetreMs ?? 2800, surClaque: o.surClaque ?? (() => {}), surRejet: o.surRejet ?? (() => {}) };
   }
 
   /** Le niveau le plus fort depuis le dernier appel (puis remis à zéro). */

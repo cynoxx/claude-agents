@@ -26,6 +26,10 @@ describe("trois claquements de mains", () => {
     expect(lancer(signal(3000, [[500, 50, 0.7], [1000, 50, 0.6], [1500, 50, 0.8]]))).toBe(1);
   });
 
+  it("entend des claquements moyens (un micro de portable, à quelques dizaines de cm)", () => {
+    expect(lancer(signal(3000, [[500, 60, 0.2], [1000, 60, 0.2], [1500, 60, 0.2]], 0.01))).toBe(1);
+  });
+
   it("ne se déclenche pas sur deux claquements, ni sur trois trop espacés", () => {
     expect(lancer(signal(3000, [[500, 50, 0.7], [1000, 50, 0.7]]))).toBe(0);
     expect(lancer(signal(9000, [[500, 50, 0.7], [3500, 50, 0.7], [6500, 50, 0.7]]))).toBe(0);
