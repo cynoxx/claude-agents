@@ -123,6 +123,10 @@ export class DetecteurClaques {
 async function main(): Promise<void> {
   const racine = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const config = loadConfig(process.env.BUREAU_CONFIG_DIR ?? racine);
+  if (!config.claque.actif && !process.env.CLAQUE_FORCER) {
+    console.log('Les claquements sont coupés. Pour les remettre : "claque": { "actif": true } dans bureau.config.json.');
+    process.exit(3);
+  }
   const seuil = Number(process.env.CLAQUE_SEUIL) || config.claque.sensibilite;
   const niveaux = process.argv.includes("--niveaux") || !!process.env.CLAQUE_NIVEAUX;
   const detecteur = new DetecteurClaques({

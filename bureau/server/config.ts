@@ -91,8 +91,8 @@ export interface BureauConfig {
   cerveau: { moteur: "claude" | "local"; url: string; modele: string; cle: string; outils: boolean };
   /** Le compagnon (npm run compagnon) : un deuxième assistant pour parler, avec l'IA locale (LM Studio par défaut). */
   compagnon: { nom: string; port: number; url: string; modele: string; cle: string; pauseFinMs: number };
-  /** Trois claquements de mains pour allumer Max (npm run claque) : la sensibilité (0 à 1, plus bas = plus sensible). */
-  claque: { sensibilite: number };
+  /** Trois claquements de mains pour allumer Max (npm run claque). `actif` : coupé par défaut ; la sensibilité va de 0 à 1 (plus bas = plus sensible). */
+  claque: { actif: boolean; sensibilite: number };
   /** Tes outils : Notion et Super Productivity (liens directs), et le fichier Excel du suivi d'habitudes. */
   liens: { notion: string; superProductivity: string; habitudes: string };
   /** Le Studio vidéo : un dossier (iCloud Drive, pour y accéder depuis l'iPhone) et tes comptes. */
@@ -186,7 +186,7 @@ export const DEFAULT_CONFIG: BureauConfig = {
   obscur: { minutes: 50, raccourciEntree: null, raccourciSortie: null },
   cerveau: { moteur: "claude", url: "http://localhost:11434/v1", modele: "qwen2.5:7b", cle: "", outils: true },
   compagnon: { nom: "Tokyo", port: 4848, url: "http://127.0.0.1:1234/v1", modele: "auto", cle: "", pauseFinMs: 1300 },
-  claque: { sensibilite: 0.06 },
+  claque: { actif: false, sensibilite: 0.06 },
   liens: { notion: "", superProductivity: "", habitudes: "~/Documents/Bureau/Suivi_habitudes.xlsx" },
   studio: {
     dossier: "~/Library/Mobile Documents/com~apple~CloudDocs/Max Studio",

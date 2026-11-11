@@ -7,5 +7,6 @@ JOURNAL="$HOME/Library/Logs/Bureau-claque.log"
 while true; do
   echo "— $(date '+%d/%m %H:%M:%S') l'écoute démarre (app Max Oreille)" >> "$JOURNAL"
   ./node_modules/.bin/tsx server/claque.ts >> "$JOURNAL" 2>&1
+  [ $? -eq 3 ] && break  # claquements coupés dans la config : on ne relance pas
   sleep 5
 done

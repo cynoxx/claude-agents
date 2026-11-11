@@ -10,7 +10,7 @@ npm test                  # vitest (tout doit rester vert)
 npm run typecheck         # tsc --noEmit
 npm run build             # typecheck + vite build
 npm run arreter           # arrête le Bureau
-npm run claque-installer  # l'app « Max Oreille » : 3 claquements = Max s'allume
+npm run claque-installer  # l'app « Max Oreille » : 3 claquements = Max s'allume (coupé par défaut : claque.actif)
 npm run voix-xtts         # la voix XTTS ; npm run voix-reference -- extrait.mp3 : voix française de référence
 npm run ia-locale         # IA locale (LM Studio / Ollama) ; npm run compagnon : Tokyo, le second assistant
 ```
