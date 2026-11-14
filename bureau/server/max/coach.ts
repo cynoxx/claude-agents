@@ -5,6 +5,7 @@ import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import path from "node:path";
 import type { CoachVue } from "../../shared/protocol.ts";
+import { bonjour } from "./bonjour.ts";
 
 export const FICHIER_PROFIL = "moi.md";
 export const FICHIER_JOURNAL = "travail.jsonl";
@@ -444,12 +445,17 @@ export class Coach extends EventEmitter {
     return lignes.join("\n");
   }
 
-  /** Phrase d'accueil au réveil. */
-  accueil(): string {
-    const b = this.bilan();
-    if (this.minuteur?.type === "travail") return `Salut ! Ta session « ${this.minuteur.sujet} » tourne toujours. Je t'écoute.`;
-    if (b.aujourdhui) return `Salut ! Déjà ${dureeParlee(b.aujourdhui)} de travail aujourd'hui. Je t'écoute.`;
-    return "Salut ! Je t'écoute.";
+  /** Ce que Max dit en premier à l'ouverture : bonjour, nouvelles, et sa journée (examen, travail, sport). */
+  accueil(sport = "", nom = ""): string {
+    const maintenant = new Date();
+    return bonjour({
+      maintenant,
+      echeances: echeances(lireProfil(this.o.dossier), maintenant),
+      sport,
+      nom,
+      ...(this.minuteur?.type === "travail" ? { session: this.minuteur.sujet } : {}),
+      travail: this.bilan().aujourdhui,
+    });
   }
 
   fermer(): void {

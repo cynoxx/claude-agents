@@ -8,6 +8,7 @@ import type { AssistantApi } from "../routes-max.ts";
 import { consigneMax } from "./consigne.ts";
 import type { FinReponse } from "./cerveau.ts";
 import { dureeParlee, type FinMinuteur, type LimitePole } from "./coach.ts";
+import { complementSport } from "./sport.ts";
 
 /** Au-delà, Max ne dit plus sa réponse à voix haute : la suite est à l'écran (il ne parle pas trop). */
 const PAROLE_MAX = 200;
@@ -50,7 +51,7 @@ export interface PlanningLike extends EventEmitter {
 export interface CoachLike extends EventEmitter {
   vue(): CoachVue;
   contexte(): string;
-  accueil(): string;
+  accueil(sport?: string, nom?: string): string;
 }
 
 export interface OptionsAssistant {
@@ -404,25 +405,30 @@ export class Assistant extends EventEmitter implements AssistantApi {
     if (accueil) {
       // il arrive : le Bureau trie ses mails pendant que Max le salue
       this.emit("arrivee");
-      const saluer = () => {
-        if (this.etat === "veille") return;
-        // court : le reste (séance, travail, échéance) est à l'écran, il le demande s'il veut
-        const bonjour = `Salut${prenom ? ` ${prenom}` : ""}, je t'écoute.`;
-        this.noter("max", bonjour);
-        this.parler(bonjour);
-        // une fois par jour, au premier réveil : construire l'emploi du temps ensemble
-        if (this.o.planning?.doitProposer()) {
-          this.o.planning.noterPropose();
-          // proposé à l'écran, pas à voix haute : Max ne lance pas la conversation tout seul
-          this.noter("bureau", "🗓 Pas encore d'emploi du temps aujourd'hui : dis « Max, on fait ma journée ».");
-        }
-      };
-      // l'intro (animation et musique) d'abord : Max parle quand la musique a baissé
-      const delai = this.o.intro?.() ?? 0;
-      clearTimeout(this.minuterieIntro);
-      if (delai > 0) this.minuterieIntro = setTimeout(saluer, delai);
-      else saluer();
+      this.saluer(prenom);
     }
+  }
+
+  /** L'intro (animation et musique) d'abord, puis Max le salue et pose sa journée quand la musique a baissé. */
+  private saluer(prenom = ""): void {
+    const dire = () => {
+      if (this.etat === "veille") return;
+      // il prend de ses nouvelles et pose la journée (examen proche, travail, séance) : construit sans le cerveau, ça part tout de suite
+      const sport = this.o.sport?.vue ? complementSport(this.o.sport.vue()) : "";
+      const bonjour = this.o.coach ? this.o.coach.accueil(sport, prenom) : `Salut ${prenom || "chef"}, comment tu vas ?`;
+      this.noter("max", bonjour);
+      this.parler(bonjour);
+      // une fois par jour, au premier réveil : construire l'emploi du temps ensemble
+      if (this.o.planning?.doitProposer()) {
+        this.o.planning.noterPropose();
+        // proposé à l'écran, pas à voix haute : Max ne lance pas la conversation tout seul
+        this.noter("bureau", "🗓 Pas encore d'emploi du temps aujourd'hui : dis « Max, on fait ma journée ».");
+      }
+    };
+    const delai = this.o.intro?.() ?? 0;
+    clearTimeout(this.minuterieIntro);
+    if (delai > 0) this.minuterieIntro = setTimeout(dire, delai);
+    else dire();
   }
 
   veille(): void {
@@ -522,8 +528,9 @@ export class Assistant extends EventEmitter implements AssistantApi {
       : "Mode obscur terminé. Réponds en une phrase, en redevenant le Max habituel.";
   }
 
+  /** « Max au rapport » alors qu'il est déjà réveillé : l'intro, puis le bonjour, comme à l'ouverture (sauf s'il est en train de parler). */
   rejouerIntro(): void {
-    if (!this.o.bouche.parle) this.o.intro?.();
+    if (!this.o.bouche.parle && this.tours === 0) this.saluer();
   }
 
   /** Un rappel dit tel quel (en se réveillant s'il dormait). */

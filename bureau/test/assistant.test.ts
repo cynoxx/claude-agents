@@ -163,9 +163,18 @@ describe("Assistant — réveil", () => {
     expect(oreille.active).toBe(true);
     expect(cerveau().actif).toBe(true);
     expect(cerveau().consigne).toContain("Prénom : Johan");
-    expect(bouche.dites).toEqual(["Salut, je t'écoute."]);
+    expect(bouche.dites).toEqual(["Salut chef, comment tu vas ?"]);
     await jusqua(() => a.vue().etat === "ecoute");
-    expect(a.vue().messages.map((m) => [m.de, m.texte])).toEqual([["max", "Salut, je t'écoute."]]);
+    expect(a.vue().messages.map((m) => [m.de, m.texte])).toEqual([["max", "Salut chef, comment tu vas ?"]]);
+  });
+
+  it("« Max au rapport » alors qu'il est déjà réveillé : il redit bonjour, sans se couper", async () => {
+    a.reveiller();
+    a.rejouerIntro();
+    expect(bouche.dites).toHaveLength(1);
+    await jusqua(() => !bouche.parle);
+    a.rejouerIntro();
+    expect(bouche.dites).toEqual(["Salut chef, comment tu vas ?", "Salut chef, comment tu vas ?"]);
   });
 
   it("ne refait rien si on le réveille alors qu'il est déjà réveillé", () => {
@@ -393,8 +402,8 @@ class FauxCoach extends EventEmitter {
   contexte() {
     return "Nous sommes le lundi 26 octobre 2026.";
   }
-  accueil() {
-    return "Salut ! Déjà 50 minutes de travail aujourd'hui. Je t'écoute.";
+  accueil(sport = "", nom = "") {
+    return `Salut ${nom || "chef"}, comment tu vas ? Tu as déjà 50 minutes de travail aujourd'hui.${sport ? ` ${sport}` : ""} On commence par quoi ?`;
   }
 }
 
@@ -410,7 +419,7 @@ describe("Assistant — coach", () => {
     expect(cerveau().consigne).toContain("Je suis en PASS.");
     expect(cerveau().consigne).toContain("Nous sommes le lundi 26 octobre 2026.");
     expect(cerveau().consigne).toContain("- etudes : 🩺 Prof (Études)");
-    expect(bouche.dites).toEqual(["Salut, je t'écoute."]);
+    expect(bouche.dites).toEqual(["Salut chef, comment tu vas ? Tu as déjà 50 minutes de travail aujourd'hui. On commence par quoi ?"]);
     expect(a.vue().coach).toEqual(coach.vue());
   });
 
@@ -610,7 +619,7 @@ describe("Assistant — verrou par le visage", () => {
     verrou.ouvrir("Johan");
     expect(a.vue().etat).not.toBe("veille");
     expect(oreille.active).toBe(true);
-    expect(bouche.dites).toEqual(["Salut Johan, je t'écoute."]);
+    expect(bouche.dites).toEqual(["Salut Johan, comment tu vas ? Tu as déjà 50 minutes de travail aujourd'hui. On commence par quoi ?"]);
   });
 
   it("verrouillé, entend « Max » mais demande le visage au lieu de répondre", () => {
@@ -683,7 +692,7 @@ describe("Assistant — intégration avec un vrai cerveau et une vraie bouche (f
     await jusqua(() => a.vue().messages.some((m) => m.de === "max" && m.texte.startsWith("Bien reçu")), 5000);
     await jusqua(() => a.vue().etat === "ecoute");
     const dits = fs.readFileSync(process.env.FAKE_SAY_LOG!, "utf8").trim().split("\n").map((l) => JSON.parse(l).at(-1));
-    expect(dits).toEqual(["Salut, je t'écoute.", "Bien reçu : bonjour.", "Autre chose ?"]);
+    expect(dits).toEqual(["Salut chef, comment tu vas ?", "Bien reçu : bonjour.", "Autre chose ?"]);
   }, 15_000);
 });
 
