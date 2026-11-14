@@ -38,13 +38,13 @@ export const COULEURS = {
 };
 
 export const REGLAGES: Record<Humeur, Reglage> = {
-  veille: { c1: COULEURS.bleu, c2: COULEURS.froid, visage: 0.12, energie: 0.25, taille: 0.88, lumiere: 0.7, anneaux: 0, etincelles: 0, vitesse: 0.06 },
+  veille: { c1: COULEURS.bleu, c2: COULEURS.froid, visage: 0.6, energie: 0.25, taille: 0.88, lumiere: 0.7, anneaux: 0, etincelles: 0, vitesse: 0.06 },
   ecoute: { c1: COULEURS.froid, c2: COULEURS.blanc, visage: 0.95, energie: 0.35, taille: 1, lumiere: 1, anneaux: 1, etincelles: 0, vitesse: 0 },
   reflexion: { c1: COULEURS.bleu, c2: COULEURS.blanc, visage: 0.4, energie: 0.9, taille: 0.96, lumiere: 0.95, anneaux: 0, etincelles: 0.45, vitesse: 0.35 },
   parole: { c1: COULEURS.froid, c2: COULEURS.blanc, visage: 0.8, energie: 0.5, taille: 1.04, lumiere: 1.1, anneaux: 0, etincelles: 0, vitesse: 0 },
   alerte: { c1: COULEURS.braise, c2: COULEURS.feu, visage: 0.9, energie: 0.8, taille: 1, lumiere: 1.1, anneaux: 2, etincelles: 0, vitesse: 0 },
   fete: { c1: COULEURS.or, c2: COULEURS.blanc, visage: 0.55, energie: 0.7, taille: 1.08, lumiere: 1.2, anneaux: 0, etincelles: 1, vitesse: 0.25 },
-  soir: { c1: COULEURS.ambre, c2: COULEURS.ambreClair, visage: 0.2, energie: 0.12, taille: 0.8, lumiere: 0.5, anneaux: 0, etincelles: 0, vitesse: 0.03 },
+  soir: { c1: COULEURS.ambre, c2: COULEURS.ambreClair, visage: 0.5, energie: 0.12, taille: 0.8, lumiere: 0.5, anneaux: 0, etincelles: 0, vitesse: 0.03 },
 };
 
 /** L'heure à partir de laquelle Max passe à l'ambre, et celle où il revient au bleu. */

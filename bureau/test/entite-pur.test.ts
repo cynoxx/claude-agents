@@ -17,10 +17,11 @@ describe("les humeurs de Max", () => {
     expect(humeurDe("veille", { fete: true, heure: 22 })).toBe("fete");
   });
 
-  it("montre son visage quand il écoute ou parle, presque pas au repos", () => {
+  it("montre son visage quand il écoute ou parle, et le garde, plus effacé, au repos", () => {
     expect(REGLAGES.ecoute.visage).toBeGreaterThan(0.8);
     expect(REGLAGES.parole.visage).toBeGreaterThan(0.6);
-    expect(REGLAGES.veille.visage).toBeLessThan(0.3);
+    expect(REGLAGES.veille.visage).toBeGreaterThan(0.4);
+    expect(REGLAGES.veille.visage).toBeLessThan(REGLAGES.parole.visage);
     expect(REGLAGES.soir.lumiere).toBeLessThan(REGLAGES.veille.lumiere);
   });
 });

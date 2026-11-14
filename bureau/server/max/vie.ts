@@ -1,6 +1,7 @@
 // Ta vie, rangée : des domaines (études, santé, business…), chacun avec ses catégories (« Vidéos monétisables »…),
 // des projets avec leur prochaine action et leur échéance (vie/projets.json), et le journal du jour (vie/journal.jsonl,
 // une ligne par note ou bilan). Max s'en sert pour savoir quoi faire maintenant, et l'écran pour te le montrer.
+import { sansPass } from "./fin-du-pass.js";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import path from "node:path";
@@ -88,7 +89,7 @@ export class Vie extends EventEmitter {
   private lireProjets(): ProjetVie[] {
     try {
       const p = JSON.parse(fs.readFileSync(path.join(this.dossier, FICHIER_PROJETS), "utf8")) as ProjetVie[];
-      if (Array.isArray(p)) return p.filter((x) => x && x.id && x.nom && ESTDOMAINE.has(x.domaine));
+      if (Array.isArray(p)) return sansPass(p.filter((x) => x && x.id && x.nom && ESTDOMAINE.has(x.domaine)));
     } catch {
       // pas encore de fichier : les projets de départ
     }

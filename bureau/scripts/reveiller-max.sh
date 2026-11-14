@@ -17,6 +17,12 @@ URL="http://127.0.0.1:$PORT"
 JOURNAL="${BUREAU_JOURNAL:-$HOME/Library/Logs/Bureau.log}"
 mkdir -p "$(dirname "$JOURNAL")"
 
+# Le code a changé depuis que le Bureau tourne (un « git pull ») : on l'arrête, il repart avec le nouveau.
+PIDF="$DONNEES/serveur.pid"
+if [ -f "$PIDF" ] && curl -fs "$URL/api/sante" > /dev/null 2>&1 && [ -n "$(find server shared web package.json -type f -newer "$PIDF" -not -path 'web/dist/*' | head -1)" ]; then
+  bash scripts/arreter-bureau.sh >> "$JOURNAL" 2>&1
+fi
+
 if ! curl -fs "$URL/api/sante" > /dev/null 2>&1; then
   # La page n'est reconstruite que si elle manque ou si le code a changé.
   if [ ! -f web/dist/index.html ] || [ -n "$(find web shared -type f -newer web/dist/index.html -not -path 'web/dist/*' | head -1)" ]; then

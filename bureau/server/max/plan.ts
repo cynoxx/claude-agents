@@ -4,6 +4,7 @@
 // - Trois règles par jour ; une journée où elles sont tenues est une bonne journée, même si le reste a déraillé.
 // L'état (début du plan, règles cochées par jour) est dans vie/plan.json. Rien de personnel dans ce fichier de code :
 // les détails sont dans moi.md, sur le Mac seulement.
+import { sansMedecine } from "./fin-du-pass.js";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import path from "node:path";
@@ -79,7 +80,7 @@ export class Plan extends EventEmitter {
     super();
     this.fichier = path.join(o.dossier, "vie", "plan.json");
     try {
-      this.etat = JSON.parse(fs.readFileSync(this.fichier, "utf8"));
+      this.etat = JSON.parse(sansMedecine(fs.readFileSync(this.fichier, "utf8")));
     } catch {
       this.etat = { debut: jourDe(this.maintenant), regles: {} };
       this.sauver();
