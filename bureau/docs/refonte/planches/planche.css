@@ -1,0 +1,45 @@
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap");
+
+:root {
+  --nuit: #04060a;
+  --froid: #6fe0ff;
+  --bleu: #2e8bff;
+  --blanc: #eaf6ff;
+  --braise: #ff3b2f;
+  --feu: #ff7a45;
+  --or: #ffd27a;
+  --ambre: #ffb36b;
+  --texte: #cfe3f3;
+  --discret: #7d93a8;
+  --titre: "Rajdhani", "Avenir Next", system-ui, sans-serif;
+  --corps: "Inter", system-ui, sans-serif;
+  --chiffres: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { background: var(--nuit); }
+body { width: 1600px; height: 1000px; position: relative; overflow: hidden; font-family: var(--corps); color: var(--texte); }
+canvas { position: absolute; inset: 0; width: 1600px; height: 1000px; }
+.calque { position: absolute; inset: 0; }
+
+/* le verre holographique : un plan de lumière, pas une carte */
+.verre {
+  position: absolute;
+  padding: 20px 24px;
+  background: linear-gradient(160deg, rgba(111, 224, 255, 0.09), rgba(46, 139, 255, 0.03) 45%, rgba(4, 6, 10, 0.25));
+  border: 1px solid rgba(111, 224, 255, 0.22);
+  border-top-color: rgba(234, 246, 255, 0.5);
+  border-radius: 3px;
+  box-shadow: 0 0 34px rgba(46, 139, 255, 0.14), inset 0 1px 0 rgba(234, 246, 255, 0.12);
+  background-image: linear-gradient(160deg, rgba(111, 224, 255, 0.09), rgba(46, 139, 255, 0.03) 45%, rgba(4, 6, 10, 0.25)),
+    repeating-linear-gradient(0deg, rgba(234, 246, 255, 0.025) 0 1px, transparent 1px 3px);
+}
+.verre.braise { border-color: rgba(255, 59, 47, 0.4); border-top-color: rgba(255, 122, 69, 0.8); box-shadow: 0 0 40px rgba(255, 59, 47, 0.2), inset 0 1px 0 rgba(255, 122, 69, 0.2); background-image: linear-gradient(160deg, rgba(255, 59, 47, 0.12), rgba(255, 59, 47, 0.03) 45%, rgba(4, 6, 10, 0.25)), repeating-linear-gradient(0deg, rgba(255, 200, 180, 0.03) 0 1px, transparent 1px 3px); }
+.etiquette { font: 600 13px var(--titre); letter-spacing: 0.34em; text-transform: uppercase; color: var(--froid); }
+.braise .etiquette, .rouge { color: var(--feu); }
+.grand { font: 700 44px/1.05 var(--titre); color: var(--blanc); letter-spacing: 0.01em; }
+.moyen { font: 600 24px/1.2 var(--titre); color: var(--blanc); }
+.chiffre { font-family: var(--chiffres); font-variant-numeric: tabular-nums; }
+.petit { font-size: 14px; line-height: 1.5; color: var(--discret); }
+.legende { position: absolute; left: 40px; bottom: 26px; font: 500 13px var(--corps); color: var(--discret); max-width: 900px; }
+.marque { position: absolute; left: 40px; top: 30px; font: 700 15px var(--titre); letter-spacing: 0.5em; color: var(--blanc); }
+.marque small { display: block; margin-top: 6px; font: 500 12px var(--corps); letter-spacing: 0.04em; color: var(--discret); }

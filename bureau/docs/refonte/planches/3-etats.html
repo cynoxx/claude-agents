@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Planche 3 : les états de Max, les couleurs, les lettres</title><link rel="stylesheet" href="planche.css">
+<style>
+.nom { position: absolute; width: 200px; text-align: center; transform: translateX(-50%); top: 372px; font: 700 17px var(--titre); letter-spacing: .3em; text-transform: uppercase; color: var(--blanc); }
+.nom small { display: block; margin-top: 5px; font: 400 12.5px/1.35 var(--corps); letter-spacing: 0; text-transform: none; color: var(--discret); }
+.bas { position: absolute; left: 60px; right: 60px; top: 520px; display: grid; grid-template-columns: 1.05fr 1fr 1fr; gap: 28px; }
+.bas .verre { position: static; min-height: 370px; }
+.pal { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+.pal div { font-size: 12.5px; color: var(--discret); } .pal i { display: block; height: 44px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,.12); }
+.pal b { display:block; color: var(--blanc); font-weight: 500; font-size: 13.5px; }
+.t1 { font: 700 46px/1 var(--titre); color: var(--blanc); letter-spacing: .02em; margin-top: 14px; }
+.t2 { font: 400 16px/1.5 var(--corps); margin-top: 10px; }
+.t3 { font: 600 34px var(--chiffres); color: var(--blanc); margin-top: 12px; }
+ul { padding-left: 18px; margin-top: 12px; } li { margin: 7px 0; font-size: 14.5px; line-height: 1.45; } li b { color: var(--blanc); font-weight: 500; }
+</style></head><body>
+<canvas id="c" width="3200" height="2000"></canvas>
+<div class="calque" id="k">
+  <div class="marque">MAX<small>Planche 3 · ses sept états, les couleurs, les lettres</small></div>
+  <div class="bas">
+    <div class="verre"><div class="etiquette">La couleur a un sens</div>
+      <div class="pal">
+        <div><i style="background:#04060A"></i><b>Nuit</b>le fond</div>
+        <div><i style="background:#6FE0FF"></i><b>Froid</b>l'information</div>
+        <div><i style="background:#2E8BFF"></i><b>Bleu</b>Max au calme</div>
+        <div><i style="background:#FF3B2F"></i><b>Braise</b>urgence, sanction</div>
+        <div><i style="background:#FFD27A"></i><b>Or</b>quête réussie</div>
+        <div><i style="background:#FFB36B"></i><b>Ambre</b>après 21 h</div>
+      </div>
+      <div class="petit" style="margin-top:14px">Jamais plus de deux couleurs à l'écran en même temps. L'œil noir et rouge de l'ouverture annonce la braise.</div>
+    </div>
+    <div class="verre"><div class="etiquette">Les lettres</div>
+      <div class="t1">RAJDHANI 700</div>
+      <div class="petit">Titres, états, étiquettes. Licence libre (OFL).</div>
+      <div class="t2">Inter, pour tout ce qui se lit : net, calme, lisible de loin sur le second écran.</div>
+      <div class="t3">08:49 · J‑2 · 4/6</div>
+      <div class="petit">JetBrains Mono pour les chiffres : ils ne bougent pas quand ils changent.</div>
+    </div>
+    <div class="verre"><div class="etiquette">Le mouvement</div>
+      <ul>
+        <li><b>La voix pilote la matière.</b> Le volume et le spectre réels déforment Max. Rien ne tourne en boucle.</li>
+        <li><b>Des ressorts.</b> Tout arrive avec de l'élan et se pose, rien ne glisse à vitesse constante.</li>
+        <li><b>La fenêtre.</b> La caméra suit ta tête : la scène se décale comme derrière une vitre.</li>
+        <li><b>Le soir.</b> Après 21 h : ambre, moins de lumière, des gestes plus lents.</li>
+        <li><b>60 images par seconde</b>, ou l'effet est retiré.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<script type="module">
+import { dessinerMax, ETATS, COULEURS } from "./planche.js";
+const c = document.getElementById("c"), ctx = c.getContext("2d");
+ctx.scale(2, 2);
+ctx.fillStyle = COULEURS.nuit; ctx.fillRect(0, 0, 1600, 1000);
+const textes = { veille: "Il respire, lentement.", ecoute: "Un anneau s'ouvre, tourné vers toi.", reflexion: "Des idées passent dans la matière.", parole: "Sa voix pousse la lumière.", alerte: "Braise : une échéance, une sanction.", fete: "Or : la quête est passée.", soir: "Ambre, plus petit, plus lent." };
+const k = document.getElementById("k");
+Object.keys(ETATS).forEach((id, i) => {
+  const x = 145 + i * 218;
+  dessinerMax(ctx, x, 245, 62, id, 20 + i);
+  const d = document.createElement("div"); d.className = "nom"; d.style.left = x + "px";
+  d.innerHTML = `${ETATS[id].nom}<small>${textes[id]}</small>`; k.appendChild(d);
+});
+document.body.dataset.pret = "1";
+</script></body></html>

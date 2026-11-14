@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Planche 2 : la salle des opérations</title><link rel="stylesheet" href="planche.css">
+<style>
+.pole { position: absolute; width: 190px; text-align: center; transform: translateX(-50%); }
+.pole .nom { font: 700 19px var(--titre); letter-spacing: .12em; color: var(--blanc); text-transform: uppercase; }
+.pole .et { font-size: 13px; color: var(--discret); margin-top: 3px; }
+.pole .pc { font: 600 22px var(--chiffres); color: var(--blanc); position: absolute; left: 0; right: 0; }
+.quetes { left: 60px; top: 140px; width: 340px; }
+.q { display: flex; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid rgba(111,224,255,.12); font-size: 15px; }
+.q i { width: 16px; height: 16px; border: 1.5px solid var(--froid); flex: none; } .q.f i { background: var(--froid); box-shadow: 0 0 10px var(--froid); } .q.f span { color: var(--discret); text-decoration: line-through; }
+.sanction { right: 60px; top: 140px; width: 320px; }
+.rev { right: 60px; top: 330px; width: 320px; }
+</style></head><body>
+<canvas id="c" width="3200" height="2000"></canvas>
+<div class="calque" id="k">
+  <div class="marque">MAX · LE BUREAU<small>Planche 2 · la salle des opérations (second écran)</small></div>
+  <div class="verre quetes">
+    <div class="etiquette">Quêtes du jour · 2 / 5</div>
+    <div class="q f" style="border-top:0;margin-top:8px"><i></i><span>Levé à l'heure, téléphone hors de la chambre</span></div>
+    <div class="q f"><i></i><span>Premier bloc avant tout réseau</span></div>
+    <div class="q"><i></i><span>4 blocs de maths</span></div>
+    <div class="q"><i></i><span>Boxe · 18 h 30</span></div>
+    <div class="q"><i></i><span>Couché à 22 h, sans écran</span></div>
+  </div>
+  <div class="verre braise sanction">
+    <div class="etiquette">Sanction en cours</div>
+    <div class="moyen" style="margin-top:8px">20 pompes avant le premier bloc</div>
+    <div class="petit" style="margin-top:6px">La quête d'hier n'est pas passée.</div>
+  </div>
+  <div class="verre rev">
+    <div class="etiquette">Révisions espacées</div>
+    <div class="q" style="border-top:0;margin-top:8px"><span style="flex:1">Dérivées</span><b class="chiffre" style="color:var(--blanc)">J+3</b></div>
+    <div class="q"><span style="flex:1">Loi d'Ohm</span><b class="chiffre" style="color:var(--blanc)">J+1</b></div>
+    <div class="q"><span style="flex:1">Puissance électrique</span><b class="chiffre" style="color:var(--discret)">demain</b></div>
+  </div>
+  <div class="legende">Sept pôles posés sur un sol de lumière, en vraie 3D : la caméra s'approche de celui dont Max parle. L'arc dit l'avancement de la semaine. On lit l'état de sa vie en 3 secondes.</div>
+</div>
+<script type="module">
+import { dessinerFond, dessinerMax, arc, COULEURS, rgba } from "./planche.js";
+const c = document.getElementById("c"), ctx = c.getContext("2d");
+ctx.scale(2, 2);
+dessinerFond(ctx, 1600, 1000, { horizon: 0.5 });
+dessinerMax(ctx, 800, 330, 88, "veille", 5);
+const poles = [
+  ["MT2E", "Partiel J‑2", 0.42, COULEURS.braise, 560, 560, 62],
+  ["Sport", "Boxe ce soir", 0.7, COULEURS.froid, 800, 540, 58],
+  ["Santé", "Sommeil 7 h 40", 0.8, COULEURS.froid, 1040, 560, 62],
+  ["Asclepium", "En pause : examens", 0.3, COULEURS.froid, 330, 720, 74],
+  ["Cortex", "En pause : examens", 0.1, COULEURS.froid, 640, 760, 80],
+  ["Le Loup Corse", "En pause : examens", 0.15, COULEURS.froid, 960, 760, 80],
+  ["Foi et famille", "Appel dimanche", 0.6, COULEURS.or, 1270, 720, 74],
+];
+const k = document.getElementById("k");
+for (const [nom, et, part, coul, x, y, r] of poles) {
+  // le socle : une ellipse de lumière au sol, puis l'arc d'avancement
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  const g = ctx.createRadialGradient(x, y + r * 0.9, 0, x, y + r * 0.9, r * 1.6);
+  g.addColorStop(0, rgba(coul, 0.3)); g.addColorStop(1, rgba(coul, 0));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y + r * 0.9, r * 1.6, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+  // le lien vers Max
+  const l = ctx.createLinearGradient(x, y, 800, 330); l.addColorStop(0, rgba(coul, 0.35)); l.addColorStop(1, rgba(coul, 0));
+  ctx.strokeStyle = l; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - r); ctx.quadraticCurveTo((x + 800) / 2, 380, 800, 345); ctx.stroke();
+  ctx.restore();
+  arc(ctx, x, y, r, part, coul, 5);
+  const d = document.createElement("div"); d.className = "pole"; d.style.left = x + "px"; d.style.top = (y - 14) + "px";
+  d.innerHTML = `<div class="pc" style="top:0">${Math.round(part * 100)}<small style="font-size:12px;color:var(--discret)"> %</small></div><div style="height:${r + 26}px"></div><div class="nom">${nom}</div><div class="et" style="${coul === COULEURS.braise ? "color:var(--feu)" : ""}">${et}</div>`;
+  k.appendChild(d);
+}
+document.body.dataset.pret = "1";
+</script></body></html>
