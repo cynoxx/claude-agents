@@ -5,7 +5,7 @@ import { LIENS } from "../shared/liens.ts";
 import type { AssistantVue, ClientMessage, EtatBureau, EtatMax, MailsVue, PlanningVue, VueEcran } from "../shared/protocol.ts";
 import { dureeCourte, restant } from "./conversation.ts";
 import { duree } from "./poles-pur.ts";
-import { Humanoide } from "./humanoide.ts";
+import { Entite } from "./max3d/entite.ts";
 import { Montagnes } from "./montagnes.ts";
 import { Regard } from "./regard.ts";
 import { basculerSons, son, sonsActifs, tonnerre } from "./sons.ts";
@@ -86,14 +86,14 @@ export function etiquettesAnneaux(e: EtatBureau): string[] {
 const echapper = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export class Jarvis {
-  private sphere: Humanoide;
+  private sphere: Entite;
   private vue: VueEcran = "jarvis";
   private etat?: EtatBureau;
   private ultime: Ultime;
 
   constructor(private envoyer: (m: ClientMessage) => void) {
-    // Max en buste humanoïde de particules, devant ses montagnes
-    this.sphere = new Humanoide($<HTMLCanvasElement>("sphere"));
+    // Max, l'esprit de lumière (3D), devant ses montagnes
+    this.sphere = new Entite($<HTMLCanvasElement>("sphere"));
     this.sphere.demarrer();
     // les montagnes vibrent avec sa voix ; sa tête suit ton visage
     const montagnes = new Montagnes($<HTMLCanvasElement>("j-fond"), () => this.sphere.niveauVoix);

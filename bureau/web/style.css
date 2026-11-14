@@ -4339,3 +4339,24 @@ body[data-ecran="jarvis"] #j-bureau,
 body[data-ecran="jarvis"] #j-mission {
   display: none !important;
 }
+
+/* --- Refonte : Max, l'esprit de lumière, grand et au centre (les panneaux passent devant lui) --- */
+.jarvis:not([data-mode="fiche"]) .j-sphere {
+  position: fixed;
+  left: 50%;
+  top: 45%;
+  width: min(92vh, 64vw);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+  transition: none;
+}
+.jarvis:not([data-mode="fiche"]) .j-sphere-zone {
+  justify-content: flex-end;
+  align-self: stretch;
+}
+.jarvis:not([data-mode="fiche"]) .j-sphere-zone > p {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 18px rgba(4, 6, 10, 0.9), 0 0 4px rgba(4, 6, 10, 0.9);
+}

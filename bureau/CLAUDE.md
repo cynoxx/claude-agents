@@ -23,6 +23,7 @@ Avant de pousser : `npm run typecheck && npm test`. Une page cassée ne se voit 
 - `server/voix/` : la bouche (`bouche.ts`, XTTS, Piper, ElevenLabs, secours `say`) et l'oreille (`oreille-page.ts`).
 - Cerveau : `claude -p` (stream-json) avec le serveur MCP « bureau » ; option `CerveauLocal` (API compatible OpenAI).
 - `web/` : la page (Vite, plusieurs pages : `index.html`, `compagnon.html`). Le style « Système » de Solo Leveling (variables `--sys*`, police Rajdhani) est dans `style.css`.
+- `web/max3d/` : Max, l'esprit de lumière (three.js). `entite-pur.ts` : ses humeurs, ses ressorts, le visage dans la sphère (testé) ; `entite.ts` : le rendu. `http://localhost:4747/atelier.html` le montre seul, humeur par humeur. La refonte en cours est décrite dans `docs/refonte/`.
 - `web/oeil-code.ts` : l'ouverture (œil de code, canvas). `web/intro.ts` la joue puis la fenêtre du Système. `web/pointeur*.ts` : le pointeur à la main (MediaPipe). `web/ecoute*.ts` : l'oreille dans Chrome (Web Speech).
 - `shared/` : types et fonctions partagés serveur et page. `test/` : un fichier de test par module.
 

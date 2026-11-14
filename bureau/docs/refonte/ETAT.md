@@ -42,3 +42,16 @@ Tests au départ : 535 passent, 1 ignoré. Captures « avant » : `avant/jarvis.
 ## Limites de cet état des lieux
 
 Je travaille dans un conteneur Linux, sans le Mac. Je n'ai pas vu tourner : le vrai micro, la vraie caméra, deux vrais écrans, les voix sur puce Apple.
+
+## Avancement
+
+- [x] Étape 0 : état des lieux, direction, planches (validées par Johan : un visage dans la sphère, le Bureau en pôles de lumière, plus de niveau ni d'XP).
+- [x] Étape 1 : MT2E à la place du PASS, mode examen.
+- [x] Étape 3, première partie : Max en 3D (`web/max3d/`), ses sept humeurs, branché sur l'écran Jarvis à la place de l'ancien buste. Page d'atelier : `/atelier.html`.
+- [ ] Étape 2 : la voix (banc d'essai, écoute à l'aveugle).
+- [ ] Étape 3, suite : WebGPU quand le navigateur le permet (aujourd'hui : WebGL2 partout), la fenêtre couplée à la tête pour toute la scène.
+- [ ] Étape 4 : l'ouverture. Étape 5 : les deux écrans. Étape 6 : l'oreille locale et le routeur. Étape 7 : la finition.
+
+Ce qui reste simulé : la voix qui déforme Max. Le son de Max est joué par le serveur, pas par la page ; tant que c'est le cas, la page imite des syllabes (`voixSimulee`). Le vrai son arrivera avec l'étape de la voix (`Entite.nourrirVoix`).
+
+Non vérifié : la fluidité sur le Mac. Les captures viennent d'un rendu logiciel, sans carte graphique.
