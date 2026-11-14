@@ -38,7 +38,7 @@ describe("le suivi d'habitudes dans Excel", () => {
     };
     expect(ligne("Levé à l'heure, téléphone hors de la chambre").getCell(5).value).toBe("✓");
     expect(ligne("Couché à l'heure, sans écran au lit").getCell(5).value).toBeNull();
-    expect(ligne("Blocs de médecine (50 min)").getCell(5).value).toBe(5);
+    expect(ligne("Blocs d'études (50 min)").getCell(5).value).toBe(5);
     expect(ligne("Prière").getCell(5).value).toBe("✓");
     expect(ligne("Salle / sport").getCell(5).value).toBe("✓");
 

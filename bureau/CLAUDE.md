@@ -1,6 +1,6 @@
 # CLAUDE.md : « Le Bureau » et Max
 
-Max est l'assistant vocal de Johan, étudiant en PASS (examen le 14 décembre), façon Jarvis, sur son Mac. Ce dépôt contient son serveur (Node/TypeScript), son écran (page web) et ses outils. **Réponds toujours en français** à Johan.
+Max est l'assistant vocal de Johan, étudiant en BUT MT2E (sa situation à jour est dans son `moi.md`), façon Jarvis, sur son Mac. Ce dépôt contient son serveur (Node/TypeScript), son écran (page web) et ses outils. **Réponds toujours en français** à Johan.
 
 ## Commandes
 

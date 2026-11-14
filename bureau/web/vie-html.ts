@@ -120,7 +120,7 @@ export function htmlPlan(p: PlanVue | undefined, blocsFaits = 0): string {
       (r) =>
         `<li><button type="button" class="vr-case" data-regle="${r.id}" aria-pressed="${p.aujourdhui[r.id]}">${p.aujourdhui[r.id] ? "✓" : ""}</button><span>${echapper(r.texte)}</span></li>`,
     )
-    .join("")}<li class="vq-compte"><span class="vr-case vr-fixe" aria-hidden="true">${blocs >= p.blocs ? "✓" : ""}</span><span>Blocs de médecine (50 min)</span><b>[${blocs}/${p.blocs}]</b></li></ul>${
+    .join("")}<li class="vq-compte"><span class="vr-case vr-fixe" aria-hidden="true">${blocs >= p.blocs ? "✓" : ""}</span><span>Blocs d'études (50 min)</span><b>[${blocs}/${p.blocs}]</b></li></ul>${
     accomplie
       ? `<p class="vq-accomplie">QUÊTE ACCOMPLIE</p>`
       : `<p class="vq-chrono">TEMPS RESTANT <b data-chrono>--:--:--</b></p><p class="vq-avert">⚠ Quête incomplète : une petite pénalité demain. Il reste du temps.</p>`

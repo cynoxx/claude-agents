@@ -12,7 +12,7 @@ const FICHIER_PROJETS = "projets.json";
 const FICHIER_JOURNAL = "journal.jsonl";
 
 export const DOMAINES: VieVue["domaines"] = [
-  { id: "etudes", nom: "Études", emoji: "🩺", categories: ["PASS", "Méthode"] },
+  { id: "etudes", nom: "Études", emoji: "🎓", categories: ["Cours", "Méthode"] },
   { id: "sante", nom: "Corps", emoji: "💪", categories: ["Sport", "Sommeil", "Alimentation"] },
   { id: "business", nom: "Business", emoji: "💼", categories: ["Vidéos monétisables", "Livre & boutique", "Clipping"] },
   { id: "apps", nom: "Apps", emoji: "📱", categories: ["Applications"] },
@@ -22,7 +22,7 @@ export const DOMAINES: VieVue["domaines"] = [
 
 /** Les projets du premier lancement (tu les changes en parlant à Max). */
 export const PROJETS_DEPART: Omit<ProjetVie, "id" | "maj">[] = [
-  { domaine: "etudes", categorie: "PASS", nom: "Réussir l'examen de PASS", prochaineAction: "Caler les révisions de la semaine jusqu'à l'examen", statut: "actif" },
+  { domaine: "etudes", categorie: "Cours", nom: "Réussir mon année", prochaineAction: "Caler les révisions de la semaine jusqu'au prochain examen", statut: "actif" },
   {
     domaine: "business",
     categorie: "Vidéos monétisables",

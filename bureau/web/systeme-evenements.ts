@@ -103,7 +103,7 @@ export class EvenementsSysteme {
             [
               "Le Système t'attribue la quête du jour.",
               ...p.regles.map((r) => `<span class="sys-case"></span>${echapper(r.texte)}`),
-              `<span class="sys-case"></span>Blocs de médecine (50 min) <b>[0/${p.blocs}]</b>`,
+              `<span class="sys-case"></span>Blocs d'études (50 min) <b>[0/${p.blocs}]</b>`,
               `<small>Réveil de demain : ${p.reveilDemain.replace(":", " h ")} · en cas d'échec : une petite pénalité demain.</small>`,
             ],
             "quete",

@@ -10,7 +10,7 @@ describe("le plan de reconstruction", () => {
     expect([0, 2, 3, 5, 6, 9, 12, 30].map((n) => reveilDuJour(n))).toEqual(["08:30", "08:30", "08:00", "08:00", "07:30", "07:00", "07:00", "07:00"]);
   });
 
-  it("monte les blocs de médecine semaine après semaine : 3, 5, puis 6", () => {
+  it("monte les blocs d'études semaine après semaine : 3, 5, puis 6", () => {
     expect([1, 2, 3, 8].map(blocsDeLaSemaine)).toEqual([3, 5, 6, 6]);
   });
 

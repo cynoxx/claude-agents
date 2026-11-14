@@ -38,7 +38,7 @@ export function annonceIntro(e: EtatBureau): { joueur: string; niveau: number; q
   return {
     joueur: (e.verrou?.prenom || "Joueur").toUpperCase(),
     niveau: niveau(e.assistant?.coach?.total ?? 0).niveau,
-    quete: p ? `${p.blocs} blocs de médecine · 3 règles` : "Quête du jour",
+    quete: p ? `${p.blocs} blocs d'études · 3 règles` : "Quête du jour",
   };
 }
 

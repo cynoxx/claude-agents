@@ -351,3 +351,21 @@ describe("Coach — temps par pôle et limite", () => {
     expect(limites).toEqual([]);
   });
 });
+
+describe("le mode examen", () => {
+  const e = (nom: string, jours: number) => ({ nom, date: "2026-11-16", jours });
+
+  it("repère les examens à 7 jours ou moins, par leur nom", async () => {
+    const { examensProches } = await import("../server/max/coach.ts");
+    const liste = [e("Partiel de maths (rattrapage)", 2), e("Rendez-vous dentiste", 3), e("Partiel d'électricité", 5), e("Concours AST", 200)];
+    expect(examensProches(liste).map((x) => x.nom)).toEqual(["Partiel de maths (rattrapage)", "Partiel d'électricité"]);
+  });
+
+  it("écrit la ligne du contexte, ou rien sans examen proche", async () => {
+    const { ligneModeExamen } = await import("../server/max/coach.ts");
+    expect(ligneModeExamen([e("Rendez-vous dentiste", 1), e("Examen de thermique", 30)])).toBe("");
+    const l = ligneModeExamen([e("Partiel de maths", 0), e("DS d'électricité", 1), e("Contrôle d'anglais", 5)]);
+    expect(l).toContain("MODE EXAMEN : Partiel de maths, aujourd'hui ; DS d'électricité, demain ; Contrôle d'anglais, dans 5 jours.");
+    expect(l).toContain("Priorité absolue à Partiel de maths");
+  });
+});

@@ -14,7 +14,7 @@ export const ARTEFACTS: Artefact[] = [
     id: "jarvis-ultime",
     nom: "JARVIS ULTIME",
     emoji: "👁",
-    description: "son assistant claude.ai : planning du jour, études PASS (UE, fiches, interrogation orale, récitation), sport, prière, budget, courses, corvées, proches, bilan du soir",
+    description: "son assistant claude.ai : planning du jour, études (fiches, interrogation orale, récitation), sport, prière, budget, courses, corvées, proches, bilan du soir",
     url: "https://claude.ai/artifact/AMmh5P3szhb2MXL2YtRp2s",
   },
   { id: "agent-financier", nom: "Agent financier", emoji: "💶", description: "ses finances : budget, dépenses, revenus, objectifs d'épargne", url: "https://claude.ai/artifact/5Envk91bbCznx7bKLdpCHD" },

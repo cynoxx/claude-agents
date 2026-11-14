@@ -224,6 +224,23 @@ export function echeances(profil: string, maintenant: Date): Echeance[] {
   return out.sort((x, y) => x.jours - y.jours);
 }
 
+const MOT_EXAMEN = /partiel|examen|exam\b|concours|contr[ôo]le|\bds\b|devoir surveill|rattrapage|[ée]preuve|oral\b/i;
+/** À combien de jours d'un examen on passe en mode examen. */
+export const JOURS_MODE_EXAMEN = 7;
+
+/** Les examens (échéances dont le nom parle d'un partiel, d'un examen, d'un concours…) à 7 jours ou moins, du plus proche au plus lointain. */
+export function examensProches(e: Echeance[]): Echeance[] {
+  return e.filter((x) => x.jours <= JOURS_MODE_EXAMEN && MOT_EXAMEN.test(x.nom));
+}
+
+/** La ligne « MODE EXAMEN » du contexte de Max (vide s'il n'y a pas d'examen proche). */
+export function ligneModeExamen(e: Echeance[]): string {
+  const ex = examensProches(e);
+  if (!ex.length) return "";
+  const quand = (j: number) => (j === 0 ? "aujourd'hui" : j === 1 ? "demain" : `dans ${j} jours`);
+  return `MODE EXAMEN : ${ex.map((x) => `${x.nom}, ${quand(x.jours)}`).join(" ; ")}. Priorité absolue à ${ex[0].nom} (voir « Mode examen ») : plan heure par heure, business en pause.`;
+}
+
 /** Ajoute « - AAAA-MM-JJ : nom » à la section « ## Échéances » de moi.md (créée au besoin). */
 export function ajouterEcheance(dossier: string, date: string, nom: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
@@ -414,6 +431,8 @@ export class Coach extends EventEmitter {
         ? `Échéances : ${e.map((x) => `${x.nom} : le ${dateParlee(new Date(`${x.date}T12:00:00`))}, ${x.jours === 0 ? "aujourd'hui" : `dans ${x.jours} jour${x.jours > 1 ? "s" : ""}`}`).join(" ; ")}.`
         : "Échéances : aucune notée (ajouter_echeance pour en ajouter).",
     );
+    const examen = ligneModeExamen(e);
+    if (examen) lignes.push(examen);
     lignes.push(`Travail noté : ${decrireBilan(this.bilan()).split("\n").slice(0, 4).join(" ")}`);
     const temps = [...this.temps()].filter(([, v]) => v.aujourdhui || v.limite);
     if (temps.length) lignes.push(`Temps par pôle aujourd'hui : ${temps.map(([p, v]) => `${p} ${dureeParlee(v.aujourdhui)}${v.limite ? ` (limite ${dureeParlee(v.limite)})` : ""}`).join(", ")}.`);

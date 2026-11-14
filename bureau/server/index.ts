@@ -106,7 +106,7 @@ const sport = new Sport({ dossier: config.dossierMissions });
 const vie = new Vie({ dossier: config.dossierMissions });
 const plan = new Plan({
   dossier: config.dossierMissions,
-  // les blocs de médecine d'un jour (pour juger la quête de la veille)
+  // les blocs d'études d'un jour (pour juger la quête de la veille)
   minutesDuJour: (jour) => lireJournal(config.dossierMissions).filter((s) => poleDe(s) === "etudes" && jourDe(new Date(s.debut)) === jour).reduce((t, s) => t + s.minutes, 0),
 });
 // le Studio vidéo, dans iCloud Drive (s'il est activé sur ce Mac)

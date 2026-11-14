@@ -144,7 +144,7 @@ Pour chaque idée : un titre court, une accroche d'une phrase, et le tout premie
     {
       id: "relance-etudes",
       nom: "Relance études",
-      description: "à 15 h, si tu es loin de ton objectif de PASS, Max te propose une session",
+      description: "à 15 h, si tu es loin de ton objectif d'études, Max te propose une session",
       heure: "15:00",
       faire: async () => {
         const t = d.travail();

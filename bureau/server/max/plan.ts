@@ -1,6 +1,6 @@
 // Le plan de reconstruction : des objectifs assez petits pour être tenus, qui grandissent chaque semaine.
 // - Le réveil recule de 30 min tous les 3 jours, de 8 h 30 jusqu'à 7 h (c'est l'heure de lever qui recale le sommeil).
-// - Les blocs de 50 min de médecine : 3 par jour la 1re semaine, 5 la 2e, 6 ensuite.
+// - Les blocs de 50 min d'études : 3 par jour la 1re semaine, 5 la 2e, 6 ensuite.
 // - Trois règles par jour ; une journée où elles sont tenues est une bonne journée, même si le reste a déraillé.
 // L'état (début du plan, règles cochées par jour) est dans vie/plan.json. Rien de personnel dans ce fichier de code :
 // les détails sont dans moi.md, sur le Mac seulement.
@@ -12,7 +12,7 @@ import { jourDe } from "./coach.ts";
 
 export const REGLES: { id: RegleId; texte: string }[] = [
   { id: "lever", texte: "Levé à l'heure, téléphone hors de la chambre" },
-  { id: "bloc", texte: "Premier bloc de médecine avant tout réseau social" },
+  { id: "bloc", texte: "Premier bloc d'études avant tout réseau social" },
   { id: "coucher", texte: "Couché avant l'heure, sans écran au lit" },
 ];
 
@@ -49,9 +49,9 @@ export function blocsDeLaSemaine(semaine: number): number {
  * ou l'humiliation, et toujours annulables (malade, journée de crise).
  */
 export const SANCTIONS: Record<1 | 2 | 3, string> = {
-  1: "20 pompes avant ton premier bloc de médecine.",
-  2: "20 pompes et 10 minutes de rangement avant ton premier bloc de médecine.",
-  3: "Zone de pénalité : un bloc de médecine de 50 minutes en plus, et 20 pompes avant de commencer.",
+  1: "20 pompes avant ton premier bloc d'études.",
+  2: "20 pompes et 10 minutes de rangement avant ton premier bloc d'études.",
+  3: "Zone de pénalité : un bloc d'études de 50 minutes en plus, et 20 pompes avant de commencer.",
 };
 
 interface SanctionEtat {
@@ -106,7 +106,7 @@ export class Plan extends EventEmitter {
     return reveilDuJour(this.numero() + 1, this.o.reglages);
   }
 
-  /** L'objectif de médecine du jour, en minutes. */
+  /** L'objectif d'études du jour, en minutes. */
   objectifMinutes(): number {
     return blocsDeLaSemaine(Math.floor(this.numero() / 7) + 1) * BLOC_MIN;
   }
@@ -147,7 +147,7 @@ export class Plan extends EventEmitter {
     const manques = REGLES.filter((x) => !r[x.id]).map((x) => x.texte);
     if (this.o.minutesDuJour) {
       const visees = blocsDeLaSemaine(Math.floor(this.numero(hier) / 7) + 1);
-      if (this.o.minutesDuJour(hier) < visees * BLOC_MIN) manques.push(`Blocs de médecine (${visees} visés)`);
+      if (this.o.minutesDuJour(hier) < visees * BLOC_MIN) manques.push(`Blocs d'études (${visees} visés)`);
     }
     if (manques.length && !this.etat.sanctions?.[auj]) {
       const niveau = (manques.length >= 3 ? 3 : manques.length) as 1 | 2 | 3;
@@ -189,7 +189,7 @@ export class Plan extends EventEmitter {
   decrire(): string {
     const v = this.vue();
     const tenues = REGLES.filter((x) => v.aujourdhui[x.id]).map((x) => x.texte);
-    return `Plan de reconstruction : jour ${v.jour} (semaine ${v.semaine}). Objectif du jour : ${v.blocs} blocs de 50 min de médecine. Réveil aujourd'hui ${v.reveil}, demain ${v.reveilDemain}. Règles tenues aujourd'hui : ${tenues.length ? tenues.join(" ; ") : "aucune encore"}. Série de journées à 3/3 : ${v.serie}.${
+    return `Plan de reconstruction : jour ${v.jour} (semaine ${v.semaine}). Objectif du jour : ${v.blocs} blocs de 50 min d'études. Réveil aujourd'hui ${v.reveil}, demain ${v.reveilDemain}. Règles tenues aujourd'hui : ${tenues.length ? tenues.join(" ; ") : "aucune encore"}. Série de journées à 3/3 : ${v.serie}.${
       v.sanction
         ? v.sanction.statut === "en-cours"
           ? ` SANCTION EN COURS (quête de la veille non réalisée : ${v.sanction.motif.join(" ; ")}) : ${v.sanction.texte}`

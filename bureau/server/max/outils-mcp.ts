@@ -429,7 +429,7 @@ serveur.registerTool(
   "regle_du_jour",
   {
     description:
-      "Coche (ou décoche) une de ses 3 règles non négociables du jour : lever (levé à l'heure, téléphone hors de la chambre), bloc (premier bloc de médecine avant tout réseau social), coucher (couché avant l'heure, sans écran au lit).",
+      "Coche (ou décoche) une de ses 3 règles non négociables du jour : lever (levé à l'heure, téléphone hors de la chambre), bloc (premier bloc d'études avant tout réseau social), coucher (couché avant l'heure, sans écran au lit).",
     inputSchema: { regle: z.enum(["lever", "bloc", "coucher"]), tenue: z.boolean().optional() },
   },
   async (a) => appeler("POST", "/api/outils/regle", a),
@@ -456,7 +456,7 @@ serveur.registerTool(
   "ouvrir_artefact",
   {
     description:
-      "Ouvre dans son navigateur un de ses artefacts claude.ai, posés dans le bureau : jarvis-ultime (planning, études PASS, fiches, interrogation, prière, budget, courses, proches, bilan du soir), agent-financier (budget, dépenses, épargne), muse (idées de business IA du jour, boost Asclepium).",
+      "Ouvre dans son navigateur un de ses artefacts claude.ai, posés dans le bureau : jarvis-ultime (planning, études, fiches, interrogation, prière, budget, courses, proches, bilan du soir), agent-financier (budget, dépenses, épargne), muse (idées de business IA du jour, boost Asclepium).",
     inputSchema: { artefact: z.enum(["jarvis-ultime", "agent-financier", "muse"]) },
   },
   async (a) => appeler("POST", "/api/outils/artefact", a),
@@ -497,7 +497,7 @@ serveur.registerTool(
       id: z.string().optional(),
       nom: z.string().optional(),
       domaine: z.enum(["etudes", "sante", "business", "apps", "vie", "esprit"]).optional(),
-      categorie: z.string().optional().describe("ex. « Vidéos monétisables », « PASS », « Argent »"),
+      categorie: z.string().optional().describe("ex. « Vidéos monétisables », « Cours », « Argent »"),
       objectif: z.string().optional(),
       prochaineAction: z.string().optional().describe("La toute prochaine chose concrète à faire"),
       echeance: z.string().optional().describe("AAAA-MM-JJ"),

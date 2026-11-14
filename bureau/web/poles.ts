@@ -263,7 +263,7 @@ export class QG {
 <div class="qf-temps-ligne"><strong class="${depasse ? "qf-rouge" : ""}">${duree(t.aujourdhui)}</strong> aujourd'hui · ${duree(t.semaine)} sur 7 jours</div>
 ${cible ? `<div class="qg-jauge${depasse ? " rouge" : ""}"><i style="width:${Math.min(100, Math.round((t.aujourdhui / cible) * 100))}%"></i></div>` : ""}
 <div class="qf-barres" aria-label="7 derniers jours">${b.map((x) => `<span title="${duree(x.minutes)}"><i style="height:${Math.round(x.hauteur * 100)}%"></i><small>${x.jour}</small></span>`).join("")}</div>
-${id === "business" && depasse ? `<p class="j-petit qf-rouge">Limite atteinte : le PASS d'abord, le reste au parking.</p>` : ""}`;
+${id === "business" && depasse ? `<p class="j-petit qf-rouge">Limite atteinte : les études d'abord, le reste au parking.</p>` : ""}`;
   }
 
   private specifique(id: string, e: EtatBureau): string {

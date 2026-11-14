@@ -43,7 +43,7 @@ export function htmlStatut(e: EtatBureau): string {
   const nom = (e.verrou?.prenom || "Joueur").toUpperCase();
   return `<h3>Statut</h3>
 <div class="ss-tete"><div><small>NOM</small><b>${echapper(nom)}</b></div><div class="ss-niv"><small>NIVEAU</small><b>${n.niveau}</b></div></div>
-<p class="ss-ligne"><small>CLASSE</small> Étudiant en médecine</p>
+<p class="ss-ligne"><small>CLASSE</small> Étudiant</p>
 <p class="ss-ligne"><small>TITRE</small> ${echapper(titreJoueur(s))}</p>
 <div class="ss-xp" title="${n.xp} / ${n.prochain} XP (1 minute de travail = 1 XP)"><i style="width:${pct}%"></i><span>XP ${n.xp} / ${n.prochain}</span></div>
 <ul class="ss-stats">${(Object.keys(s) as (keyof Stats)[]).map((k) => `<li title="${TITRES[k]}"><small>${k}</small><b>${s[k]}</b></li>`).join("")}</ul>`;

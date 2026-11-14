@@ -126,13 +126,13 @@ Un écran seul : rien ne change.
 
 ### Les sanctions : une quête non réalisée a un prix
 
-Chaque matin, le Bureau juge la quête d'hier : tes 3 règles et tes blocs de médecine. Chaque condition manquée compte :
+Chaque matin, le Bureau juge la quête d'hier : tes 3 règles et tes blocs d'études. Chaque condition manquée compte :
 
 | Manqué hier | Sanction aujourd'hui |
 |---|---|
 | 1 condition | 20 pompes avant ton premier bloc |
 | 2 conditions | 20 pompes + 10 minutes de rangement avant ton premier bloc |
-| 3 ou 4 conditions | **Zone de pénalité** : un bloc de médecine de 50 minutes en plus, et 20 pompes |
+| 3 ou 4 conditions | **Zone de pénalité** : un bloc d'études de 50 minutes en plus, et 20 pompes |
 
 Une fenêtre rouge l'annonce, le bloc rouge de la carte « Quête quotidienne » la garde sous les yeux, avec **FAIT** pour la valider (ou dis-le à Max) et **ANNULER** (malade, journée exceptionnelle : une sanction ne doit pas aggraver un mauvais jour). Garde-fous : une seule sanction à la fois (elles ne s'empilent jamais), jamais sur le sommeil, les repas, l'argent ou l'humiliation, et Max l'annonce sans reproche. Pour changer les sanctions : `SANCTIONS` dans `server/max/plan.ts`.
 
@@ -317,7 +317,7 @@ AnythingLLM : mets son adresse compatible OpenAI et ta clé dans `bureau.config.
 | 07:30 | Cap du matin | tes 3 prochaines actions, ta séance, la vidéo à poster, à l'écran |
 | 09:00 | Script vidéo | le script de la loi suivante d'Asclepium, dans *Max Studio › Asclepium › scripts* |
 | 12:30 | Idées du jour | 3 idées de business IA pour toi, dans la fiche Business |
-| 15:00 | Relance études | si tu es loin de ton objectif de PASS, Max te propose 50 minutes |
+| 15:00 | Relance études | si tu es loin de ton objectif d'études, Max te propose 50 minutes |
 | 21:30 | Bilan du soir | Max te demande ta journée et l'écrit dans ton journal |
 | dim. 18:00 | Revue de la semaine | le résumé de ta semaine et tes 3 priorités, dans ton journal |
 
@@ -486,7 +486,7 @@ Max sait où tu en es : il lit ton fichier **`moi.md`** (voir plus bas), connaî
 - À la fin, **il se réveille tout seul** (même s'il dormait), te félicite, te demande ce que tu as fait et te propose une pause de 5 minutes. À la fin de la pause, il te propose la suite.
 - « Max, j'arrête. » → il note le temps réellement fait.
 - « Max, combien j'ai travaillé cette semaine ? » → aujourd'hui, hier, les 7 derniers jours, ta série de jours d'affilée.
-- « Max, mon examen est le 14 décembre. » → il l'ajoute à tes échéances et fait le compte à rebours.
+- « Max, mon partiel de maths est le 16 novembre. » → il l'ajoute à tes échéances et fait le compte à rebours.
 - « Max, j'ai une idée pour ma boutique… » pendant une session → il te propose de la mettre **au parking** (`idees.md`) pour y revenir après, au lieu de t'y lancer maintenant.
 - « Max, rappelle-moi d'aller me coucher à 23 h. » → à 23 h, il te le dit à voix haute (si le Bureau est ouvert).
 - « Max, bonjour ! » → le nombre de jours avant ta prochaine échéance, ton travail d'hier, et la première session de la journée.
@@ -503,7 +503,7 @@ Les échéances se notent dans une section `## Échéances`, une par ligne :
 
 ```markdown
 ## Échéances
-- 2026-12-14 : Examen PASS
+- 2026-11-16 : Partiel de maths
 ```
 
 ## Les agents des pôles

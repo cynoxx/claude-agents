@@ -1,6 +1,6 @@
-// Le suivi d'habitudes dans Excel, comme au début de médecine : un fichier .xlsx avec une feuille par mois, les
+// Le suivi d'habitudes dans Excel, comme au début de l'année : un fichier .xlsx avec une feuille par mois, les
 // habitudes en lignes, les jours en colonnes. Max remplit les cases tout seul à partir de ce qu'il sait (tes 3 règles,
-// tes blocs de médecine, ta séance de sport) et de ce que tu lui dis (« j'ai prié », « créatine prise »). Il ne touche
+// tes blocs d'études, ta séance de sport) et de ce que tu lui dis (« j'ai prié », « créatine prise »). Il ne touche
 // qu'aux cases qu'il connaît : tes propres modifications dans le fichier restent.
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
@@ -21,9 +21,9 @@ export interface Habitude {
 
 export const HABITUDES: Habitude[] = [
   { id: "lever", nom: "Levé à l'heure, téléphone hors de la chambre", type: "case", motif: /r[ée]veil|lev[ée]/i },
-  { id: "bloc", nom: "Premier bloc de médecine avant les réseaux", type: "case" },
+  { id: "bloc", nom: "Premier bloc d'études avant les réseaux", type: "case" },
   { id: "coucher", nom: "Couché à l'heure, sans écran au lit", type: "case", motif: /coucher|dormir/i },
-  { id: "blocs", nom: "Blocs de médecine (50 min)", type: "nombre", motif: /m[ée]decine|[ée]tude|r[ée]vis|cours/i },
+  { id: "blocs", nom: "Blocs d'études (50 min)", type: "nombre", motif: /m[ée]decine|[ée]tude|r[ée]vis|cours/i },
   { id: "sport", nom: "Salle / sport", type: "case", motif: /boxe|muscu|sport|salle|entra[iî]n/i },
   { id: "priere", nom: "Prière", type: "case", motif: /pri[èe]re|dieu/i },
   { id: "abdos", nom: "Abdos du matin", type: "case", motif: /abdo/i },

@@ -78,8 +78,8 @@ describe("loadConfig", () => {
       JSON.stringify({ conseillers: [{ id: "etudes", nom: "Docteur" }, { id: "musique", domaine: "Musique" }] }),
     );
     const [etudes, musique] = loadConfig(dir).conseillers;
-    expect(etudes).toMatchObject({ id: "etudes", nom: "Docteur", domaine: "Études", emoji: "🩺" });
-    expect(etudes.consigne).toContain("PASS");
+    expect(etudes).toMatchObject({ id: "etudes", nom: "Docteur", domaine: "Études", emoji: "🎓" });
+    expect(etudes.consigne).toContain("répétition espacée");
     expect(musique).toMatchObject({ id: "musique", nom: "musique", domaine: "Musique", description: "Musique", emoji: "🤖", consigne: "" });
   });
 
