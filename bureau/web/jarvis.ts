@@ -6,7 +6,7 @@ import type { AssistantVue, ClientMessage, EtatBureau, EtatMax, MailsVue, Planni
 import { dureeCourte, restant } from "./conversation.ts";
 import { duree } from "./poles-pur.ts";
 import { Entite } from "./max3d/entite.ts";
-import { Montagnes } from "./montagnes.ts";
+import { Sol } from "./presence/sol.ts";
 import { Regard } from "./regard.ts";
 import { basculerSons, son, sonsActifs, tonnerre } from "./sons.ts";
 import { Ultime } from "./ultime.ts";
@@ -96,14 +96,14 @@ export class Jarvis {
     this.sphere = new Entite($<HTMLCanvasElement>("sphere"));
     this.sphere.demarrer();
     // les montagnes vibrent avec sa voix ; sa tête suit ton visage
-    const montagnes = new Montagnes($<HTMLCanvasElement>("j-fond"), () => this.sphere.niveauVoix);
+    const montagnes = new Sol($<HTMLCanvasElement>("j-fond"), () => this.sphere.niveauVoix);
     // Max Ultime : la transformation, puis tout passe au rouge (Max, les montagnes, l'écran)
     this.ultime = new Ultime((actif) => {
       document.body.dataset.obscur = actif ? "oui" : "non";
       this.sphere.obscur(actif);
       montagnes.obscur(actif);
       const b = $("j-obscur");
-      b.textContent = actif ? "◇ Quitter le mode obscur" : "◆ Mode obscur";
+      b.textContent = actif ? "◇ Quitter l'obscur" : "◆ Obscur";
       b.dataset.actif = actif ? "oui" : "non";
     });
     $("j-obscur").addEventListener("click", () => this.envoyer({ type: "obscur", actif: !this.etat?.assistant?.obscur }));
@@ -164,7 +164,7 @@ export class Jarvis {
     this.ultime.rendre(!!a?.obscur);
     $("j-statut").textContent = STATUTS[e];
     $("j-statut").dataset.etat = e;
-    $("j-reveil").textContent = e === "veille" ? "👂 Réveiller" : "😴 Veille";
+    $("j-reveil").textContent = e === "veille" ? "Réveiller" : "Veille";
     $("j-dit").textContent = textePrincipal(a) || (e === "veille" ? "Dis « Max » quand tu as besoin de moi." : "Je t'écoute.");
     // tes paroles ne s'affichent pas : seul le signe 🎙 s'allume quand il t'entend (et dit si le micro a un souci)
     $("j-toi").textContent = "";

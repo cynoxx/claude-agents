@@ -50,7 +50,10 @@ Je travaille dans un conteneur Linux, sans le Mac. Je n'ai pas vu tourner : le v
 - [x] Étape 3, première partie : Max en 3D (`web/max3d/`), ses sept humeurs, branché sur l'écran Jarvis à la place de l'ancien buste. Page d'atelier : `/atelier.html`.
 - [ ] Étape 2 : la voix (banc d'essai, écoute à l'aveugle).
 - [ ] Étape 3, suite : WebGPU quand le navigateur le permet (aujourd'hui : WebGL2 partout), la fenêtre couplée à la tête pour toute la scène.
-- [ ] Étape 4 : l'ouverture. Étape 5 : les deux écrans. Étape 6 : l'oreille locale et le routeur. Étape 7 : la finition.
+- [x] Étape 4 : l'ouverture (`web/presence/ouverture.ts`) : un point de lumière, une ligne, « MAX », l'état de la voix, de l'oreille et du cerveau, le bonjour ; 2 secondes si Max a déjà été ouvert aujourd'hui.
+- [x] Étape 5 : les deux écrans. Jarvis (`web/presence/presence.ts`) : Max au centre, la mission du jour, l'échéance en grand, une carte du moment, sa phrase en bas ; plus de niveau, d'XP ni de statut du joueur. Le Bureau (`web/presence/salle.ts`) : les pôles en anneaux de lumière reliés à Max, les quêtes et la sanction sur les côtés ; le pixel art n'est plus chargé.
+- [x] Étape 7, en partie : les polices servies par le projet (Inter, Rajdhani, JetBrains Mono, licence OFL), l'ambre après 21 h.
+- [ ] Étape 6 : l'oreille locale et le routeur. Étape 7, suite : les sons, l'accessibilité.
 
 Ce qui reste simulé : la voix qui déforme Max. Le son de Max est joué par le serveur, pas par la page ; tant que c'est le cas, la page imite des syllabes (`voixSimulee`). Le vrai son arrivera avec l'étape de la voix (`Entite.nourrirVoix`).
 

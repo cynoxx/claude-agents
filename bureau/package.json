@@ -32,8 +32,11 @@
     "appel": "tsx server/appel-essai.ts"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.6",
+    "@fontsource/jetbrains-mono": "^5.2.6",
     "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/press-start-2p": "^5.3.0",
+    "@fontsource/rajdhani": "^5.2.6",
     "@mediapipe/tasks-vision": "^0.10.35",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@vladmandic/face-api": "^1.7.15",

@@ -4332,7 +4332,7 @@ body[data-obscur="oui"] .main-curseur .mc-arcs {
 }
 
 /* --- deux écrans : chaque fenêtre garde son rôle, les boutons qui la feraient changer de rôle disparaissent --- */
-body[data-ecran] #btn-jarvis {
+body[data-ecran="bureau"] #btn-jarvis {
   display: none !important;
 }
 body[data-ecran="jarvis"] #j-bureau,

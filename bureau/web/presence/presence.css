@@ -1,0 +1,1239 @@
+/* « Présence » : la nouvelle peau de Max. Un esprit de lumière dans la nuit, des plans de verre autour de lui.
+   Froid : l'information. Braise : l'urgence. Or : la réussite. Ambre : après 21 h. Chargée après style.css. */
+
+@property --trou {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+body.presence {
+  --nuit: #04060a;
+  --froid: #6fe0ff;
+  --froid-rgb: 111, 224, 255;
+  --bleu: #2e8bff;
+  --blanc: #eaf6ff;
+  --braise: #ff3b2f;
+  --feu: #ff7a45;
+  --or: #ffd27a;
+  --ambre: #ffb36b;
+  --texte: #cfe3f3;
+  --discret: #7d93a8;
+  --f-titre: "Rajdhani", "Avenir Next", system-ui, sans-serif;
+  --f-corps: "Inter", system-ui, -apple-system, sans-serif;
+  --f-chiffres: "JetBrains Mono", ui-monospace, monospace;
+  /* l'ancien habillage (pixel, Système) prend les nouvelles lettres et les nouvelles couleurs */
+  --fond: var(--nuit);
+  --surface: rgba(111, 224, 255, 0.05);
+  --surface-2: rgba(111, 224, 255, 0.09);
+  --cyan: var(--froid);
+  --rouge: var(--braise);
+  --pixel: var(--f-corps);
+  --titre: var(--f-titre);
+  --mono: var(--f-chiffres);
+  --sys: var(--froid);
+  --sys-clair: var(--blanc);
+  --sys-doux: rgba(111, 224, 255, 0.3);
+  --sys-fond: rgba(6, 14, 24, 0.82);
+  --sys-police: var(--f-titre);
+  background: var(--nuit);
+  background-image: none;
+  color: var(--texte);
+  font-family: var(--f-corps);
+  -webkit-font-smoothing: antialiased;
+}
+body.presence[data-soir="oui"] {
+  --froid: #ffb36b;
+  --froid-rgb: 255, 179, 107;
+}
+
+/* ce qui disparaît : niveau, XP, statut du joueur, panneaux, montagnes, ambiance « Système », pixel art */
+body.presence .sys-ambiance,
+body.presence .qg-barre,
+body.presence #qg-accueil .j-cote,
+body.presence header.hud,
+body.presence main,
+body.presence #conversation,
+body.presence .mission-directe,
+body.presence #carte-zone,
+body.presence .sys-intro {
+  display: none !important;
+}
+
+/* --- les lettres et le verre ------------------------------------------------------------------------- */
+body.presence .chiffre {
+  font-family: var(--f-chiffres);
+  font-variant-numeric: tabular-nums;
+}
+body.presence .verre {
+  padding: 22px 26px;
+  border: 1px solid rgba(var(--froid-rgb), 0.22);
+  border-top-color: rgba(234, 246, 255, 0.45);
+  border-radius: 4px;
+  background-image: linear-gradient(160deg, rgba(var(--froid-rgb), 0.09), rgba(46, 139, 255, 0.03) 45%, rgba(4, 6, 10, 0.35)),
+    repeating-linear-gradient(0deg, rgba(234, 246, 255, 0.022) 0 1px, transparent 1px 3px);
+  box-shadow: 0 0 40px rgba(46, 139, 255, 0.12), inset 0 1px 0 rgba(234, 246, 255, 0.1);
+  color: var(--texte);
+}
+body.presence .verre.braise {
+  border-color: rgba(255, 59, 47, 0.45);
+  border-top-color: rgba(255, 122, 69, 0.85);
+  background-image: linear-gradient(160deg, rgba(255, 59, 47, 0.14), rgba(255, 59, 47, 0.03) 45%, rgba(4, 6, 10, 0.35)),
+    repeating-linear-gradient(0deg, rgba(255, 200, 180, 0.03) 0 1px, transparent 1px 3px);
+  box-shadow: 0 0 48px rgba(255, 59, 47, 0.2), inset 0 1px 0 rgba(255, 122, 69, 0.2);
+}
+body.presence .verre.or {
+  border-color: rgba(255, 210, 122, 0.4);
+  border-top-color: rgba(255, 235, 190, 0.85);
+  box-shadow: 0 0 44px rgba(255, 210, 122, 0.16);
+}
+body.presence .etiquette {
+  font: 600 12px var(--f-titre);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--froid);
+}
+body.presence .braise .etiquette {
+  color: var(--feu);
+}
+body.presence .or .etiquette {
+  color: var(--or);
+}
+
+/* --- l'écran de Max ---------------------------------------------------------------------------------- */
+body.presence .jarvis {
+  position: fixed;
+  inset: 0;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+body.presence .j-fond {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  opacity: 1;
+}
+body.presence .jarvis:not([data-mode="fiche"]) .j-sphere {
+  z-index: 1;
+  top: 44%;
+  width: min(86vh, 60vw);
+}
+.pr {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.pr > *,
+.pr-droite > * {
+  pointer-events: auto;
+}
+.pr-droite {
+  pointer-events: none;
+}
+
+.pr-haut {
+  position: absolute;
+  top: 26px;
+  left: 40px;
+  right: 40px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+.pr-marque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+body.presence .pr .pr-nom {
+  all: unset;
+  cursor: pointer;
+  font: 700 15px var(--f-titre);
+  letter-spacing: 0.55em;
+  color: var(--blanc);
+}
+body.presence #j-statut {
+  all: unset;
+  font: 500 13px var(--f-corps);
+  color: var(--discret);
+  letter-spacing: 0.01em;
+}
+.pr-outils {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  max-width: 50vw;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+.pr-outils:hover,
+.pr-outils:focus-within {
+  opacity: 1;
+}
+body.presence .pr-outils button,
+body.presence .pr-outils .qg-pastille,
+body.presence .hud-menu button {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid rgba(var(--froid-rgb), 0.2);
+  border-radius: 999px;
+  font: 500 12px var(--f-corps);
+  color: var(--texte);
+  background: rgba(4, 6, 10, 0.4);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+body.presence .pr-outils .qg-pastille {
+  cursor: default;
+}
+body.presence .pr-outils button:hover,
+body.presence .hud-menu button:hover {
+  border-color: rgba(var(--froid-rgb), 0.6);
+  color: var(--blanc);
+  background: rgba(var(--froid-rgb), 0.08);
+}
+body.presence .pr-outils [hidden],
+body.presence .hud-menu [hidden] {
+  display: none !important;
+}
+body.presence #j-obscur[data-actif="oui"] {
+  border-color: rgba(255, 59, 47, 0.7);
+  color: #ffd2cc;
+}
+body.presence .j-liens {
+  display: contents;
+}
+.pr-temps {
+  text-align: right;
+  min-width: 150px;
+}
+.pr-heure {
+  font: 500 46px/1 var(--f-chiffres);
+  color: var(--blanc);
+  letter-spacing: 0.02em;
+}
+.pr-date {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--discret);
+}
+.pr-meteo {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--discret);
+}
+
+/* les cartes */
+.pr-carte {
+  position: absolute;
+  width: clamp(290px, 25vw, 440px);
+}
+.pr-mission {
+  left: 40px;
+  top: 140px;
+  cursor: pointer;
+}
+.pr-droite {
+  position: absolute;
+  right: 40px;
+  top: 140px;
+  width: clamp(290px, 25vw, 440px);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.pr-droite .pr-carte {
+  position: relative;
+  width: auto;
+}
+.pr-echeance {
+  cursor: pointer;
+}
+.pr-titre {
+  margin-top: 16px;
+  font: 700 clamp(30px, 2.6vw, 44px) / 1.05 var(--f-titre);
+  color: var(--blanc);
+  overflow-wrap: anywhere;
+}
+.pr-titre.moyen {
+  font-size: clamp(19px, 1.4vw, 23px);
+  line-height: 1.2;
+  font-weight: 600;
+}
+.pr-sous {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--discret);
+}
+.pr-blocs {
+  display: flex;
+  gap: 6px;
+  margin: 18px 0 8px;
+}
+.pr-blocs i {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(var(--froid-rgb), 0.14);
+}
+.pr-blocs i.fait {
+  background: var(--froid);
+  box-shadow: 0 0 10px rgba(var(--froid-rgb), 0.7);
+}
+.pr-ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid rgba(var(--froid-rgb), 0.1);
+  font-size: 15px;
+  color: var(--texte);
+}
+.pr-ligne:first-of-type {
+  margin-top: 12px;
+}
+.pr-ligne .chiffre {
+  color: var(--blanc);
+  white-space: nowrap;
+}
+.pr-ligne .discret {
+  color: var(--discret);
+}
+.pr-grand {
+  margin-top: 6px;
+  font: 700 clamp(76px, 7vw, 116px) / 0.95 var(--f-titre);
+  font-family: var(--f-titre);
+  color: var(--blanc);
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 34px rgba(var(--froid-rgb), 0.35);
+}
+.braise .pr-grand {
+  text-shadow: 0 0 40px rgba(255, 59, 47, 0.55);
+}
+.pr-nom-ech {
+  margin-top: 10px;
+  font: 600 24px/1.2 var(--f-titre);
+  color: var(--blanc);
+}
+.pr-boutons {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.pr-boutons button {
+  all: unset;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 122, 69, 0.7);
+  font: 600 13px var(--f-corps);
+  color: #ffe2d8;
+  background: rgba(255, 59, 47, 0.12);
+}
+.pr-boutons button.discret {
+  border-color: rgba(234, 246, 255, 0.2);
+  color: var(--discret);
+  background: transparent;
+}
+.pr-boutons button:hover {
+  filter: brightness(1.25);
+}
+
+/* le petit mot au-dessus de Max */
+.pr-etat {
+  position: absolute;
+  left: 50%;
+  top: 13%;
+  transform: translateX(-50%);
+  font: 600 12px var(--f-titre);
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--froid);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: color 0.4s, opacity 0.4s;
+}
+.pr-etat span::before,
+.pr-etat span::after {
+  content: "·";
+  margin: 0 0.9em;
+  opacity: 0.6;
+}
+.pr[data-etat="veille"] .pr-etat {
+  color: var(--discret);
+}
+.pr[data-etat="reflechit"] .pr-etat span {
+  animation: pr-pense 1.4s ease-in-out infinite;
+}
+@keyframes pr-pense {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* en bas : ce que tu as dit, sa phrase, les pôles, le champ */
+.pr-bas {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: min(1180px, 92vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  pointer-events: none;
+}
+.pr-bas > * {
+  pointer-events: auto;
+}
+.pr-phrase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  pointer-events: none;
+}
+body.presence #j-toi,
+body.presence #j-dit,
+body.presence #j-soucis,
+body.presence #j-entendu {
+  all: unset;
+  display: block;
+  max-width: 100%;
+  text-align: center;
+}
+body.presence #j-toi {
+  font: 400 18px var(--f-corps);
+  color: var(--discret);
+}
+body.presence #j-toi:not(:empty)::before {
+  content: "« ";
+}
+body.presence #j-toi:not(:empty)::after {
+  content: " »";
+}
+body.presence #j-dit {
+  max-width: min(860px, 56vw);
+  font: 600 clamp(20px, 1.75vw, 30px) / 1.25 var(--f-titre);
+  color: var(--blanc);
+  text-shadow: 0 0 24px rgba(var(--froid-rgb), 0.3);
+  max-height: 3.9em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+body.presence #j-soucis {
+  font-size: 12px;
+  color: var(--feu);
+}
+body.presence #j-toi:empty,
+body.presence #j-soucis:empty,
+body.presence #j-entendu:empty {
+  display: none;
+}
+
+/* les pôles : une rangée de points de lumière */
+body.presence #qg-poles {
+  all: unset;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+body.presence .qg-tuile {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px 7px 12px;
+  border: 1px solid rgba(var(--froid-rgb), 0.16);
+  border-radius: 999px;
+  background: rgba(4, 6, 10, 0.45);
+  font: 600 13px var(--f-titre);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--texte);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+body.presence .qg-tuile::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--froid);
+  box-shadow: 0 0 8px var(--froid);
+}
+body.presence .qg-tuile:hover,
+body.presence .qg-tuile.active {
+  border-color: rgba(var(--froid-rgb), 0.6);
+  color: var(--blanc);
+  background: rgba(var(--froid-rgb), 0.08);
+}
+body.presence .qg-tuile.alerte {
+  border-color: rgba(255, 59, 47, 0.55);
+}
+body.presence .qg-tuile.alerte::before {
+  background: var(--braise);
+  box-shadow: 0 0 8px var(--braise);
+}
+body.presence .qg-tuile .qt-emoji,
+body.presence .qg-tuile .qt-agent,
+body.presence .qg-tuile .qt-ligne,
+body.presence .qg-tuile .qt-jauge,
+body.presence .qg-tuile .qt-pense {
+  display: none;
+}
+body.presence .qg-tuile .qt-nom {
+  all: unset;
+}
+
+/* le champ : une ligne de lumière, rien de plus */
+body.presence #j-form {
+  all: unset;
+  display: flex;
+  width: min(560px, 80vw);
+}
+body.presence #j-texte {
+  all: unset;
+  flex: 1;
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(var(--froid-rgb), 0.22);
+  font: 400 15px var(--f-corps);
+  color: var(--blanc);
+  text-align: center;
+  transition: border-color 0.3s;
+}
+body.presence #j-texte::placeholder {
+  color: rgba(125, 147, 168, 0.75);
+}
+body.presence #j-texte:focus {
+  border-bottom-color: var(--froid);
+}
+body.presence #j-form button {
+  display: none;
+}
+
+/* une fiche de pôle ouverte : les cartes s'effacent, la fiche prend le centre */
+body.presence .jarvis[data-mode="fiche"] .pr-mission,
+body.presence .jarvis[data-mode="fiche"] .pr-droite,
+body.presence .jarvis[data-mode="fiche"] .pr-etat {
+  display: none;
+}
+body.presence .jarvis[data-mode="fiche"] #j-dit {
+  font-size: 18px;
+}
+body.presence .jarvis[data-mode="fiche"] .qg-corps {
+  position: absolute;
+  left: 50%;
+  top: 110px;
+  bottom: 190px;
+  transform: translateX(-50%);
+  width: min(1180px, 92vw);
+  z-index: 4;
+  overflow: auto;
+}
+body.presence .qg-fiche {
+  font-family: var(--f-corps);
+  border: 1px solid rgba(var(--froid-rgb), 0.22);
+  border-top-color: rgba(234, 246, 255, 0.45);
+  border-radius: 4px;
+  background: linear-gradient(160deg, rgba(var(--froid-rgb), 0.08), rgba(4, 6, 10, 0.86) 40%);
+  box-shadow: 0 0 50px rgba(46, 139, 255, 0.14);
+  padding: 20px 24px;
+}
+body.presence .qg-fiche h2,
+body.presence .qg-fiche h3 {
+  font-family: var(--f-titre);
+  letter-spacing: 0.06em;
+}
+
+/* l'arrivée après l'ouverture : chaque plan de verre glisse à sa place */
+@keyframes pr-entre {
+  from {
+    opacity: 0;
+    transform: translate(var(--dx, 0), var(--dy, 0));
+  }
+}
+.jarvis.pr-arrive .pr-haut {
+  --dy: -14px;
+  animation: pr-entre 0.7s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis.pr-arrive .pr-mission {
+  --dx: -40px;
+  animation: pr-entre 0.8s 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis.pr-arrive .pr-droite > :nth-child(1) {
+  --dx: 40px;
+  animation: pr-entre 0.8s 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis.pr-arrive .pr-droite > :nth-child(2) {
+  --dx: 40px;
+  animation: pr-entre 0.8s 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis.pr-arrive .pr-bas {
+  animation: pr-entre-bas 0.8s 1.05s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.jarvis.pr-arrive .pr-etat {
+  animation: pr-entre 0.6s 1.2s ease both;
+}
+@keyframes pr-entre-bas {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px);
+  }
+}
+body[data-intro="oui"] .pr {
+  opacity: 0;
+}
+
+/* --- l'ouverture ------------------------------------------------------------------------------------- */
+.ouv {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: #000;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: var(--f-corps);
+  color: var(--blanc);
+  --trou: 0%;
+  /* le trou par lequel l'écran apparaît : fermé au départ (rien de Max ne passe à travers le noir) */
+  -webkit-mask-image: radial-gradient(circle at 50% 44%, transparent max(0%, calc(var(--trou) - 3%)), #000 var(--trou));
+  mask-image: radial-gradient(circle at 50% 44%, transparent max(0%, calc(var(--trou) - 3%)), #000 var(--trou));
+}
+.ouv[hidden] {
+  display: none;
+}
+.ouv-point {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 12px 3px #fff, 0 0 40px 10px rgba(111, 224, 255, 0.8), 0 0 120px 40px rgba(46, 139, 255, 0.35);
+  opacity: 0;
+  transform: scale(0.2);
+}
+.ouv.joue .ouv-point {
+  animation: ouv-point 0.9s ease-out forwards, ouv-souffle 1.6s 0.9s ease-in-out infinite;
+}
+@keyframes ouv-point {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes ouv-souffle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.35);
+  }
+}
+.ouv-ligne {
+  position: absolute;
+  left: 15vw;
+  right: 15vw;
+  top: 50%;
+  height: 1px;
+  margin-top: -0.5px;
+  background: linear-gradient(90deg, transparent, rgba(111, 224, 255, 0.5) 20%, #fff 50%, rgba(111, 224, 255, 0.5) 80%, transparent);
+  box-shadow: 0 0 14px 1px rgba(111, 224, 255, 0.55);
+  transform: scaleX(0);
+}
+.ouv.longue.joue .ouv-ligne {
+  animation: ouv-ligne 1.2s 0.8s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+.ouv.courte.joue .ouv-ligne {
+  animation: ouv-ligne 0.6s 0.15s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+@keyframes ouv-ligne {
+  to {
+    transform: scaleX(1);
+  }
+}
+.ouv-titre {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 104px);
+  transform: translateX(-50%);
+  padding-left: 0.6em;
+  font: 700 clamp(56px, 7vw, 92px) / 1 var(--f-titre);
+  letter-spacing: 0.6em;
+  white-space: nowrap;
+}
+.ouv-titre span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(14px);
+  text-shadow: 0 0 30px rgba(111, 224, 255, 0.8);
+}
+.ouv.longue.joue .ouv-titre span {
+  animation: ouv-lettre 0.9s calc(2.1s + var(--i) * 0.16s) cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.ouv.courte .ouv-titre,
+.ouv.courte .ouv-organes,
+.ouv.courte .ouv-salut {
+  display: none;
+}
+@keyframes ouv-lettre {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ouv-organes {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 26px);
+  transform: translateX(-50%);
+  display: flex;
+  gap: 34px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 600 11px var(--f-titre);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--discret);
+}
+.ouv-organes li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+}
+.ouv-organes i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6fe0ff;
+  box-shadow: 0 0 10px #6fe0ff;
+}
+.ouv-organes .ko i {
+  background: #ff7a45;
+  box-shadow: 0 0 10px #ff7a45;
+}
+.ouv.longue.joue .ouv-organes li {
+  animation: ouv-apparait 0.6s calc(2.9s + var(--i) * 0.22s) ease forwards;
+}
+.ouv-salut {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + 74px);
+  margin: 0;
+  text-align: center;
+  font: 300 clamp(22px, 2vw, 30px) var(--f-corps);
+  color: var(--blanc);
+  opacity: 0;
+}
+.ouv-salut small {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--discret);
+}
+.ouv.longue.joue .ouv-salut {
+  animation: ouv-apparait 0.9s 3.7s ease forwards;
+}
+@keyframes ouv-apparait {
+  to {
+    opacity: 1;
+  }
+}
+/* la lumière se ramasse en un point */
+.ouv.ramasse .ouv-titre,
+.ouv.ramasse .ouv-organes,
+.ouv.ramasse .ouv-salut {
+  transition: opacity 0.35s;
+  opacity: 0 !important;
+  animation: none !important;
+}
+.ouv.ramasse .ouv-ligne {
+  animation: none;
+  transform: scaleX(0);
+  transition: transform 0.45s cubic-bezier(0.7, 0, 0.3, 1);
+}
+.ouv.ramasse .ouv-point {
+  animation: ouv-charge 0.5s ease-in forwards;
+}
+@keyframes ouv-charge {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(3.2);
+  }
+}
+/* l'éclat, puis l'écran s'ouvre en cercle depuis Max */
+.ouv-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.95), rgba(111, 224, 255, 0.35) 30%, transparent 70%);
+  opacity: 0;
+}
+.ouv.sort .ouv-flash {
+  animation: ouv-flash 0.7s ease-out;
+}
+@keyframes ouv-flash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.ouv.sort {
+  animation: ouv-trou 1s 0.08s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+@keyframes ouv-trou {
+  to {
+    --trou: 120%;
+  }
+}
+.ouv::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 22vmin;
+  height: 22vmin;
+  margin: -11vmin 0 0 -11vmin;
+  border-radius: 50%;
+  border: 2px solid rgba(111, 224, 255, 0.9);
+  box-shadow: 0 0 30px rgba(111, 224, 255, 0.7), inset 0 0 30px rgba(111, 224, 255, 0.5);
+  opacity: 0;
+  pointer-events: none;
+}
+.ouv.sort::after {
+  animation: ouv-anneau 1s 0.08s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+@keyframes ouv-anneau {
+  0% {
+    opacity: 1;
+    transform: scale(0.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(9);
+  }
+}
+
+/* --- le Bureau : les pôles de lumière ----------------------------------------------------------------- */
+body.presence #salle {
+  display: none;
+}
+body.presence[data-vue="bureau"] #salle {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  animation: salle-arrive 0.6s ease both;
+}
+@keyframes salle-arrive {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+.salle-fond,
+.salle-fils {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.salle-fils path {
+  fill: none;
+  stroke: rgba(var(--froid-rgb), 0.3);
+  stroke-width: 1;
+}
+.salle-fils path.braise {
+  stroke: rgba(255, 59, 47, 0.5);
+}
+.salle-fils path.or {
+  stroke: rgba(255, 210, 122, 0.5);
+}
+.salle-haut {
+  position: absolute;
+  top: 26px;
+  left: 40px;
+  right: 40px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 2;
+}
+.salle-marque {
+  font: 700 15px var(--f-titre);
+  letter-spacing: 0.55em;
+  color: var(--blanc);
+  white-space: nowrap;
+}
+.salle-marque span {
+  color: var(--froid);
+}
+body.presence .salle .hud-menu {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+body.presence .salle .hud-artefacts {
+  display: contents;
+}
+.salle-orbe {
+  position: absolute;
+  left: 50%;
+  top: 24%;
+  width: 20vmin;
+  height: 20vmin;
+  transform: translate(-50%, -50%);
+}
+.salle-poles {
+  position: absolute;
+  inset: 0;
+}
+.salle-pole {
+  all: unset;
+  position: absolute;
+  width: 14vmin;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  text-align: center;
+  color: var(--texte);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.salle-pole:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+.sp-sol {
+  position: absolute;
+  left: -40%;
+  right: -40%;
+  top: 62%;
+  height: 34%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(var(--froid-rgb), 0.22), transparent 65%);
+  pointer-events: none;
+}
+.salle-pole.braise .sp-sol {
+  background: radial-gradient(ellipse at center, rgba(255, 59, 47, 0.28), transparent 65%);
+}
+.salle-pole.or .sp-sol {
+  background: radial-gradient(ellipse at center, rgba(255, 210, 122, 0.25), transparent 65%);
+}
+.sp-anneau {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: visible;
+}
+.sp-piste {
+  fill: rgba(4, 6, 10, 0.5);
+  stroke: rgba(var(--froid-rgb), 0.16);
+  stroke-width: 3;
+}
+.sp-arc {
+  fill: none;
+  stroke: var(--froid);
+  stroke-width: 4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(var(--froid-rgb), 0.9));
+}
+.braise .sp-arc {
+  stroke: #ff5a4a;
+  filter: drop-shadow(0 0 4px rgba(255, 59, 47, 0.9));
+}
+.or .sp-arc {
+  stroke: var(--or);
+  filter: drop-shadow(0 0 4px rgba(255, 210, 122, 0.9));
+}
+.sp-pct {
+  position: absolute;
+  top: 7vmin;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(18px, 2.3vmin, 28px);
+  color: var(--blanc);
+}
+.sp-pct small {
+  margin-left: 3px;
+  font-size: 0.5em;
+  color: var(--discret);
+}
+.sp-nom {
+  margin-top: 14px;
+  font: 700 clamp(14px, 1.3vw, 20px) var(--f-titre);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--blanc);
+  white-space: nowrap;
+}
+.sp-ligne {
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--discret);
+  white-space: nowrap;
+}
+.braise .sp-ligne {
+  color: var(--feu);
+}
+.salle-quetes {
+  left: 40px;
+  top: 110px;
+  z-index: 2;
+}
+.salle-droite {
+  position: absolute;
+  right: 40px;
+  top: 110px;
+  width: clamp(290px, 25vw, 440px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 2;
+}
+.salle-droite .pr-carte {
+  position: relative;
+  width: auto;
+}
+.salle-quete {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 0;
+  border-top: 1px solid rgba(var(--froid-rgb), 0.1);
+  font-size: 15px;
+  color: var(--texte);
+}
+.salle-quete:first-of-type {
+  margin-top: 12px;
+}
+.salle-quete i {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border: 1.5px solid rgba(var(--froid-rgb), 0.7);
+  border-radius: 2px;
+}
+.salle-quete.tenue i {
+  background: var(--froid);
+  box-shadow: 0 0 10px rgba(var(--froid-rgb), 0.7);
+}
+.salle-quete.tenue span {
+  color: var(--discret);
+  text-decoration: line-through;
+}
+
+@media (max-width: 1100px) {
+  .pr-carte,
+  .pr-droite,
+  .salle-droite {
+    width: 280px;
+  }
+  .pr-grand {
+    font-size: 72px;
+  }
+}
+@media (max-width: 760px) {
+  .pr-mission,
+  .pr-droite,
+  .salle-quetes,
+  .salle-droite {
+    display: none;
+  }
+  .pr-haut,
+  .salle-haut {
+    left: 16px;
+    right: 16px;
+  }
+  .pr-outils {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jarvis.pr-arrive *,
+  .ouv * {
+    animation: none !important;
+  }
+}
+
+/* --- les notifications et la grande fenêtre (quête accomplie), en verre ----------------------------- */
+body.presence .sys-toasts {
+  top: 120px;
+  right: 40px;
+  width: min(380px, 80vw);
+}
+body.presence .sys-toast {
+  padding: 14px 18px;
+  border: 1px solid rgba(var(--froid-rgb), 0.25);
+  border-top-color: rgba(234, 246, 255, 0.5);
+  border-radius: 4px;
+  background: linear-gradient(160deg, rgba(var(--froid-rgb), 0.12), rgba(4, 6, 10, 0.92) 55%);
+  box-shadow: 0 0 34px rgba(46, 139, 255, 0.18);
+  font-family: var(--f-corps);
+  color: var(--texte);
+}
+body.presence .sys-toast .sys-alerte {
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border: 0;
+  background: var(--froid);
+  box-shadow: 0 0 10px var(--froid);
+  font-size: 0;
+}
+body.presence .sys-toast b {
+  font: 600 11px var(--f-titre);
+  letter-spacing: 0.34em;
+  color: var(--froid);
+}
+body.presence .sys-toast p {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--blanc);
+}
+body.presence .sys-pop {
+  border: 1px solid rgba(255, 210, 122, 0.45);
+  border-top-color: rgba(255, 235, 190, 0.9);
+  border-radius: 4px;
+  background: linear-gradient(160deg, rgba(255, 210, 122, 0.12), rgba(4, 6, 10, 0.95) 55%);
+  box-shadow: 0 0 60px rgba(255, 210, 122, 0.25);
+  font-family: var(--f-corps);
+}
+body.presence .sys-pop::before,
+body.presence .sys-pop::after {
+  display: none;
+}
+body.presence .sys-pop .sys-tete {
+  font: 700 26px var(--f-titre);
+  letter-spacing: 0.4em;
+  color: var(--or);
+  text-shadow: 0 0 20px rgba(255, 210, 122, 0.5);
+  border-bottom-color: rgba(255, 210, 122, 0.2);
+}
+body.presence .sys-pop .sys-alerte {
+  display: none;
+}
+body.presence .sys-pop-ok {
+  font-family: var(--f-titre);
+}
+
+/* « all: unset » fait hériter pointer-events: none de la colonne du bas : on rend la main aux éléments cliquables */
+body.presence #qg-poles,
+body.presence .qg-tuile,
+body.presence #j-form,
+body.presence #j-texte,
+body.presence .pr-outils button,
+body.presence .pr-boutons button,
+body.presence .pr .pr-nom {
+  pointer-events: auto;
+}
+
+/* la fiche d'un pôle, en verre : plus de crochets ni de titres entre crochets */
+body.presence .jarvis[data-mode="fiche"] .j-sphere-zone {
+  background: none;
+  border: 0;
+}
+body.presence .qg-fiche .qf-tete {
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(var(--froid-rgb), 0.14);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 4px 0 16px;
+}
+body.presence .qg-fiche .qf-titre h2 {
+  font: 700 30px var(--f-titre);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--blanc);
+}
+body.presence .qg-fiche .qf-titre p {
+  font-size: 13px;
+  color: var(--discret);
+}
+body.presence .qg-fiche .j-carte {
+  border: 1px solid rgba(var(--froid-rgb), 0.16);
+  border-top-color: rgba(234, 246, 255, 0.35);
+  border-radius: 4px;
+  background: linear-gradient(160deg, rgba(var(--froid-rgb), 0.07), rgba(4, 6, 10, 0.3) 50%);
+  box-shadow: none;
+  clip-path: none;
+}
+body.presence .qg-fiche .j-carte::before,
+body.presence .qg-fiche .j-carte::after,
+body.presence .qg-fiche .j-carte h3::before,
+body.presence .qg-fiche .j-carte h3::after {
+  content: none;
+  display: none;
+}
+body.presence .qg-fiche .j-carte h3 {
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  text-align: left;
+  font: 600 12px var(--f-titre);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--froid);
+  text-shadow: none;
+}
+body.presence .qg-fiche button,
+body.presence .qg-fiche .qf-question input {
+  font-family: var(--f-corps);
+  border-radius: 999px;
+}
+body.presence .qg-fiche .qf-question input {
+  border: 1px solid rgba(var(--froid-rgb), 0.22);
+  background: rgba(4, 6, 10, 0.5);
+  color: var(--blanc);
+}
+
+/* l'ancien écran met tous ses enfants en « position: relative » : le calque Présence reste posé sur tout l'écran */
+body.presence .jarvis > .pr {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+body.presence .jarvis[data-mode="fiche"] > .qg-corps {
+  position: absolute;
+}

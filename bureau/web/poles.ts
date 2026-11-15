@@ -2,6 +2,7 @@
 // et la petite fenêtre des mails qui s'ouvre toute seule quand ils viennent d'être triés.
 // La fiche est construite une fois à l'ouverture, puis seuls ses blocs qui changent sont réécrits (le corps 3D et
 // le champ de question ne bougent pas).
+import { nomPole } from "./presence/presence-pur.ts";
 import type { ClientMessage, ConseillerVue, EtatBureau, MailsVue, Plateforme, RegleId, TempsPole } from "../shared/protocol.ts";
 import { son } from "./sons.ts";
 import { JOURS_SEMAINE, MUSCLES, SEANCES, seance } from "../shared/sport.ts";
@@ -152,7 +153,7 @@ export class QG {
         const jauge = t.jauge === null ? "" : `<span class="qt-jauge"><i style="width:${Math.min(100, Math.round(t.jauge * 100))}%"></i></span>`;
         const pense = c.statut === "reflechit" ? `<span class="qt-pense">${echapper(c.nom)} réfléchit…</span>` : "";
         return `<button type="button" class="qg-tuile${c.id === this.pole ? " active" : ""}${t.alerte ? " alerte" : ""}" data-pole="${echapper(c.id)}" style="--pole:${echapper(c.couleur)}" aria-pressed="${c.id === this.pole}">
-  <span class="qt-emoji">${c.emoji}</span><span class="qt-nom">${echapper(c.domaine)}</span><span class="qt-agent">${echapper(c.nom)}</span>
+  <span class="qt-emoji">${c.emoji}</span><span class="qt-nom">${echapper(nomPole(c.id, c.domaine))}</span><span class="qt-agent">${echapper(c.nom)}</span>
   <span class="qt-ligne">${echapper(t.ligne)}</span>${jauge}${pense}</button>`;
       })
       .join("");
@@ -190,7 +191,7 @@ export class QG {
 <div class="qf-tete">
   <button type="button" class="qf-retour" data-action="accueil">← Accueil</button>
   <span class="qf-emoji">${c.emoji}</span>
-  <div class="qf-titre"><h2>${echapper(c.domaine)}</h2><p>Ton agent : <strong>${echapper(c.nom)}</strong> · ${echapper(c.description)}</p></div>
+  <div class="qf-titre"><h2>${echapper(nomPole(c.id, c.domaine))}</h2><p>Ton agent : <strong>${echapper(c.nom)}</strong> · ${echapper(c.description)}</p></div>
   <span class="espace"></span>
   <button type="button" data-action="session">⏱ Session 25 min</button>
 </div>

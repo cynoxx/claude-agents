@@ -75,11 +75,18 @@ export class EvenementsSysteme {
 
   rendre(e: EtatBureau): void {
     // pas pendant l'intro ni l'écran verrouillé
-    if (document.querySelector(".sys-intro:not([hidden])") || e.verrou?.verrouille) return;
+    if (document.querySelector(".sys-intro:not([hidden]), .ouv:not([hidden])") || e.verrou?.verrouille) return;
     const a = e.assistant;
     const n = niveau(a?.coach?.total ?? 0).niveau;
     const mem = { niveau: Number(lire("max-niveau") ?? NaN), queteAttribuee: lire("max-quete-attribuee"), queteAccomplie: lire("max-quete-accomplie"), penaliteAnnoncee: lire("max-penalite"), aujourdhui: jour() };
     for (const ev of evenementsSysteme(e, { ...mem, niveau: Number.isNaN(mem.niveau) ? null : mem.niveau })) {
+      // le nouvel écran montre déjà la sanction et la quête du jour sur ses cartes, et n'a plus de niveau :
+      // seule la quête accomplie mérite encore le grand écran
+      if (document.body.classList.contains("presence") && ev !== "accomplie") {
+        if (ev === "penalite") ecrire("max-penalite", mem.aujourdhui);
+        if (ev === "attribution") ecrire("max-quete-attribuee", mem.aujourdhui);
+        continue;
+      }
       if (ev === "penalite") {
         ecrire("max-penalite", mem.aujourdhui);
         const sa = e.plan!.sanction!;
@@ -137,7 +144,7 @@ export class EvenementsSysteme {
   private toast(texte: string): void {
     const t = document.createElement("div");
     t.className = "sys-toast";
-    t.innerHTML = `<span class="sys-alerte">!</span><div><b>NOTIFICATION</b><p>${echapper(texte.replace(/^[^\p{L}\p{N}]+/u, ""))}</p></div>`;
+    t.innerHTML = `<span class="sys-alerte">!</span><div><b>MAX</b><p>${echapper(texte.replace(/^[^\p{L}\p{N}]+/u, ""))}</p></div>`;
     this.toasts.prepend(t);
     son("systeme", 0.05);
     while (this.toasts.children.length > 3) this.toasts.lastElementChild?.remove();
