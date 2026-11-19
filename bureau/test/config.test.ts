@@ -5,6 +5,10 @@ import path from "node:path";
 import { loadConfig, expandHome, DEFAULT_CONFIG } from "../server/config.ts";
 
 describe("loadConfig", () => {
+  it("les trois claquements sont actifs par défaut", () => {
+    expect(DEFAULT_CONFIG.claque.actif).toBe(true);
+  });
+
   it("renvoie les valeurs par défaut sans fichier", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bureau-cfg-"));
     const c = loadConfig(dir);

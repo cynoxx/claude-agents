@@ -28,7 +28,9 @@ retirer_connexion() {
 case "${1:-}" in
   installer)
     [ "$(uname)" = "Darwin" ] || { echo "Ça ne marche que sur Mac."; exit 1; }
-    grep -q '"actif" *: *true' "$RACINE/bureau.config.json" 2> /dev/null || echo "ℹ️  Les claquements sont coupés par défaut : mets \"claque\": { \"actif\": true } dans bureau.config.json, sinon l'écoute s'arrête aussitôt."
+    if grep -q '"claque" *: *{ *"actif" *: *false' "$RACINE/bureau.config.json" 2> /dev/null; then
+      echo "ℹ️  Les claquements sont coupés dans bureau.config.json (\"claque\": { \"actif\": false }) : enlève cette ligne ou mets true, sinon l'écoute s'arrête aussitôt."
+    fi
     command -v ffmpeg > /dev/null 2>&1 || [ -x /opt/homebrew/bin/ffmpeg ] || [ -x /usr/local/bin/ffmpeg ] || { echo "❌ Il faut ffmpeg : brew install ffmpeg"; exit 1; }
     chmod +x "$RACINE/scripts/claque-boucle.sh"
     arreter
