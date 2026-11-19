@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "vite build --logLevel warn && tsx server/index.ts",
+    "start": "node scripts/verifier-modules.mjs && vite build --logLevel warn && tsx server/index.ts",
     "setup": "tsx server/setup.ts",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
@@ -28,7 +28,7 @@
     "claque-diagnostic": "tsx server/claque-diagnostic.ts",
     "claque-statut": "bash scripts/claque-app.sh statut",
     "claque-desinstaller": "bash scripts/claque-app.sh desinstaller",
-    "compagnon": "vite build --logLevel warn && tsx server/compagnon/index.ts",
+    "compagnon": "node scripts/verifier-modules.mjs && vite build --logLevel warn && tsx server/compagnon/index.ts",
     "appel": "tsx server/appel-essai.ts"
   },
   "dependencies": {

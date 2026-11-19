@@ -42,9 +42,10 @@ case "${1:-}" in
     osacompile -o "$APP" -e "do shell script \"/bin/bash \" & quoted form of \"$RACINE/scripts/claque-boucle.sh\"" || { echo "❌ osacompile a échoué."; exit 1; }
     PL="$APP/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier fr.bureau.max-oreille" "$PL" 2> /dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string fr.bureau.max-oreille" "$PL"
-    /usr/libexec/PlistBuddy -c "Add :CFBundleName string Max Oreille" "$PL" 2> /dev/null
+    /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Max Oreille'" "$PL" 2> /dev/null
     /usr/libexec/PlistBuddy -c "Add :LSUIElement bool true" "$PL"
-    /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string Max écoute tes trois claquements de mains pour s'allumer. Le son reste sur ton Mac." "$PL"
+    # pas d'apostrophe droite dans le texte : PlistBuddy la prend pour un guillemet (« Parse Error: Unclosed Quotes »)
+    /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'Max écoute tes trois claquements de mains pour se réveiller. Le son reste sur ton Mac.'" "$PL"
     # 2. signée sur ce Mac (sinon macOS ne retient pas l'autorisation du micro)
     codesign --force --deep -s - "$APP" > /dev/null 2>&1 || echo "⚠️  codesign a échoué (l'app marchera, mais macOS pourrait redemander le micro)."
     # 3. lancée à chaque ouverture de session

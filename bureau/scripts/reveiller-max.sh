@@ -24,6 +24,8 @@ if [ -f "$PIDF" ] && curl -fs "$URL/api/sante" > /dev/null 2>&1 && [ -n "$(find 
 fi
 
 if ! curl -fs "$URL/api/sante" > /dev/null 2>&1; then
+  # un « git pull » a pu ajouter des paquets : on les installe avant de construire la page
+  node scripts/verifier-modules.mjs >> "$JOURNAL" 2>&1
   # La page n'est reconstruite que si elle manque ou si le code a changé.
   if [ ! -f web/dist/index.html ] || [ -n "$(find web shared -type f -newer web/dist/index.html -not -path 'web/dist/*' | head -1)" ]; then
     npx --no-install vite build --logLevel warn >> "$JOURNAL" 2>&1
