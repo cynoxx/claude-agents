@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Planche 1 : l'écran Jarvis</title><link rel="stylesheet" href="planche.css">
+<style>
+.mission { left: 60px; top: 150px; width: 400px; }
+.echeance { right: 60px; top: 150px; width: 330px; }
+.carte { right: 60px; top: 440px; width: 330px; }
+.parole { position: absolute; left: 0; right: 0; bottom: 120px; text-align: center; }
+.parole .lui { font: 500 17px var(--corps); color: var(--discret); margin-bottom: 14px; }
+.parole .max { font: 600 34px/1.25 var(--titre); color: var(--blanc); text-shadow: 0 0 30px rgba(111,224,255,.45); }
+.parole .max i { font-style: normal; color: rgba(234,246,255,.35); }
+.etat { position: absolute; left: 0; right: 0; top: 196px; text-align: center; font: 600 12px var(--titre); letter-spacing: .5em; color: var(--froid); }
+.blocs { display: flex; gap: 6px; margin-top: 16px; } .blocs span { flex: 1; height: 5px; background: rgba(111,224,255,.16); } .blocs span.f { background: var(--froid); box-shadow: 0 0 10px var(--froid); }
+.ligne { display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid rgba(111,224,255,.12); font-size: 15px; } .ligne b { color: var(--blanc); font-weight: 500; }
+.heure { position: absolute; right: 60px; top: 30px; text-align: right; font: 600 30px var(--chiffres); color: var(--blanc); } .heure small { display:block; font: 500 12px var(--corps); color: var(--discret); margin-top: 4px; }
+</style></head><body>
+<canvas id="c" width="3200" height="2000"></canvas>
+<div class="calque">
+  <div class="marque">MAX<small>Planche 1 · l'écran Jarvis (écran principal)</small></div>
+  <div class="heure chiffre">08:49<small>samedi 14 novembre</small></div>
+  <div class="etat">· IL TE PARLE ·</div>
+
+  <div class="verre mission">
+    <div class="etiquette">Mission du jour</div>
+    <div class="grand" style="margin-top:12px">Maths : 4 blocs</div>
+    <div class="petit" style="margin-top:8px">Bloc 2 en cours · exercices types, sans la correction</div>
+    <div class="blocs"><span class="f"></span><span class="f"></span><span></span><span></span></div>
+    <div class="ligne" style="margin-top:16px"><span>Prochain créneau</span><b class="chiffre">10:45 · Bloc 3</b></div>
+    <div class="ligne"><span>Coucher</span><b class="chiffre">22:00</b></div>
+  </div>
+
+  <div class="verre braise echeance">
+    <div class="etiquette">Échéance</div>
+    <div class="chiffre" style="font-size:84px;font-weight:600;color:#fff;line-height:1;margin-top:10px;text-shadow:0 0 34px rgba(255,59,47,.7)">J‑2</div>
+    <div class="moyen" style="margin-top:12px">Partiel de maths</div>
+    <div class="petit" style="margin-top:4px">lundi · puis électricité, J‑5</div>
+  </div>
+
+  <div class="verre carte">
+    <div class="etiquette">À réviser aujourd'hui</div>
+    <div class="ligne" style="border-top:0;margin-top:8px"><span>Dérivées · J+3</span><b>20 min</b></div>
+    <div class="ligne"><span>Loi d'Ohm · J+1</span><b>15 min</b></div>
+    <div class="petit" style="margin-top:8px">Cette carte apparaît quand Max en parle, puis s'efface.</div>
+  </div>
+
+  <div class="parole">
+    <div class="lui">« Max, je fais quoi maintenant ? »</div>
+    <div class="max">Bloc 2. Les dérivées, <i>trois exercices, sans la correction.</i></div>
+  </div>
+  <div class="legende">Max au centre, grand, vivant : sa matière bouge avec sa vraie voix. Trois informations seulement autour de lui. Le rouge ne sert qu'à l'urgence.</div>
+</div>
+<script type="module">
+import { dessinerFond, dessinerMax } from "./planche.js";
+const c = document.getElementById("c"), ctx = c.getContext("2d");
+ctx.scale(2, 2);
+dessinerFond(ctx, 1600, 1000);
+dessinerMax(ctx, 800, 470, 205, "parole", 11);
+document.body.dataset.pret = "1";
+</script></body></html>

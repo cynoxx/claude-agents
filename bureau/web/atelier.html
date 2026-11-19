@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Max · l'atelier</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #04060a; overflow: hidden; font-family: "Rajdhani", "Avenir Next", system-ui, sans-serif; color: #cfe3f3; }
+      body { background: radial-gradient(ellipse at 50% 55%, #0a1626 0%, #04060a 70%); }
+      #max { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+      nav { position: fixed; left: 0; right: 0; bottom: 28px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+      button { font: 600 14px "Rajdhani", system-ui, sans-serif; letter-spacing: 0.22em; text-transform: uppercase; color: #cfe3f3; background: rgba(111, 224, 255, 0.06); border: 1px solid rgba(111, 224, 255, 0.25); padding: 10px 16px; cursor: pointer; }
+      button[aria-pressed="true"] { color: #04060a; background: #6fe0ff; }
+      p { position: fixed; left: 28px; top: 20px; margin: 0; font-size: 14px; letter-spacing: 0.3em; color: #7d93a8; }
+      body[data-nu] nav, body[data-nu] p { display: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="max"></canvas>
+    <p>MAX · L'ATELIER · bouge la souris, il te suit</p>
+    <nav id="humeurs"></nav>
+    <script type="module" src="./atelier.ts"></script>
+  </body>
+</html>
