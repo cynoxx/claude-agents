@@ -60,13 +60,16 @@ export function App({ updateAvailable, onUpdate }: { updateAvailable: boolean; o
   else content = <Today />;
 
   const firstRun = !s.state.prefs.onboardingDone && s.space === 'real';
+  const isActive = (k: string) => (k === 'aujourdhui' ? page === 'aujourdhui' || !(NAV.some((n) => n[0] === page) || page === 'journal') : page === k);
+  const activeIdx = NAV.findIndex(([k]) => isActive(k));
   return (
     <UIContext.Provider value={ui}>
+      <div className="aurora" aria-hidden="true"><i /><i /><i /></div>
       {s.space === 'demo' && <div className="demo-banner" role="status">Espace de démonstration — tes vraies données ne sont pas touchées. <a href="#/reglages/demo" style={{ color: 'white' }}>Revenir</a></div>}
       <div className="shell">
         <nav className="sidenav" aria-label="Navigation principale">
           <div className="brand">Max</div>
-          {NAV.map(([k, l, i]) => <a key={k} href={'#/' + k} aria-current={page === k || (k === 'aujourdhui' && !NAV.some((n) => n[0] === page) && page !== 'journal') ? 'page' : undefined}><span aria-hidden="true">{i}</span>{l}</a>)}
+          {NAV.map(([k, l, i]) => <a key={k} href={'#/' + k} aria-current={isActive(k) ? 'page' : undefined}><span aria-hidden="true">{i}</span>{l}</a>)}
           <a href="#/journal" aria-current={page === 'journal' ? 'page' : undefined}><span aria-hidden="true">☾</span>Journal</a>
           <div style={{ flex: 1 }} />
           <SaveStatus />
@@ -87,12 +90,13 @@ export function App({ updateAvailable, onUpdate }: { updateAvailable: boolean; o
           </main>
         </div>
       </div>
-      <nav className="tabbar" aria-label="Navigation">
-        {NAV.map(([k, l, i]) => <a key={k} href={'#/' + k} aria-current={page === k || (k === 'aujourdhui' && !NAV.some((n) => n[0] === page)) ? 'page' : undefined}><span className="ico" aria-hidden="true">{i}</span>{l}</a>)}
+      <nav className="tabbar" aria-label="Navigation" style={{ '--i': Math.max(activeIdx, 0) } as React.CSSProperties} data-none={activeIdx < 0 ? '' : undefined}>
+        <span className="pill" aria-hidden="true" />
+        {NAV.map(([k, l, i]) => <a key={k} href={'#/' + k} aria-current={isActive(k) ? 'page' : undefined}><span className="ico" aria-hidden="true">{i}</span>{l}</a>)}
       </nav>
       <div className="toasts" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className="toast" role={t.error ? 'alert' : 'status'} style={t.error ? { background: 'var(--danger)' } : undefined}>
+          <div key={t.id} className={'toast' + (t.error ? ' err' : '')} role={t.error ? 'alert' : 'status'}>
             <span className="grow">{t.text}</span>
             {t.batchId && <button className="btn small" onClick={() => undo(t)}>Annuler</button>}
             <button className="btn small ghost" style={{ border: 0 }} aria-label="Fermer" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}>✕</button>

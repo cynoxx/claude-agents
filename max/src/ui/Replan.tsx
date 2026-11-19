@@ -151,7 +151,7 @@ export function ReplanSheet({ initial, captureId, onClose }: { initial?: ReplanF
         </details>
       </section>
 
-      <div className="btn-row" style={{ marginTop: 14, position: 'sticky', bottom: -24, background: 'var(--bg)', padding: '10px 0' }}>
+      <div className="btn-row sticky-actions">
         <button className="btn primary" onClick={() => apply(true)} disabled={actionable.length === 0 && !facts.energy && !facts.availableUntil && facts.minutesLeft == null}>Tout appliquer</button>
         {selected.size !== actionable.length && <button className="btn" onClick={() => apply(false)}>Appliquer la sélection ({selected.size})</button>}
         <button className="btn ghost" onClick={onClose}>Ne rien changer</button>
